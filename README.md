@@ -4,7 +4,8 @@ Role-based portal (Admin · Mentor · Student) for **Placeonix** — an IT train
 placement institute. Single-page frontend + Node/Express + MongoDB API.
 
 - **Live app:** https://placeonix-dashboard.vercel.app
-- **Repo:** https://github.com/sowjanya-design/Placeonix_Dashboard
+- **Repo:** https://github.com/sowjanya-design/LMS-Placeonix
+- **Working branch:** `mohan` (push updates here)
 
 ## Test logins (live + seeded local)
 
