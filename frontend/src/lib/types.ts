@@ -56,6 +56,25 @@ export interface Submission {
   mentorFeedback?: string;
 }
 
+export type AttendanceStatus = "present" | "absent" | "late" | "excused";
+
+export interface AttendanceRecord {
+  _id: string;
+  batch: { _id: string; name: string; code: string };
+  date: string;
+  status: AttendanceStatus;
+  sessionTitle?: string;
+}
+
+export interface AttendanceSummary {
+  present: number;
+  absent: number;
+  late: number;
+  excused: number;
+  total: number;
+  percentage: number;
+}
+
 export interface Assignment {
   _id: string;
   title: string;

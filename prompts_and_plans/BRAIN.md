@@ -99,6 +99,26 @@ Root `package.json` also exposes `npm run dev|start|seed|portal` as delegating s
 > Newest entries at the top. Format: `### YYYY-MM-DD — short title` then 1-3 bullets:
 > what changed, why, anything the next session should know.
 
+### 2026-08-06 — Next.js frontend: Student Attendance page
+- `app/dashboard/attendance/page.tsx` — summary stat row (overall %, present/late/
+  excused/absent counts) + a sortable-by-date table of every attendance record
+  (batch, session, color-coded status), fetching `GET /attendance/me`.
+- **Caught and fixed a role-gating bug during verification, not before**: the
+  mentor-role fallback message rendered correctly, but the page still fired
+  `/attendance/me` on mount regardless of role — and that route is
+  `authorize('student')`-only on the backend, so mentors got a console 403 on every
+  visit even though the UI looked fine. Fixed by gating the fetch itself on
+  `user.role === 'student'`, not just the rendered output. Re-verified both roles
+  clean afterward. Worth remembering for the next placeholder-to-real-page
+  graduation: check whether the endpoint is role-restricted, and gate the *fetch*,
+  not just the UI branch, before calling it done.
+- Verified in-browser as the seeded student: 88% overall, 37 present/3 excused/2
+  absent, 40 real records rendered correctly. `tsc`/lint/build all clean.
+- Next session: same pattern continues. Remaining student placeholders: Sessions,
+  Resources, Placements, Certificates, Fees, Leaderboard, Feedback, Profile. Mentor
+  and admin sections are all still placeholders — nothing built for those roles yet
+  beyond the "not migrated" fallback message pattern.
+
 ### 2026-08-06 — Backend fix: assignment-list submission leak + Frontend: student Assignments (submit flow)
 - **Security fix found while building the frontend, not a planned task**: `GET
   /assignments` (`backend/src/controllers/assignmentController.js`) returned full
