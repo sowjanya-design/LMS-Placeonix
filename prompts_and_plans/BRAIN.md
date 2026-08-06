@@ -99,6 +99,40 @@ Root `package.json` also exposes `npm run dev|start|seed|portal` as delegating s
 > Newest entries at the top. Format: `### YYYY-MM-DD — short title` then 1-3 bullets:
 > what changed, why, anything the next session should know.
 
+### 2026-08-06 — MongoDB Atlas connected + Next.js frontend: auth flow (Phase 6 start)
+- **Atlas connected.** `backend/.env` didn't exist; found real credentials in
+  `atlas-credentials.env` (repo root, gitignored). `mongodb+srv://` failed with
+  `ECONNREFUSED` on the SRV DNS lookup — this dev environment's Node resolver is
+  pinned to `127.0.0.1`, which refuses SRV queries even though the OS resolver works.
+  Fixed by resolving the SRV/TXT records manually (`nslookup -type=SRV`/`-type=TXT`)
+  and using a standard (non-SRV) `mongodb://` connection string with the shard hosts,
+  replica set, and authSource read directly from those records — same cluster,
+  different connection string shape. If this breaks after an Atlas cluster change,
+  redo the nslookup and update `backend/.env`'s `MONGO_URI`.
+- Ran `npm run seed` against the real Atlas cluster — full demo dataset now live
+  (courses, batches, enrollments, payments, leads, certificates, roles/permissions).
+  Demo logins: `admin@placeonix.in` / `mentor@placeonix.in` / `student@placeonix.in`,
+  all password `Password123`.
+- **Next.js frontend: first real feature (auth flow).** The `frontend/` scaffold from
+  the reorg was still the default `create-next-app` starter. Built: `lib/api.ts` (fetch
+  wrapper, `credentials: 'include'`, never touches the token directly — same
+  cookie-only approach as the Phase 0 fix, this time built in from the start instead
+  of retrofitted), `lib/auth-context.tsx` (React context wrapping `/auth/me`, `login`,
+  `logout`), `components/auth-guard.tsx` (redirects to `/login` if no session),
+  `/login` page, `/dashboard` layout+page (role-aware header, live stats from
+  `/users/me/stats`). Root `/` redirects to `/dashboard` or `/login` based on session.
+- Also updated `backend/.env`'s `CLIENT_URL` from `:8080` (old vanilla portal) to
+  `:3000` (Next.js dev default) — required for the CORS+cookie flow to work at all.
+- **Verified in an actual browser** (not just curl): full login → dashboard-with-real-data
+  → reload-persists-session → logout → direct-nav-to-/dashboard-while-logged-out-redirects
+  flow, zero console errors at every step. `tsc --noEmit`, `next lint`, and `next build`
+  all clean.
+- Next session: this is the *first slice* of Phase 6, not a finished frontend — only
+  auth + an empty dashboard shell exist. The old `frontend/legacy_html/placeonix-hub-portal.html`
+  is the feature-complete reference for everything still to migrate (all the
+  role-specific modules listed in `docs/FEATURES.md`, if that file survived the reorg —
+  check `prompts_and_plans/` or wherever docs/ ended up).
+
 ### 2026-08-06 — Repo reorg: placeonix-hub-backend → backend/, fresh Next.js frontend/
 - Mid-session, the working tree changed outside of this conversation:
   `placeonix-hub-backend/` became `backend/` (same content, including everything
