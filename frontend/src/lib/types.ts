@@ -5,10 +5,15 @@ export interface User {
   firstName: string;
   lastName: string;
   email: string;
+  phone?: string;
   role: Role;
   status: string;
   avatar?: string | null;
+  createdAt: string;
+  studentProfile?: { enrollmentId?: string };
+  mentorProfile?: { studentCount?: number };
 }
+
 
 export interface AnalyticsOverview {
   students: { total: number; active: number };
@@ -35,9 +40,13 @@ export interface Batch {
   _id: string;
   name: string;
   code: string;
+  course?: { _id: string; title: string };
   mode: "online" | "offline" | "hybrid";
   venue?: string;
-  mentor?: { firstName: string; lastName: string };
+  mentor?: { _id?: string; firstName: string; lastName: string };
+  capacity?: number;
+  enrolledCount?: number;
+  status?: "upcoming" | "enrolling" | "active" | "completed" | "cancelled";
 }
 
 export type EnrollmentStatus = "enrolled" | "in_progress" | "completed" | "dropped" | "at_risk";

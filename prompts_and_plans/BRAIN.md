@@ -99,6 +99,45 @@ Root `package.json` also exposes `npm run dev|start|seed|portal` as delegating s
 > Newest entries at the top. Format: `### YYYY-MM-DD — short title` then 1-3 bullets:
 > what changed, why, anything the next session should know.
 
+### 2026-08-06 — Frontend: 4 admin CRUD pages (Students, Mentors, Batches, Courses)
+- User asked to check *every* page on the live site and wire up full backend
+  functionality. Surveyed the live site's full admin nav (20 items) directly —
+  screenshotted Students, Mentors, Batches, Courses in detail. Given the scope (20+
+  admin pages, plus mentor/student variants), explicitly scoped this pass to the 4
+  highest-traffic admin CRUD pages rather than attempt all of them silently; said so
+  to the user rather than claiming full completion.
+- `dashboard/students/page.tsx`: table matching the live layout (avatar+enrollmentId,
+  email, phone, joined date, status badge), **real** `+ Add Student` modal
+  (`POST /users` with role=student) and **real** `Delete` (`DELETE /users/:id`) — both
+  verified end-to-end in-browser: added a student, got back a real generated
+  `enrollmentId` (`PLX20260004`), deleted it, confirmed gone after a fresh reload
+  (not just local state).
+- `dashboard/mentors/page.tsx`: list with real `DELETE /users/:id`.
+- `dashboard/batches/page.tsx`: card grid from `GET /batches`, real seat
+  counts/mentor/status.
+- `dashboard/courses/page.tsx`: full catalog from `GET /courses` with a working
+  client-side category filter (verified: clicking "Web Development" correctly
+  narrows 17 courses down to the 1 matching course).
+- Extended `lib/types.ts`'s `User` (phone, createdAt, studentProfile, mentorProfile)
+  and `Batch` (course, capacity, enrolledCount, status) rather than adding duplicate
+  interfaces — caught and fixed a duplicate `Batch` interface (TS would have silently
+  used whichever came last) before it shipped.
+- Fixed a minor Next.js LCP warning (sidebar logo needed `priority` since it's
+  above-the-fold on every page) — not a bug, but a legitimate perf hint worth
+  clearing rather than ignoring.
+- Verified all 4 pages in-browser against our own backend + Atlas data, zero console
+  errors after a dev-server restart (same Turbopack-cache lesson as the Calendar grid
+  bug — restart before trusting a "broken" render). `tsc`/lint/build all clean.
+- **Not done yet, scoped out of this pass, still using the `[section]` placeholder**:
+  Sessions, Placements, Companies, Leads, Payments, Certificates, Resources, Reviews,
+  Leaderboard, Announcements, Reports, Settings, Mock Interviews, Alumni, Office
+  Hours (admin) — plus the mentor and student role variants of pages already built
+  for admin only. Students/Mentors pages also dropped Import/Export CSV and
+  View/Edit actions from the live site for time — only Add/Delete are real so far.
+  Next session: continue this same pattern (survey live page → real GET for list →
+  real mutations for the actions that matter) down the remaining nav, prioritizing
+  whichever the user actually uses day to day.
+
 ### 2026-08-06 — Frontend: full shell + admin Dashboard + Calendar to match live site (round 2)
 - User provided screenshots of the actual live admin Dashboard and Calendar pages —
   showed the previous round's fix was correct in direction but incomplete: the header
