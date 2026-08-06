@@ -99,6 +99,32 @@ Root `package.json` also exposes `npm run dev|start|seed|portal` as delegating s
 > Newest entries at the top. Format: `### YYYY-MM-DD — short title` then 1-3 bullets:
 > what changed, why, anything the next session should know.
 
+### 2026-08-06 — Phase 0 foundations: audit logging + cookie-only auth on frontend
+- **AuditLog**: new model (`src/models/AuditLog.js`) + `auditLog()` helper
+  (`src/utils/audit.js`, fire-and-forget, never throws) wired into the highest-value
+  write paths: auth (login success/failure, register, logout, password
+  change/reset), user admin actions (role change, delete), and payments
+  (record/status-change/refund). Read via new admin-only `GET /api/v1/audit-logs`.
+- **Auth**: the backend already set httpOnly cookies on login (good — no change
+  needed there). The gap was the *frontend*, which additionally stored the raw JWT
+  in `localStorage` (`plx_token`) and sent it via `Authorization: Bearer`, defeating
+  the httpOnly protection. Removed that: `apiFetch` now sends `credentials: 'include'`
+  and relies solely on the cookie; `localStorage` only keeps non-secret markers
+  (`plx_had_session`, `plx_demo_session`) to decide whether to attempt silent
+  auto-login on page load. Backend response body still includes `accessToken` for
+  Postman/API-tool consumers and existing tests — only the frontend stopped reading it.
+- Updated `.env.example`'s `CLIENT_URL` default from `:3000` to `:8080` to match the
+  actual local dev port (`_serve.js`) — cross-origin cookies need an exact origin
+  match, not a guess.
+- **Scoped down from the original Phase 0 plan**: did not build a full
+  controller→service→repository layering refactor this pass — kept it to targeted
+  audit-log calls in the controllers that matter most (auth/users/payments) rather
+  than restructuring every controller. Full service-layer extraction is still open
+  if/when it's worth the churn — see [docs/PLATFORM_UPGRADE_PLAN.md](docs/PLATFORM_UPGRADE_PLAN.md).
+- All 36 backend Jest tests pass unchanged after these changes.
+- Next session: RBAC (Phase 1 — Roles/Permissions/RolePermissions) is the next
+  planned step per the upgrade plan.
+
 ### 2026-08-05 — Platform upgrade plan drafted
 - Analyzed `LMS database.docx` (target architecture: Next.js + layered Node backend +
   RBAC/audit/IDE-assessment/CRM/finance modules) and `LMS Database schemas.xlsx` (71

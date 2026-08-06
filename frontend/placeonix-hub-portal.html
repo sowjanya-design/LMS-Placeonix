@@ -3392,7 +3392,11 @@
     var API_BASE = (location.hostname === 'localhost' || location.hostname === '127.0.0.1')
       ? 'http://localhost:5000/api/v1'
       : '/api/v1';
-    var _token = localStorage.getItem('plx_token') || null;
+    // Auth is via an httpOnly cookie set by the API (not readable/stealable from JS).
+    // We only keep a plain marker of "was logged in" so we know whether to attempt
+    // silent auto-login on page load; the real session lives in the cookie.
+    var _hadSession = localStorage.getItem('plx_had_session') === '1';
+    var _isDemoSession = localStorage.getItem('plx_demo_session') === '1';
     var _currentUser = null;
     var _demoMode = false;
 
@@ -3522,7 +3526,7 @@
     function _demoResponse(path) {
       var p = path.split('?')[0];
       var role = _currentUser ? _currentUser.role : 'student';
-      if (p === '/auth/login' || p === '/auth/me') return { success: true, data: { user: _currentUser, accessToken: 'demo' } };
+      if (p === '/auth/login' || p === '/auth/me') return { success: true, data: { user: _currentUser } };
       if (p === '/auth/logout') return { success: true };
       if (p === '/users/me/enrollments') return { success: true, data: _DEMO_ENROLLMENTS };
       if (p === '/users/leaderboard') return { success: true, data: _DEMO_LEADERBOARD };
@@ -3575,8 +3579,9 @@
       }
       opts = opts || {};
       var headers = { 'Content-Type': 'application/json' };
-      if (_token) headers['Authorization'] = 'Bearer ' + _token;
-      var res = await fetch(API_BASE + path, Object.assign({}, opts, { headers: headers }));
+      // Session lives in an httpOnly cookie the API sets on login — 'include' is what
+      // makes the browser send it (needed cross-origin in local dev; harmless same-origin).
+      var res = await fetch(API_BASE + path, Object.assign({ credentials: 'include' }, opts, { headers: headers }));
       var json;
       try { json = await res.json(); } catch (e) { json = {}; }
       if (!res.ok) {
@@ -3624,13 +3629,12 @@
     }
 
     async function autoLogin() {
-      if (!_token) return;
-      if (_token === 'demo') {
-        // Demo session stored — clear it, require fresh login
-        _token = null;
-        localStorage.removeItem('plx_token');
+      if (_isDemoSession) {
+        // Demo sessions don't persist across reloads — require a fresh login.
+        localStorage.removeItem('plx_demo_session');
         return;
       }
+      if (!_hadSession) return; // no cookie was ever set on this browser — skip the round trip
       try {
         var res = await apiFetch('/auth/me');
         _currentUser = res.data.user;
@@ -3640,8 +3644,7 @@
         document.getElementById('app').style.display = 'block';
         initApp(currentRole);
       } catch (e) {
-        _token = null;
-        localStorage.removeItem('plx_token');
+        localStorage.removeItem('plx_had_session');
       }
     }
 
@@ -3817,9 +3820,8 @@
           method: 'POST',
           body: JSON.stringify({ email: email, password: password })
         });
-        _token = res.data.accessToken;
         _currentUser = res.data.user;
-        localStorage.setItem('plx_token', _token);
+        localStorage.setItem('plx_had_session', '1');
         currentRole = _currentUser.role;
         populateROLES();
         var ls = document.getElementById('loginScreen');
@@ -3840,7 +3842,7 @@
           var demoUser = _DEMO_USERS[email];
           if (demoUser && password === 'Password123') {
             _demoMode = true;
-            _token = 'demo';
+            localStorage.setItem('plx_demo_session', '1');
             _currentUser = demoUser;
             currentRole = demoUser.role;
             populateROLES();
@@ -3869,10 +3871,10 @@
 
     async function doLogout() {
       try { if (!_demoMode) await apiFetch('/auth/logout', { method: 'POST' }); } catch (e) { }
-      _token = null;
       _currentUser = null;
       _demoMode = false;
-      localStorage.removeItem('plx_token');
+      localStorage.removeItem('plx_had_session');
+      localStorage.removeItem('plx_demo_session');
       closeModal();
       var db = document.getElementById('demoBanner'); if (db) db.remove();
       // Reset the login form so credentials & button don't persist

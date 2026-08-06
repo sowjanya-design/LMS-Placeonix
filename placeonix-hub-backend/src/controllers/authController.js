@@ -4,6 +4,7 @@ const ApiResponse = require('../utils/ApiResponse');
 const asyncHandler = require('../utils/asyncHandler');
 const { generateTokenPair, verifyToken } = require('../utils/jwt');
 const logger = require('../utils/logger');
+const { auditLog } = require('../utils/audit');
 const crypto = require('crypto');
 
 const cookieOptions = () => ({
@@ -47,6 +48,7 @@ exports.register = asyncHandler(async (req, res, next) => {
   if (existing) return next(new AppError('Email already registered', 409));
 
   const user = await User.create({ ...req.body, role: 'student' });
+  auditLog(req, { module: 'auth', action: 'register', resource: 'User', resourceId: user._id, userId: user._id, userEmail: user.email });
   return await sendTokens(user, res, 201, 'Registration successful');
 });
 
@@ -60,24 +62,31 @@ exports.login = asyncHandler(async (req, res, next) => {
   }
 
   const user = await User.findOne({ email }).select('+password');
-  if (!user) return next(new AppError('Invalid credentials', 401));
+  if (!user) {
+    auditLog(req, { module: 'auth', action: 'login', userEmail: email, status: 'failure', message: 'No such account' });
+    return next(new AppError('Invalid credentials', 401));
+  }
 
   if (user.isLocked) {
     const minutesLeft = Math.ceil((user.lockUntil - Date.now()) / 60000);
+    auditLog(req, { module: 'auth', action: 'login', userId: user._id, userEmail: user.email, status: 'failure', message: 'Account locked' });
     return next(new AppError(`Account locked. Try again in ${minutesLeft} minutes`, 423));
   }
 
   const isMatch = await user.matchPassword(password);
   if (!isMatch) {
     await user.incrementLoginAttempts();
+    auditLog(req, { module: 'auth', action: 'login', userId: user._id, userEmail: user.email, status: 'failure', message: 'Wrong password' });
     return next(new AppError('Invalid credentials', 401));
   }
 
   if (user.status !== 'active') {
+    auditLog(req, { module: 'auth', action: 'login', userId: user._id, userEmail: user.email, status: 'failure', message: `Account ${user.status}` });
     return next(new AppError(`Account is ${user.status}`, 403));
   }
 
   await user.resetLoginAttempts();
+  auditLog(req, { module: 'auth', action: 'login', userId: user._id, userEmail: user.email });
   return await sendTokens(user, res, 200, 'Login successful');
 });
 
@@ -108,6 +117,7 @@ exports.logout = asyncHandler(async (req, res) => {
   if (req.user) {
     req.user.refreshToken = undefined;
     await req.user.save({ validateBeforeSave: false });
+    auditLog(req, { module: 'auth', action: 'logout', userId: req.user._id, userEmail: req.user.email });
   }
   res.clearCookie('accessToken');
   res.clearCookie('refreshToken');
@@ -138,6 +148,7 @@ exports.updatePassword = asyncHandler(async (req, res, next) => {
 
   user.password = newPassword;
   await user.save();
+  auditLog(req, { module: 'auth', action: 'update_password', userId: user._id, userEmail: user.email });
   return await sendTokens(user, res, 200, 'Password updated');
 });
 
@@ -203,5 +214,6 @@ exports.resetPassword = asyncHandler(async (req, res, next) => {
   user.passwordResetExpiry = undefined;
   await user.save();
 
+  auditLog(req, { module: 'auth', action: 'reset_password', userId: user._id, userEmail: user.email });
   return await sendTokens(user, res, 200, 'Password reset successful');
 });

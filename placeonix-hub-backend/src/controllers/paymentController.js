@@ -3,6 +3,7 @@ const Enrollment = require('../models/Enrollment');
 const AppError = require('../utils/AppError');
 const ApiResponse = require('../utils/ApiResponse');
 const asyncHandler = require('../utils/asyncHandler');
+const { auditLog } = require('../utils/audit');
 
 // @desc   Student submits a fee payment for admin verification.
 //         No payment gateway is integrated yet — this does NOT move money
@@ -129,6 +130,14 @@ exports.recordPayment = asyncHandler(async (req, res, next) => {
   });
   await enrollment.save();
 
+  auditLog(req, {
+    module: 'payments',
+    action: 'record_payment',
+    resource: 'Payment',
+    resourceId: payment._id,
+    newValue: { amount, method, enrollmentId, status: 'completed' },
+  });
+
   return ApiResponse.created(res, 'Payment recorded', { payment, enrollment });
 });
 
@@ -150,6 +159,7 @@ exports.updatePayment = asyncHandler(async (req, res, next) => {
   if (!payment) return next(new AppError('Payment not found', 404));
 
   const wasCompleted = payment.status === 'completed';
+  const oldStatus = payment.status;
   if (status !== undefined) payment.status = status;
   if (notes !== undefined) payment.notes = reason ? `${notes} (${reason})` : notes;
   if (transactionId !== undefined) payment.transactionId = transactionId;
@@ -176,6 +186,16 @@ exports.updatePayment = asyncHandler(async (req, res, next) => {
   }
 
   await payment.save();
+  if (oldStatus !== payment.status) {
+    auditLog(req, {
+      module: 'payments',
+      action: 'update_status',
+      resource: 'Payment',
+      resourceId: payment._id,
+      oldValue: { status: oldStatus },
+      newValue: { status: payment.status },
+    });
+  }
   return ApiResponse.success(res, 200, 'Payment updated', { payment });
 });
 
@@ -199,6 +219,14 @@ exports.refundPayment = asyncHandler(async (req, res, next) => {
   // Update enrollment
   await Enrollment.findByIdAndUpdate(payment.enrollment, {
     $inc: { 'fee.paid': -(amount || payment.amount), 'fee.due': amount || payment.amount },
+  });
+
+  auditLog(req, {
+    module: 'payments',
+    action: 'refund',
+    resource: 'Payment',
+    resourceId: payment._id,
+    newValue: { amount: amount || payment.amount, reason, status: payment.status },
   });
 
   return ApiResponse.success(res, 200, 'Refund processed', { payment });

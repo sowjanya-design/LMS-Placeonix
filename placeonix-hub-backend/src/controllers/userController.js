@@ -3,6 +3,7 @@ const Enrollment = require('../models/Enrollment');
 const AppError = require('../utils/AppError');
 const ApiResponse = require('../utils/ApiResponse');
 const asyncHandler = require('../utils/asyncHandler');
+const { auditLog } = require('../utils/audit');
 
 // @desc   List users (admin)
 // @route  GET /api/v1/users?role=&status=&page=&limit=&search=
@@ -147,6 +148,13 @@ exports.deleteUser = asyncHandler(async (req, res, next) => {
   // simply show "Unassigned"; reassign them to another mentor as needed.
 
   await user.deleteOne();
+  auditLog(req, {
+    module: 'users',
+    action: 'delete_user',
+    resource: 'User',
+    resourceId: user._id,
+    oldValue: { email: user.email, role: user.role, status: user.status },
+  });
   return ApiResponse.success(res, 200, 'User removed');
 });
 
@@ -157,8 +165,17 @@ exports.updateRole = asyncHandler(async (req, res, next) => {
   if (!['admin', 'mentor', 'student'].includes(role)) {
     return next(new AppError('Invalid role', 400));
   }
+  const before = await User.findById(req.params.id).select('role email');
+  if (!before) return next(new AppError('User not found', 404));
   const user = await User.findByIdAndUpdate(req.params.id, { role }, { new: true });
-  if (!user) return next(new AppError('User not found', 404));
+  auditLog(req, {
+    module: 'users',
+    action: 'update_role',
+    resource: 'User',
+    resourceId: user._id,
+    oldValue: { role: before.role },
+    newValue: { role },
+  });
   return ApiResponse.success(res, 200, `Role updated to ${role}`, { user });
 });
 
