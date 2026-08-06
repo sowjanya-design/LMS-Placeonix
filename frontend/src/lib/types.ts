@@ -41,3 +41,31 @@ export interface Enrollment {
   fee: { total: number; paid: number; due: number };
   enrollmentDate: string;
 }
+
+export type SubmissionStatus = "submitted" | "late" | "reviewed" | "returned";
+
+export interface Submission {
+  _id: string;
+  student: string;
+  submittedAt: string;
+  content?: string;
+  githubLink?: string;
+  status: SubmissionStatus;
+  score?: number;
+  grade?: string;
+  mentorFeedback?: string;
+}
+
+export interface Assignment {
+  _id: string;
+  title: string;
+  description: string;
+  instructions?: string;
+  course: { _id: string; title: string };
+  batch: { _id: string; name: string; code: string };
+  dueDate: string;
+  maxScore: number;
+  type: string;
+  difficulty: "easy" | "medium" | "hard";
+  submissions: Submission[];
+}

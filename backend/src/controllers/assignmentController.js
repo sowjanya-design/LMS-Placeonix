@@ -35,7 +35,20 @@ exports.listAssignments = asyncHandler(async (req, res) => {
     .skip((page - 1) * limit)
     .limit(Number(limit));
 
-  return ApiResponse.paginated(res, 'Assignments fetched', assignments, page, limit, total);
+  // Same masking as getAssignment: a student must only ever see their own
+  // submission, never classmates' — the raw docs above carry every
+  // submission in the batch (content, files, mentor feedback, scores).
+  const data =
+    req.user.role === 'student'
+      ? assignments.map((a) => {
+          const obj = a.toObject();
+          const mine = obj.submissions.find((s) => String(s.student) === String(req.user._id));
+          obj.submissions = mine ? [mine] : [];
+          return obj;
+        })
+      : assignments;
+
+  return ApiResponse.paginated(res, 'Assignments fetched', data, page, limit, total);
 });
 
 // @desc   Get assignment

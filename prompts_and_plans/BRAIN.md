@@ -99,6 +99,35 @@ Root `package.json` also exposes `npm run dev|start|seed|portal` as delegating s
 > Newest entries at the top. Format: `### YYYY-MM-DD — short title` then 1-3 bullets:
 > what changed, why, anything the next session should know.
 
+### 2026-08-06 — Backend fix: assignment-list submission leak + Frontend: student Assignments (submit flow)
+- **Security fix found while building the frontend, not a planned task**: `GET
+  /assignments` (`backend/src/controllers/assignmentController.js`) returned full
+  `Assignment` docs including the *unfiltered* `submissions` array to every role —
+  meaning any student could see every classmate's submission content, GitHub links,
+  and mentor feedback/scores for assignments in their own batch, just by listing
+  assignments. `getAssignment` (single-assignment fetch) already masked this
+  correctly; the list endpoint never got the same treatment. Fixed by applying the
+  identical per-student masking there. Added a regression test
+  (`assignments.test.js`) that seeds two students' submissions and asserts student A
+  never sees student B's content via the list endpoint (and that a mentor still sees
+  both, since mentors are supposed to). Full suite: 50 tests passing, lint clean.
+- `app/dashboard/assignments/page.tsx` — student-only real page (mentor/admin see a
+  short "not migrated yet" notice, consistent with the placeholder pattern rather
+  than pretending to support grading). Lists assignments with a status badge (Not
+  submitted / Overdue / Submitted / Late / Graded with score), shows mentor feedback
+  inline when present, and an inline submit form (notes + GitHub link) that posts to
+  `POST /assignments/:id/submit` then refetches that one assignment so the UI
+  reflects the real server state rather than assuming success.
+- Verified in-browser end-to-end as the seeded student: submitted "Node REST API"
+  through the real form, badge updated to "Submitted" immediately, **and stayed
+  "Submitted" after a full page reload** (proof it round-tripped through Atlas, not
+  just local state). Mentor fallback message also verified. Zero console errors.
+  `tsc`/lint/build all clean.
+- Next session: same graduation pattern as My Courses — add a real page at the
+  matching route. Mentor's Assignments (grading/review UI, `POST
+  /assignments/:id/submissions/:submissionId/review`) is still a placeholder and a
+  reasonable next target, or continue down the student list (Attendance, Sessions).
+
 ### 2026-08-06 — Next.js frontend: Student "My Courses" (first real content page)
 - `app/dashboard/my-courses/page.tsx` — first real content page (not a placeholder),
   fetches `GET /users/me/enrollments`, renders each enrollment as a card: course

@@ -112,4 +112,29 @@ describe('Assignments API — ownership + grading', () => {
       .send({ content: 'Sneaky' });
     expect(res.statusCode).toBe(403);
   });
+
+  it('never shows a student a classmate\'s submission via the list endpoint', async () => {
+    const { user: mentor, token: mentorToken } = await createUserAndLogin({ role: 'mentor' });
+    const { user: studentA, token: tokenA } = await createUserAndLogin({ role: 'student' });
+    const { user: studentB } = await createUserAndLogin({ role: 'student' });
+    const { batch, course } = await createCourseAndBatch(mentor._id, mentor._id);
+    await Enrollment.create({ student: studentA._id, course: course._id, batch: batch._id, fee: { total: 0, paid: 0, due: 0 } });
+    await Enrollment.create({ student: studentB._id, course: course._id, batch: batch._id, fee: { total: 0, paid: 0, due: 0 } });
+    const assignment = await makeAssignment(mentor, batch);
+    assignment.submissions.push(
+      { student: studentA._id, status: 'submitted', content: 'A\'s secret work' },
+      { student: studentB._id, status: 'submitted', content: 'B\'s secret work' }
+    );
+    await assignment.save();
+
+    const resA = await request(app).get('/api/v1/assignments').set(auth(tokenA));
+    expect(resA.statusCode).toBe(200);
+    const seenByA = resA.body.data[0].submissions;
+    expect(seenByA).toHaveLength(1);
+    expect(seenByA[0].content).toBe('A\'s secret work');
+    expect(JSON.stringify(resA.body)).not.toContain('B\'s secret work');
+
+    const resMentor = await request(app).get('/api/v1/assignments').set(auth(mentorToken));
+    expect(resMentor.body.data[0].submissions).toHaveLength(2);
+  });
 });
