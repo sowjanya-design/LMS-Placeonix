@@ -99,6 +99,31 @@ Root `package.json` also exposes `npm run dev|start|seed|portal` as delegating s
 > Newest entries at the top. Format: `### YYYY-MM-DD — short title` then 1-3 bullets:
 > what changed, why, anything the next session should know.
 
+### 2026-08-06 — Next.js frontend: role-aware sidebar navigation
+- `lib/nav.ts`: the exact `ROLES[role].nav` config from
+  `frontend/legacy_html/placeonix-hub-portal.html` (admin 20 items, mentor 14,
+  student 17), ported as typed data instead of inline JS objects — so the new
+  frontend's nav is feature-parity-by-construction with what each role could already
+  see, not a guess at what they need.
+- `components/icons.tsx`: the old portal's `iconSvg()` path data, ported to React
+  components (added one missing icon — `message`, used by student's "Feedback" nav
+  item but absent from the original icon map, which silently fell back to the home
+  icon there).
+- `components/sidebar.tsx`: renders `NAV[user.role]`, active-route highlighting via
+  `usePathname`. Every item links to `/dashboard/{id}` (`dashboard` itself → `/dashboard`).
+- `app/dashboard/[section]/page.tsx`: catch-all placeholder for every nav item that
+  doesn't have a real page yet — resolves the id back to its role-specific label via
+  `NAV[user.role]` and shows "not yet migrated" rather than a 404. This is deliberate:
+  every sidebar link should resolve to *something* honest as pages get built one at a
+  time, instead of either 404s or fake content.
+- Verified in-browser for both admin and mentor: distinct nav sets render correctly,
+  `Link` client-side navigation to a placeholder route works, active-item highlighting
+  updates. `tsc --noEmit`, lint, and `next build` all clean.
+- Next session: no real content pages exist yet except `/dashboard` itself — every
+  other nav item is still a placeholder. Next natural slice per the earlier
+  discussion: student "My Courses" (ties into the Quiz/Coding-Challenge work from
+  Phases 2-3) or admin's Students/Mentors/Courses tables.
+
 ### 2026-08-06 — MongoDB Atlas connected + Next.js frontend: auth flow (Phase 6 start)
 - **Atlas connected.** `backend/.env` didn't exist; found real credentials in
   `atlas-credentials.env` (repo root, gitignored). `mongodb+srv://` failed with

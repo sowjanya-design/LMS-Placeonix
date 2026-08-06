@@ -3,6 +3,7 @@
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/lib/auth-context";
 import { AuthGuard } from "@/components/auth-guard";
+import { Sidebar } from "@/components/sidebar";
 
 function DashboardChrome({ children }: { children: React.ReactNode }) {
   const { user, logout } = useAuth();
@@ -29,7 +30,10 @@ function DashboardChrome({ children }: { children: React.ReactNode }) {
           </button>
         </div>
       </header>
-      <main className="flex-1 px-6 py-8">{children}</main>
+      <div className="flex flex-1">
+        <Sidebar />
+        <main className="flex-1 px-6 py-8">{children}</main>
+      </div>
     </div>
   );
 }
