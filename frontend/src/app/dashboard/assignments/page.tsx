@@ -17,10 +17,8 @@ function StatusBadge({ assignment }: { assignment: Assignment }) {
   if (!mine) {
     return (
       <span
-        className={`shrink-0 rounded-full px-2.5 py-1 text-xs font-medium ${
-          overdue
-            ? "bg-red-500/10 text-red-600 dark:text-red-400"
-            : "bg-black/10 text-black/60 dark:bg-white/10 dark:text-white/60"
+        className={`shrink-0 rounded-full px-2.5 py-1 text-xs font-semibold ${
+          overdue ? "bg-red-lt text-red" : "bg-bg text-muted"
         }`}
       >
         {overdue ? "Overdue" : "Not submitted"}
@@ -29,13 +27,13 @@ function StatusBadge({ assignment }: { assignment: Assignment }) {
   }
   if (mine.status === "reviewed" || mine.status === "returned") {
     return (
-      <span className="shrink-0 rounded-full bg-emerald-500/10 px-2.5 py-1 text-xs font-medium text-emerald-600 dark:text-emerald-400">
+      <span className="shrink-0 rounded-full bg-green-lt px-2.5 py-1 text-xs font-semibold text-green">
         Graded {mine.score != null ? `· ${mine.score}/${assignment.maxScore}` : ""}
       </span>
     );
   }
   return (
-    <span className="shrink-0 rounded-full bg-blue-500/10 px-2.5 py-1 text-xs font-medium text-blue-600 dark:text-blue-400">
+    <span className="shrink-0 rounded-full bg-blue-lt px-2.5 py-1 text-xs font-semibold text-blue">
       {mine.status === "late" ? "Submitted (late)" : "Submitted"}
     </span>
   );
@@ -69,26 +67,27 @@ function SubmitForm({
   }
 
   return (
-    <div className="mt-3 flex flex-col gap-2 border-t border-black/10 pt-3 dark:border-white/10">
+    <div className="mt-3 flex flex-col gap-2 border-t border-line pt-3">
       <textarea
         placeholder="Notes / write-up (optional)"
         value={content}
         onChange={(e) => setContent(e.target.value)}
         rows={3}
-        className="rounded-lg border border-black/15 bg-transparent px-3 py-2 text-sm outline-none focus:border-black/40 dark:border-white/15 dark:focus:border-white/40"
+        className="rounded-lg border-[1.5px] border-line bg-[#fbfbfd] px-3 py-2 text-sm text-ink outline-none focus:border-purple focus:bg-white"
       />
       <input
         type="url"
         placeholder="GitHub link (optional)"
         value={githubLink}
         onChange={(e) => setGithubLink(e.target.value)}
-        className="rounded-lg border border-black/15 bg-transparent px-3 py-2 text-sm outline-none focus:border-black/40 dark:border-white/15 dark:focus:border-white/40"
+        className="rounded-lg border-[1.5px] border-line bg-[#fbfbfd] px-3 py-2 text-sm text-ink outline-none focus:border-purple focus:bg-white"
       />
-      {error && <p className="text-sm text-red-600 dark:text-red-400">{error}</p>}
+      {error && <p className="text-sm text-red">{error}</p>}
       <button
         onClick={handleSubmit}
         disabled={submitting}
-        className="self-start rounded-lg bg-black px-4 py-1.5 text-sm font-medium text-white disabled:opacity-50 dark:bg-white dark:text-black"
+        className="self-start rounded-lg px-4 py-1.5 text-sm font-semibold text-white shadow-[0_4px_14px_rgba(108,63,245,0.28)] disabled:opacity-50"
+        style={{ background: "linear-gradient(135deg, var(--purple), var(--purple-dk))" }}
       >
         {submitting ? "Submitting…" : "Submit assignment"}
       </button>
@@ -117,8 +116,8 @@ export default function AssignmentsPage() {
   if (user && user.role !== "student") {
     return (
       <div className="flex flex-col gap-2">
-        <h1 className="text-xl font-semibold">Assignments</h1>
-        <p className="text-sm text-black/60 dark:text-white/60">
+        <h1 className="text-xl font-bold text-ink">Assignments</h1>
+        <p className="text-sm text-muted">
           Grading &amp; assignment management for {user.role}s hasn&apos;t been migrated to the
           new frontend yet.
         </p>
@@ -129,17 +128,13 @@ export default function AssignmentsPage() {
   return (
     <div className="flex flex-col gap-6">
       <div>
-        <h1 className="text-xl font-semibold">Assignments</h1>
-        <p className="text-sm text-black/60 dark:text-white/60">
-          Work assigned across your enrolled batches.
-        </p>
+        <h1 className="text-xl font-bold text-ink">Assignments</h1>
+        <p className="text-sm text-muted">Work assigned across your enrolled batches.</p>
       </div>
 
-      {error && <p className="text-sm text-red-600 dark:text-red-400">{error}</p>}
+      {error && <p className="text-sm text-red">{error}</p>}
 
-      {assignments && assignments.length === 0 && (
-        <p className="text-sm text-black/50 dark:text-white/50">No assignments yet.</p>
-      )}
+      {assignments && assignments.length === 0 && <p className="text-sm text-muted">No assignments yet.</p>}
 
       {assignments && assignments.length > 0 && (
         <div className="flex flex-col gap-3">
@@ -147,23 +142,21 @@ export default function AssignmentsPage() {
             const mine = a.submissions[0];
             const canSubmit = !mine || mine.status === "submitted" || mine.status === "late";
             return (
-              <div key={a._id} className="rounded-xl border border-black/10 p-5 dark:border-white/10">
+              <div key={a._id} className="rounded-xl border border-line bg-white p-5 shadow-[0_1px_2px_rgba(24,24,27,.04)]">
                 <div className="flex items-start justify-between gap-3">
                   <div>
-                    <p className="text-xs font-medium uppercase tracking-wide text-black/40 dark:text-white/40">
+                    <p className="text-xs font-medium tracking-wide text-muted uppercase">
                       {a.course.title} · {a.batch.name}
                     </p>
-                    <h2 className="font-semibold">{a.title}</h2>
-                    <p className="mt-1 text-xs text-black/50 dark:text-white/50">
-                      Due {formatDueDate(a.dueDate)}
-                    </p>
+                    <h2 className="font-bold text-ink">{a.title}</h2>
+                    <p className="mt-1 text-xs text-muted">Due {formatDueDate(a.dueDate)}</p>
                   </div>
                   <StatusBadge assignment={a} />
                 </div>
 
                 {mine?.mentorFeedback && (
-                  <p className="mt-3 rounded-lg bg-black/[0.03] p-3 text-sm dark:bg-white/5">
-                    <span className="font-medium">Feedback: </span>
+                  <p className="mt-3 rounded-lg bg-bg p-3 text-sm text-ink2">
+                    <span className="font-semibold text-ink">Feedback: </span>
                     {mine.mentorFeedback}
                   </p>
                 )}
@@ -174,7 +167,7 @@ export default function AssignmentsPage() {
                   canSubmit && (
                     <button
                       onClick={() => setOpenId(a._id)}
-                      className="mt-3 rounded-lg border border-black/15 px-3 py-1.5 text-sm transition-colors hover:bg-black/5 dark:border-white/15 dark:hover:bg-white/10"
+                      className="mt-3 rounded-lg border-[1.5px] border-line px-3 py-1.5 text-sm font-semibold text-ink2 transition-colors hover:border-purple hover:bg-purple-lt hover:text-purple"
                     >
                       {mine ? "Resubmit" : "Submit"}
                     </button>

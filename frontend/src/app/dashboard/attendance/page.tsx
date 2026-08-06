@@ -6,10 +6,10 @@ import { api, ApiError } from "@/lib/api";
 import type { AttendanceRecord, AttendanceStatus, AttendanceSummary } from "@/lib/types";
 
 const STATUS_STYLE: Record<AttendanceStatus, string> = {
-  present: "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400",
-  late: "bg-amber-500/10 text-amber-600 dark:text-amber-400",
-  excused: "bg-blue-500/10 text-blue-600 dark:text-blue-400",
-  absent: "bg-red-500/10 text-red-600 dark:text-red-400",
+  present: "bg-green-lt text-green",
+  late: "bg-amber-lt text-amber",
+  excused: "bg-blue-lt text-blue",
+  absent: "bg-red-lt text-red",
 };
 
 const STATUS_LABEL: Record<AttendanceStatus, string> = {
@@ -49,8 +49,8 @@ export default function AttendancePage() {
   if (user && user.role !== "student") {
     return (
       <div className="flex flex-col gap-2">
-        <h1 className="text-xl font-semibold">Attendance</h1>
-        <p className="text-sm text-black/60 dark:text-white/60">
+        <h1 className="text-xl font-bold text-ink">Attendance</h1>
+        <p className="text-sm text-muted">
           Attendance management for {user.role}s hasn&apos;t been migrated to the new frontend yet.
         </p>
       </div>
@@ -60,60 +60,58 @@ export default function AttendancePage() {
   return (
     <div className="flex flex-col gap-6">
       <div>
-        <h1 className="text-xl font-semibold">Attendance</h1>
-        <p className="text-sm text-black/60 dark:text-white/60">Your attendance record.</p>
+        <h1 className="text-xl font-bold text-ink">Attendance</h1>
+        <p className="text-sm text-muted">Your attendance record.</p>
       </div>
 
-      {error && <p className="text-sm text-red-600 dark:text-red-400">{error}</p>}
+      {error && <p className="text-sm text-red">{error}</p>}
 
       {summary && (
         <div className="grid grid-cols-2 gap-4 sm:grid-cols-5">
-          <div className="rounded-xl border border-black/10 p-4 dark:border-white/10">
-            <p className="text-2xl font-semibold">{summary.percentage}%</p>
-            <p className="text-xs text-black/50 dark:text-white/50">Overall</p>
+          <div className="rounded-xl border border-line bg-white p-4 shadow-[0_1px_2px_rgba(24,24,27,.04)]">
+            <p className="text-2xl font-bold text-ink">{summary.percentage}%</p>
+            <p className="text-xs text-muted">Overall</p>
           </div>
-          <div className="rounded-xl border border-black/10 p-4 dark:border-white/10">
-            <p className="text-2xl font-semibold">{summary.present}</p>
-            <p className="text-xs text-black/50 dark:text-white/50">Present</p>
+          <div className="rounded-xl border border-line bg-white p-4 shadow-[0_1px_2px_rgba(24,24,27,.04)]">
+            <p className="text-2xl font-bold text-ink">{summary.present}</p>
+            <p className="text-xs text-muted">Present</p>
           </div>
-          <div className="rounded-xl border border-black/10 p-4 dark:border-white/10">
-            <p className="text-2xl font-semibold">{summary.late}</p>
-            <p className="text-xs text-black/50 dark:text-white/50">Late</p>
+          <div className="rounded-xl border border-line bg-white p-4 shadow-[0_1px_2px_rgba(24,24,27,.04)]">
+            <p className="text-2xl font-bold text-ink">{summary.late}</p>
+            <p className="text-xs text-muted">Late</p>
           </div>
-          <div className="rounded-xl border border-black/10 p-4 dark:border-white/10">
-            <p className="text-2xl font-semibold">{summary.excused}</p>
-            <p className="text-xs text-black/50 dark:text-white/50">Excused</p>
+          <div className="rounded-xl border border-line bg-white p-4 shadow-[0_1px_2px_rgba(24,24,27,.04)]">
+            <p className="text-2xl font-bold text-ink">{summary.excused}</p>
+            <p className="text-xs text-muted">Excused</p>
           </div>
-          <div className="rounded-xl border border-black/10 p-4 dark:border-white/10">
-            <p className="text-2xl font-semibold">{summary.absent}</p>
-            <p className="text-xs text-black/50 dark:text-white/50">Absent</p>
+          <div className="rounded-xl border border-line bg-white p-4 shadow-[0_1px_2px_rgba(24,24,27,.04)]">
+            <p className="text-2xl font-bold text-ink">{summary.absent}</p>
+            <p className="text-xs text-muted">Absent</p>
           </div>
         </div>
       )}
 
-      {records && records.length === 0 && (
-        <p className="text-sm text-black/50 dark:text-white/50">No attendance recorded yet.</p>
-      )}
+      {records && records.length === 0 && <p className="text-sm text-muted">No attendance recorded yet.</p>}
 
       {records && records.length > 0 && (
-        <div className="overflow-hidden rounded-xl border border-black/10 dark:border-white/10">
+        <div className="overflow-hidden rounded-xl border border-line bg-white shadow-[0_1px_2px_rgba(24,24,27,.04)]">
           <table className="w-full text-sm">
             <thead>
-              <tr className="border-b border-black/10 text-left text-xs uppercase tracking-wide text-black/40 dark:border-white/10 dark:text-white/40">
-                <th className="px-4 py-3 font-medium">Date</th>
-                <th className="px-4 py-3 font-medium">Batch</th>
-                <th className="px-4 py-3 font-medium">Session</th>
-                <th className="px-4 py-3 font-medium">Status</th>
+              <tr className="border-b border-line text-left text-xs tracking-wide text-muted uppercase">
+                <th className="px-4 py-3 font-semibold">Date</th>
+                <th className="px-4 py-3 font-semibold">Batch</th>
+                <th className="px-4 py-3 font-semibold">Session</th>
+                <th className="px-4 py-3 font-semibold">Status</th>
               </tr>
             </thead>
             <tbody>
               {records.map((r) => (
-                <tr key={r._id} className="border-b border-black/5 last:border-0 dark:border-white/5">
-                  <td className="px-4 py-3">{formatDate(r.date)}</td>
-                  <td className="px-4 py-3 text-black/60 dark:text-white/60">{r.batch.name}</td>
-                  <td className="px-4 py-3 text-black/60 dark:text-white/60">{r.sessionTitle || "—"}</td>
+                <tr key={r._id} className="border-b border-line last:border-0">
+                  <td className="px-4 py-3 text-ink2">{formatDate(r.date)}</td>
+                  <td className="px-4 py-3 text-muted">{r.batch.name}</td>
+                  <td className="px-4 py-3 text-muted">{r.sessionTitle || "—"}</td>
                   <td className="px-4 py-3">
-                    <span className={`rounded-full px-2.5 py-1 text-xs font-medium ${STATUS_STYLE[r.status]}`}>
+                    <span className={`rounded-full px-2.5 py-1 text-xs font-semibold ${STATUS_STYLE[r.status]}`}>
                       {STATUS_LABEL[r.status]}
                     </span>
                   </td>

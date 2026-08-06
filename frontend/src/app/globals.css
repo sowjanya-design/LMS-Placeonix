@@ -1,26 +1,53 @@
 @import "tailwindcss";
 
+/* Brand tokens ported 1:1 from frontend/legacy_html/placeonix-hub-portal.html
+   (:root CSS vars) so the Next.js frontend matches the live site
+   (https://placeonix-dashboard.vercel.app/) instead of a generic default theme.
+   Deliberately no dark-mode variant — the brand itself doesn't have one; letting
+   prefers-color-scheme flip this to black/white was the bug that prompted this file. */
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --purple: #5b5fc7;
+  --purple-dk: #4a4eb0;
+  --purple-lt: #eef0fb;
+  --purple-mid: #6d71d4;
+  --ink: #19191f;
+  --ink2: #3f3f46;
+  --muted: #71717a;
+  --line: #ecece9;
+  --bg: #f7f7f5;
+  --white: #ffffff;
+  --green: #3f9c6d;
+  --green-lt: #e7f1ec;
+  --amber: #b58a3a;
+  --amber-lt: #f5efe2;
+  --red: #c2554f;
+  --red-lt: #f6e9e8;
+  --blue: #4f6db0;
+  --blue-lt: #eaeff7;
 }
 
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+  --color-purple: var(--purple);
+  --color-purple-dk: var(--purple-dk);
+  --color-purple-lt: var(--purple-lt);
+  --color-purple-mid: var(--purple-mid);
+  --color-ink: var(--ink);
+  --color-ink2: var(--ink2);
+  --color-muted: var(--muted);
+  --color-line: var(--line);
+  --color-bg: var(--bg);
+  --color-green: var(--green);
+  --color-green-lt: var(--green-lt);
+  --color-amber: var(--amber);
+  --color-amber-lt: var(--amber-lt);
+  --color-red: var(--red);
+  --color-red-lt: var(--red-lt);
+  --color-blue: var(--blue);
+  --color-blue-lt: var(--blue-lt);
+  --font-sans: var(--font-plus-jakarta-sans);
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background: var(--bg);
+  color: var(--ink2);
 }

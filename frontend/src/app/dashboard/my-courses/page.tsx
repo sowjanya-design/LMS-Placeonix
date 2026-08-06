@@ -13,11 +13,11 @@ const STATUS_LABEL: Record<EnrollmentStatus, string> = {
 };
 
 const STATUS_STYLE: Record<EnrollmentStatus, string> = {
-  enrolled: "bg-blue-500/10 text-blue-600 dark:text-blue-400",
-  in_progress: "bg-amber-500/10 text-amber-600 dark:text-amber-400",
-  completed: "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400",
-  dropped: "bg-black/10 text-black/50 dark:bg-white/10 dark:text-white/50",
-  at_risk: "bg-red-500/10 text-red-600 dark:text-red-400",
+  enrolled: "bg-blue-lt text-blue",
+  in_progress: "bg-amber-lt text-amber",
+  completed: "bg-green-lt text-green",
+  dropped: "bg-bg text-muted",
+  at_risk: "bg-red-lt text-red",
 };
 
 export default function MyCoursesPage() {
@@ -34,18 +34,14 @@ export default function MyCoursesPage() {
   return (
     <div className="flex flex-col gap-6">
       <div>
-        <h1 className="text-xl font-semibold">My Courses</h1>
-        <p className="text-sm text-black/60 dark:text-white/60">
-          Courses you&apos;re currently enrolled in.
-        </p>
+        <h1 className="text-xl font-bold text-ink">My Courses</h1>
+        <p className="text-sm text-muted">Courses you&apos;re currently enrolled in.</p>
       </div>
 
-      {error && <p className="text-sm text-red-600 dark:text-red-400">{error}</p>}
+      {error && <p className="text-sm text-red">{error}</p>}
 
       {enrollments && enrollments.length === 0 && (
-        <p className="text-sm text-black/50 dark:text-white/50">
-          You&apos;re not enrolled in any courses yet.
-        </p>
+        <p className="text-sm text-muted">You&apos;re not enrolled in any courses yet.</p>
       )}
 
       {enrollments && enrollments.length > 0 && (
@@ -53,42 +49,35 @@ export default function MyCoursesPage() {
           {enrollments.map((e) => (
             <div
               key={e._id}
-              className="flex flex-col gap-3 rounded-xl border border-black/10 p-5 dark:border-white/10"
+              className="flex flex-col gap-3 rounded-xl border border-line bg-white p-5 shadow-[0_1px_2px_rgba(24,24,27,.04)]"
             >
               <div className="flex items-start justify-between gap-2">
                 <div>
-                  <p className="text-xs font-medium uppercase tracking-wide text-black/40 dark:text-white/40">
-                    {e.course.category}
-                  </p>
-                  <h2 className="font-semibold">{e.course.title}</h2>
+                  <p className="text-xs font-medium tracking-wide text-muted uppercase">{e.course.category}</p>
+                  <h2 className="font-bold text-ink">{e.course.title}</h2>
                 </div>
-                <span
-                  className={`shrink-0 rounded-full px-2.5 py-1 text-xs font-medium ${STATUS_STYLE[e.status]}`}
-                >
+                <span className={`shrink-0 rounded-full px-2.5 py-1 text-xs font-semibold ${STATUS_STYLE[e.status]}`}>
                   {STATUS_LABEL[e.status]}
                 </span>
               </div>
 
               <div>
-                <div className="mb-1 flex justify-between text-xs text-black/50 dark:text-white/50">
+                <div className="mb-1 flex justify-between text-xs text-muted">
                   <span>Progress</span>
                   <span>{e.progress.overall}%</span>
                 </div>
-                <div className="h-1.5 overflow-hidden rounded-full bg-black/10 dark:bg-white/10">
-                  <div
-                    className="h-full rounded-full bg-black dark:bg-white"
-                    style={{ width: `${e.progress.overall}%` }}
-                  />
+                <div className="h-1.5 overflow-hidden rounded-full bg-line">
+                  <div className="h-full rounded-full bg-purple" style={{ width: `${e.progress.overall}%` }} />
                 </div>
               </div>
 
-              <div className="flex flex-col gap-1 text-xs text-black/60 dark:text-white/60">
+              <div className="flex flex-col gap-1 text-xs text-muted">
                 <span>
                   {e.batch.name} · <span className="capitalize">{e.batch.mode}</span>
                   {e.batch.mentor && ` · ${e.batch.mentor.firstName} ${e.batch.mentor.lastName}`}
                 </span>
                 {e.fee.due > 0 && (
-                  <span className="text-amber-600 dark:text-amber-400">
+                  <span className="text-amber">
                     ₹{e.fee.due.toLocaleString("en-IN")} due of ₹{e.fee.total.toLocaleString("en-IN")}
                   </span>
                 )}

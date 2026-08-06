@@ -15,8 +15,8 @@ export default function SectionPlaceholder() {
 
   return (
     <div className="flex flex-col gap-2">
-      <h1 className="text-xl font-semibold">{item?.label ?? "Coming soon"}</h1>
-      <p className="text-sm text-black/60 dark:text-white/60">
+      <h1 className="text-xl font-bold text-ink">{item?.label ?? "Coming soon"}</h1>
+      <p className="text-sm text-muted">
         This section hasn&apos;t been migrated to the new Next.js frontend yet.
       </p>
     </div>

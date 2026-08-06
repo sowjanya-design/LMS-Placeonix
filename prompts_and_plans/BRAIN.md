@@ -99,6 +99,48 @@ Root `package.json` also exposes `npm run dev|start|seed|portal` as delegating s
 > Newest entries at the top. Format: `### YYYY-MM-DD — short title` then 1-3 bullets:
 > what changed, why, anything the next session should know.
 
+### 2026-08-06 — Frontend brand-theme fix: matched the actual live site design
+- **Root cause the user flagged**: the Next.js frontend built in earlier sessions used
+  a generic black/white minimal theme with `prefers-color-scheme: dark` support — but
+  the real brand (verified live at https://placeonix-dashboard.vercel.app/, and
+  matching `frontend/legacy_html/placeonix-hub-portal.html`) has **no dark mode** and
+  uses a specific purple/ink palette + Plus Jakarta Sans font + a real logo and login
+  illustration. On a system in dark mode, the whole app was silently flipping to
+  black backgrounds — that's what "backgrounds have changed" meant.
+- Ported the brand design tokens 1:1 from the legacy portal's `:root` CSS vars into
+  `app/globals.css` (`--purple`, `--ink`, `--muted`, `--line`, `--bg`, status colors)
+  via Tailwind v4's `@theme inline`, with **no dark-mode variant** — deliberate, since
+  the brand doesn't have one and that adaptive theme was the bug.
+- Switched the font from Geist to Plus Jakarta Sans (`layout.tsx`) to match.
+- Copied the real logo (`placeonix-logo.png`) and login illustration
+  (`login-illustration.svg`) from `frontend/legacy_html/assets/` into
+  `frontend/public/brand/`.
+- Rebuilt `/login` to match the live site's split-screen design pixel-for-pixel:
+  gradient brand panel (logo, tagline, headline, illustration, footer) + form panel
+  (icon-prefixed inputs, password show/hide toggle, gradient login button, working
+  "Quick Demo Access" buttons that actually log in — not just decorative).
+- Rebuilt `Sidebar` and the dashboard header to match the legacy shell: white
+  sidebar with the real logo, role-colored avatar initials (admin `#5b5fc7`, mentor
+  `#5b7c99`, student `#3f9c6d` — new `lib/roles.ts`), purple active-nav highlight
+  with the left accent bar, translucent blurred header showing the current page
+  title. Updated every existing page (`dashboard`, `my-courses`, `assignments`,
+  `attendance`, the `[section]` placeholder, `auth-guard`'s loading spinner) to use
+  the brand tokens instead of the old black/white `dark:` utility classes.
+- Hit and fixed a `next/image` aspect-ratio warning along the way: the logo/
+  illustration `width`/`height` props were guessed values with the wrong aspect
+  ratio (real: logo 855×277, illustration viewBox 1094×760) — fixed by using the
+  actual intrinsic dimensions rather than papering over it with inline `style`
+  overrides.
+- Verified in-browser against a fresh screenshot compared directly to the live site:
+  login screen is now a close visual match, dashboard/My Courses shell carries the
+  same purple/ink/role-color system. Zero console errors/warnings anywhere.
+  `tsc`/lint/build all clean.
+- Next session: **if any more pages get built, use the tokens in `globals.css`
+  (`text-ink`, `text-muted`, `bg-purple-lt`, etc.) and `lib/roles.ts`'s `ROLE_COLOR`
+  — do not reach for Tailwind's default black/white/dark: utilities again**, that's
+  exactly what caused this regression. The `Assignments`/`Attendance` pages are the
+  reference for the pattern now.
+
 ### 2026-08-06 — Next.js frontend: Student Attendance page
 - `app/dashboard/attendance/page.tsx` — summary stat row (overall %, present/late/
   excused/absent counts) + a sortable-by-date table of every attendance record

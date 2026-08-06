@@ -15,8 +15,8 @@ export function AuthGuard({ children }: { children: React.ReactNode }) {
 
   if (loading || !user) {
     return (
-      <div className="flex flex-1 items-center justify-center">
-        <p className="text-sm text-black/50 dark:text-white/50">Loading…</p>
+      <div className="flex flex-1 items-center justify-center bg-bg">
+        <div className="h-9 w-9 animate-spin rounded-full border-[3px] border-line border-t-purple" />
       </div>
     );
   }
