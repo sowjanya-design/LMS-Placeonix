@@ -107,3 +107,159 @@ export interface Assignment {
   difficulty: "easy" | "medium" | "hard";
   submissions: Submission[];
 }
+
+export interface Session {
+  _id: string;
+  title: string;
+  batch?: { _id: string; name: string };
+  instructor?: { firstName: string; lastName: string };
+  mode: "online" | "offline";
+  venue?: string;
+  meetingLink?: string;
+  recordingUrl?: string;
+  status: "scheduled" | "live" | "completed" | "cancelled";
+  startTime: string;
+  endTime: string;
+}
+
+export interface PlacementDrive {
+  _id: string;
+  company: string;
+  role: string;
+  description?: string;
+  package: { min: number; max: number; currency?: string };
+  location: string[];
+  workMode: "onsite" | "remote" | "hybrid";
+  vacancies: number;
+  applicationDeadline: string;
+  status: "open" | "closed" | "completed";
+  applications?: Array<{ _id: string; student: string; status: string }>;
+}
+
+export interface Company {
+  _id: string;
+  name: string;
+  website?: string;
+  industry?: string;
+  location?: string;
+  contactPerson?: string;
+  contactEmail?: string;
+}
+
+export interface Lead {
+  _id: string;
+  firstName: string;
+  lastName: string;
+  email: string;
+  phone: string;
+  courseInterestedName?: string;
+  source: string;
+  status: "new" | "contacted" | "follow-up" | "converted" | "rejected" | "spam";
+  createdAt: string;
+}
+
+export interface Payment {
+  _id: string;
+  student: { _id: string; firstName: string; lastName: string };
+  enrollment?: { _id: string };
+  amount: number;
+  method: string;
+  status: "pending" | "processing" | "completed" | "failed" | "refunded" | "partial-refund";
+  paidOn?: string;
+  transactionId?: string;
+}
+
+export interface Certificate {
+  _id: string;
+  student: { _id: string; firstName: string; lastName: string };
+  course: { _id: string; title: string };
+  certificateNumber: string;
+  type: string;
+  status: "active" | "revoked";
+  issuedDate: string;
+  grade?: string;
+}
+
+export interface Resource {
+  _id: string;
+  title: string;
+  description?: string;
+  type: "pdf" | "video" | "link" | "archive" | "document" | "image" | "other";
+  fileUrl?: string;
+  externalUrl?: string;
+  course?: { _id: string; title: string };
+}
+
+export interface Review {
+  _id: string;
+  student: { _id: string; firstName: string; lastName: string };
+  targetType: "mentor" | "course" | "batch" | "institute";
+  target: string;
+  rating: number;
+  title?: string;
+  comment?: string;
+  createdAt: string;
+  response?: string;
+}
+
+export interface LeaderboardRow {
+  id: string;
+  name: string;
+  enrollmentId: string;
+  progress: number;
+  attendance: number;
+  points: number;
+  rank: number;
+}
+
+export interface Announcement {
+  _id: string;
+  title: string;
+  body: string;
+  type: "general" | "placement" | "holiday" | "urgent" | "event";
+  priority: "low" | "normal" | "high";
+  publishAt: string;
+  createdBy?: { firstName: string; lastName: string };
+}
+
+export interface MockInterview {
+  _id: string;
+  student: { _id: string; firstName: string; lastName: string };
+  interviewer?: { firstName: string; lastName: string };
+  title: string;
+  role?: string;
+  company?: string;
+  type: string;
+  scheduledAt: string;
+  mode: "online" | "offline";
+  meetingLink?: string;
+  status: "scheduled" | "completed" | "cancelled";
+  overallScore?: number;
+}
+
+export interface Alumni {
+  _id: string;
+  name: string;
+  photo?: string;
+  course?: string;
+  company: string;
+  role?: string;
+  packageLPA?: number;
+  placedYear?: number;
+  testimonial?: string;
+  linkedIn?: string;
+  featured?: boolean;
+}
+
+export interface OfficeHourSlot {
+  _id: string;
+  mentor: { _id: string; firstName: string; lastName: string };
+  startTime: string;
+  endTime?: string;
+  topic?: string;
+  mode: "online" | "offline";
+  meetingLink?: string;
+  venue?: string;
+  status: "available" | "booked" | "cancelled";
+  bookedBy?: { _id: string; firstName: string; lastName: string };
+}

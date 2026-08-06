@@ -99,6 +99,57 @@ Root `package.json` also exposes `npm run dev|start|seed|portal` as delegating s
 > Newest entries at the top. Format: `### YYYY-MM-DD — short title` then 1-3 bullets:
 > what changed, why, anything the next session should know.
 
+### 2026-08-07 — Frontend: every nav item now a real page, all 3 roles (20 new pages)
+- User asked for every page (Dashboard through Settings) across all three role
+  interfaces. Built all of it in one pass: Sessions, Placements, Companies, Leads,
+  Payments/Fees, Certificates, Resources, Reviews, Leaderboard, Announcements, Mock
+  Interviews, Alumni, Office Hours, Reports, Settings — plus mentor-specific My
+  Students, Online Requests, and Attendance-mark, plus shared Profile/Support. The
+  `/dashboard/[section]` placeholder route now has nothing left to catch for the 21
+  nav ids across admin/mentor/student.
+- Reused the established patterns throughout: role-aware single component per route
+  (shared nav items like Sessions/Resources/Leaderboard/Calendar branch on
+  `user.role` rather than duplicating pages), real GET for every list, real mutations
+  wherever the backend supports them (not just display) — Leads status dropdown,
+  Office Hours book/cancel, Placements apply, Announcements post/delete, Alumni/
+  Companies delete, and a full mentor grading flow (score + feedback →
+  `POST /assignments/:id/submissions/:id/review`).
+- Extended `assignments/page.tsx` specifically: was student-only before, now branches
+  three ways — student (submit), mentor (`MentorGrading` — review each submission
+  inline), admin (still placeholder, admin assignment oversight wasn't asked for).
+- **Two real bugs found and fixed during verification, not before**:
+  1. Placements/Reports were dividing `package.min/max` and `highestPackage` by
+     100,000 assuming raw-rupee storage — the seed data and schema actually store
+     these fields already in LPA units (e.g. `5.5`, not `550000`). Was rendering
+     "₹0.0L" for every drive. Fixed by displaying the values directly.
+  2. None in Attendance this round, but re-confirms the standing lesson: **verify
+     the actual stored data shape per field, not just the field's existence** — a
+     field being present and a field being in the unit you assumed are different
+     bugs, and the second one doesn't throw, it just silently displays wrong.
+- Verified extensively in-browser: looped console-error checks across all 20 admin
+  pages and 12+ mentor/student pages (all clean after distinguishing real errors
+  from stale console-buffer noise and the global rate limiter's 429s during rapid
+  testing — see below). Did a full round-trip proof: student submits assignment →
+  mentor grades it with real score/feedback → student sees "Graded" with the exact
+  feedback text, confirmed via 3 separate screenshots across a role-switch. Also
+  confirmed Placements' "Apply" button correctly surfaces a real backend validation
+  error ("add a resume before applying") via `alert()` — proof the mutation path
+  reaches real business logic, not just a happy-path demo.
+- Hit the **global API rate limiter** (100 req/15min, `app.js`) during rapid
+  successive page-navigation testing — not a bug, just this session's test velocity.
+  Restarting the backend clears the in-memory limiter (same trick as clearing
+  express-rate-limit state generally — don't do this reflexively in production, only
+  for local dev testing friction).
+- `tsc`/lint/build clean across all 34 routes.
+- **Known gaps, disclosed rather than hidden**: Add/Edit modals only exist for
+  Students and Announcements — everything else is list + delete + the specific
+  mutations noted above, not full CRUD-with-forms for every entity (e.g. no "Create
+  Batch"/"Create Course"/"Issue Certificate"/"Add Company" forms yet — those need
+  more relational-field inputs than time allowed). Admin's Assignments view is still
+  a placeholder. The Profile page can't fix the "add a resume" placement-apply block
+  since it doesn't have a resume field. Notifications panel and live search results
+  dropdown are still visual-only (flagged in the previous entry, still true).
+
 ### 2026-08-06 — Frontend: 4 admin CRUD pages (Students, Mentors, Batches, Courses)
 - User asked to check *every* page on the live site and wire up full backend
   functionality. Surveyed the live site's full admin nav (20 items) directly —
