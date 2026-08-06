@@ -99,6 +99,53 @@ Root `package.json` also exposes `npm run dev|start|seed|portal` as delegating s
 > Newest entries at the top. Format: `### YYYY-MM-DD — short title` then 1-3 bullets:
 > what changed, why, anything the next session should know.
 
+### 2026-08-06 — Frontend: full shell + admin Dashboard + Calendar to match live site (round 2)
+- User provided screenshots of the actual live admin Dashboard and Calendar pages —
+  showed the previous round's fix was correct in direction but incomplete: the header
+  was missing the search box/notification bell, Logout was in the header instead of
+  pinned at the sidebar bottom, and the Dashboard page was a generic stat grid instead
+  of the real admin layout (gradient welcome banner, 4 emoji stat cards, Key Metrics
+  colored rows, Recent Students list). No Calendar page existed at all.
+- `Sidebar`: added a `Logout` button pinned at the bottom (new `logout`/`search`
+  icons in `components/icons.tsx`), matching the legacy `.sb-bottom`/`.logout-btn`.
+- Dashboard header (`dashboard/layout.tsx`): added the search input and notification
+  bell (visually matching `.gsearch`/`.notif-btn` — not wired to real search/notif
+  data yet, that's still open), removed the now-redundant header Logout button.
+- `dashboard/page.tsx` split into `AdminDashboard` (the real thing: gradient
+  `.welcome-banner` with the building emoji, 4 `StatCard`s pulling
+  `GET /analytics/overview`, a `Key Metrics` panel and `Recent Students` list pulling
+  `GET /users?role=student&limit=3&sort=-createdAt`, both ported field-for-field from
+  the legacy renderer) and `GenericDashboard` (mentor/student — kept the simpler
+  `/users/me/stats` view since no reference screenshot exists for those roles yet,
+  restyled onto the same `StatCard` component for visual consistency).
+- New `dashboard/calendar/page.tsx`: full month-grid calendar combining three real
+  data sources exactly like the legacy `renderCalendar()` — `GET /sessions` (blue,
+  "Classes"), `GET /assignments` (amber, due dates), `GET /placements` (purple,
+  application deadlines) — with Prev/Today/Next navigation, a color legend, today
+  highlighted, per-day event chips (max 3 + "N more"), and an "Upcoming" list below.
+- **Hit a real Tailwind v4 + Turbopack dev bug**: `grid-cols-7` on the calendar grid
+  computed as a single-column layout (`gridTemplateColumns: 974px` instead of 7
+  tracks) even though the class was present in the DOM and other Tailwind utilities
+  on the same page worked fine — the dev server's CSS bundle just hadn't picked up
+  that utility. A full `npm run dev` restart fixed it (confirmed via
+  `getComputedStyle` before/after); `npm run build` had it right from a cold start,
+  so this looks Turbopack-dev-cache-specific. **If a Tailwind class visibly isn't
+  applying despite correct markup, restart the dev server before assuming the
+  className is wrong.**
+- Verified in-browser against the actual reference screenshots: admin Dashboard is a
+  near-exact match (banner, stat cards, Key Metrics, Recent Students all rendering
+  real data), Calendar matches structurally with real events across all three types,
+  Prev/Today/Next confirmed working. Re-checked student role afterward — dashboard,
+  My Courses, sidebar/header all still consistent. Zero console errors anywhere.
+  `tsc`/lint/build all clean.
+- Next session: search input and notification bell are **visual only** — no live
+  search-as-you-type or real notifications wired up yet (the legacy portal's
+  `/search` and notification endpoints exist server-side and could be connected).
+  Mentor/student Dashboard still uses the generic view — get reference screenshots
+  for those roles if pixel-parity matters there too. Calendar's event fetch
+  (`?limit=300` on three endpoints) is a temporary approach ported as-is from legacy;
+  fine at current data volume, would need real date-range filtering at scale.
+
 ### 2026-08-06 — Frontend brand-theme fix: matched the actual live site design
 - **Root cause the user flagged**: the Next.js frontend built in earlier sessions used
   a generic black/white minimal theme with `prefers-color-scheme: dark` support — but

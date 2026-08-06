@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { useAuth } from "@/lib/auth-context";
 import { NAV } from "@/lib/nav";
 import { Icon } from "@/components/icons";
@@ -13,12 +13,18 @@ function hrefFor(id: string) {
 }
 
 export function Sidebar() {
-  const { user } = useAuth();
+  const { user, logout } = useAuth();
   const pathname = usePathname();
+  const router = useRouter();
   if (!user) return null;
 
   const items = NAV[user.role];
   const initials = `${user.firstName?.[0] ?? ""}${user.lastName?.[0] ?? ""}`;
+
+  async function handleLogout() {
+    await logout();
+    router.push("/login");
+  }
 
   return (
     <nav
@@ -71,6 +77,16 @@ export function Sidebar() {
             </Link>
           );
         })}
+      </div>
+
+      <div className="border-t border-line p-3.5">
+        <button
+          onClick={handleLogout}
+          className="flex w-full items-center justify-center gap-2 rounded-[9px] border border-line bg-white py-2.5 text-[0.82rem] font-semibold text-muted transition-colors hover:border-red hover:bg-red-lt hover:text-red"
+        >
+          <Icon name="logout" className="h-4 w-4" />
+          Logout
+        </button>
       </div>
     </nav>
   );

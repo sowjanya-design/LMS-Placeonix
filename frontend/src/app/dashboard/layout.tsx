@@ -1,6 +1,6 @@
 "use client";
 
-import { useRouter, usePathname } from "next/navigation";
+import { usePathname } from "next/navigation";
 import { useAuth } from "@/lib/auth-context";
 import { AuthGuard } from "@/components/auth-guard";
 import { Sidebar } from "@/components/sidebar";
@@ -17,15 +17,9 @@ function useCurrentTitle() {
 }
 
 function DashboardChrome({ children }: { children: React.ReactNode }) {
-  const { user, logout } = useAuth();
-  const router = useRouter();
+  const { user } = useAuth();
   const title = useCurrentTitle();
   const initials = `${user?.firstName?.[0] ?? ""}${user?.lastName?.[0] ?? ""}`;
-
-  async function handleLogout() {
-    await logout();
-    router.push("/login");
-  }
 
   return (
     <div className="flex flex-1">
@@ -34,26 +28,37 @@ function DashboardChrome({ children }: { children: React.ReactNode }) {
         <header className="flex flex-shrink-0 items-center justify-between border-b border-line bg-white/75 px-7 py-3.5 backdrop-blur-md">
           <div className="text-[1.2rem] font-extrabold tracking-[-0.2px] text-ink">{title}</div>
           <div className="flex items-center gap-3.5">
+            <div className="relative hidden items-center md:flex">
+              <span className="pointer-events-none absolute left-3 text-muted">
+                <Icon name="search" className="h-[17px] w-[17px]" />
+              </span>
+              <input
+                placeholder="Search students, courses…"
+                className="w-64 rounded-[10px] border-[1.5px] border-line bg-bg py-2 pr-3 pl-9 text-sm text-ink outline-none transition-colors focus:border-purple focus:bg-white"
+              />
+            </div>
+            <button
+              title="Notifications"
+              className="flex h-[38px] w-[38px] items-center justify-center rounded-[10px] border-[1.5px] border-line bg-bg text-muted transition-colors hover:border-purple hover:bg-purple-lt"
+            >
+              <Icon name="bell" className="h-[18px] w-[18px]" />
+            </button>
             {user && (
               <div className="flex items-center gap-2.5">
                 <div
-                  className="flex h-8 w-8 items-center justify-center rounded-[9px] text-xs font-extrabold text-white"
+                  className="flex h-9 w-9 items-center justify-center rounded-[10px] text-[0.82rem] font-bold text-white"
                   style={{ background: ROLE_COLOR[user.role] }}
                 >
                   {initials}
                 </div>
-                <span className="hidden text-sm text-muted sm:inline">
-                  {user.firstName} {user.lastName}
-                </span>
+                <div className="hidden sm:block">
+                  <div className="text-[0.85rem] font-bold text-ink">
+                    {user.firstName} {user.lastName}
+                  </div>
+                  <div className="text-[0.7rem] text-muted">{user._id.slice(-8).toUpperCase()}</div>
+                </div>
               </div>
             )}
-            <button
-              onClick={handleLogout}
-              className="flex h-[38px] items-center gap-1.5 rounded-[10px] border-[1.5px] border-line bg-bg px-3 text-sm font-semibold text-ink2 transition-colors hover:border-purple hover:bg-purple-lt hover:text-purple"
-            >
-              <Icon name="user" className="h-4 w-4" />
-              Log out
-            </button>
           </div>
         </header>
         <main className="flex-1 overflow-y-auto px-7 py-7">{children}</main>

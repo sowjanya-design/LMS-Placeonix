@@ -10,6 +10,16 @@ export interface User {
   avatar?: string | null;
 }
 
+export interface AnalyticsOverview {
+  students: { total: number; active: number };
+  mentors: { total: number };
+  courses: { total: number; published: number };
+  batches: { active: number };
+  enrollments: { total: number; completed: number };
+  placement: { placed: number; rate: number; openDrives: number };
+  leads: { new: number };
+}
+
 export interface Course {
   _id: string;
   title: string;
