@@ -6,59 +6,59 @@
 
 ## What this is
 Role-based (Admin / Mentor / Student) training-and-placement portal for **Placeonix**,
-an IT training & placement institute. Vanilla frontend, no build step; Node/Express +
-MongoDB API. Deployed on Vercel (static + serverless) with MongoDB Atlas.
+an IT training & placement institute. Being rebuilt from a vanilla-JS SPA onto
+Next.js, backed by Node/Express + MongoDB Atlas.
 
-- Live: https://placeonix-dashboard.vercel.app
-- Repo: https://github.com/sowjanya-design/Placeonix_Dashboard
-- Not currently a git repo on this machine (no `.git` found in the working copy).
+- Live (old vanilla portal, still deployed): https://placeonix-dashboard.vercel.app
+- Repo: https://github.com/sowjanya-design/LMS-Placeonix — **working branch `mohan`**,
+  pushed and up to date as of the last entry below. (This repo was not a git
+  repository at all until this branch of work init'd it — see the 2026-08-06 "send
+  this repo" history if `git log` needs context older than that.)
 
-## Structure
-```
-frontend/                     vanilla HTML/CSS/JS SPA, no framework/build
-  placeonix-hub-portal.html     the whole dashboard (single-file SPA)
-  landing.html                  marketing/landing page
-  manifest.json, sw.js          PWA (installable, network-only service worker)
-  assets/                       logos, illustrations
-placeonix-hub-backend/
-  api/index.js                  Vercel serverless entrypoint
-  src/
-    server.js                   local entry (app.listen) — API on :5000
-    app.js                      Express app + middleware
-    config/                     constants.js, database.js
-    models/                     20 Mongoose schemas (see Data model below)
-    controllers/, routes/       one pair per resource, mounted under /api/v1
-    middleware/                 auth (protect/authorize), validate, errorHandler
-    services/                   email (Nodemailer), cron (node-cron), upload, notifications
-    seeders/seed.js             demo data loader
-    scripts/                    migrateAlumniRefs.js, dataHygieneReport.js
-    __tests__/                  Jest + Supertest API tests
-docs/                          ARCHITECTURE.md, FEATURES.md, TEST_CASES.md, SETUP_GUIDE.txt,
-                                DEPLOY_VERCEL.md, postman collection, audit/00-inventory.md
-_serve.js                      tiny static server for frontend/ on :8080
-vercel.json                    deploy config (static frontend + serverless API)
-```
+## Current status (read this first, it's kept up to date — changelog below has the *why*)
+**Backend** (`backend/`, Express + Mongoose + MongoDB Atlas):
+- 20 original collections + this project's additions: `AuditLog`, `Permission`/`Role`
+  (RBAC), `Quiz`/`QuizResult`, `CodingChallenge`/`CodingSubmission` (sandboxed via
+  Piston, see 2026-08-06 Phase 3 entry). httpOnly-cookie auth (fixed from
+  localStorage). 50 Jest tests passing, lint clean.
+- Connected to a **live** Atlas cluster (credentials in gitignored root
+  `atlas-credentials.env`), seeded with real demo data. Local dev needs the
+  non-SRV `MONGO_URI` workaround noted in the 2026-08-06 Atlas entry if `mongodb+srv://`
+  fails with `ECONNREFUSED` in this environment.
 
-## Stack
-- **Frontend:** vanilla JS/CSS/HTML, `fetch()` to `/api/v1`, PWA.
-- **Backend:** Node ≥18, Express, MongoDB/Mongoose, JWT (access+refresh) + bcryptjs,
-  express-validator, helmet/cors/rate-limit/mongo-sanitize/hpp/xss-clean, Multer (+ S3
-  support via `@aws-sdk/client-s3`, `multer-s3`), Nodemailer, node-cron, Winston/morgan.
-- **Tests:** Jest + Supertest, `mongodb-memory-server` for isolated test DB.
-- **Hosting:** Vercel (GitHub `main` push → auto-deploy) + MongoDB Atlas.
+**Frontend** (`frontend/`, Next.js — `frontend/legacy_html/` holds the old vanilla SPA
+as a feature-complete reference for anything not yet migrated):
+- Brand theme matches the live site exactly (purple/ink palette, Plus Jakarta Sans,
+  real logo/illustration, no dark mode — see the two 2026-08-06/07 brand-fix entries
+  for why this needed fixing twice).
+- **All 34 routes exist and render real data** across admin/mentor/student — every
+  nav item from the live site's sidebar has a page, `/dashboard/[section]` placeholder
+  has nothing left to catch. See the 2026-08-07 entry for the full list.
+- **What's real vs. what's thin**: every list is real `GET` data. Mutations are real
+  wherever built (Students Add/Delete, mentor grading, Office Hours book/cancel,
+  Placements apply, Announcements post/delete, Leads status, Alumni/Companies
+  delete) — but most entities (Batch, Course, Certificate, Company, MockInterview,
+  etc.) only have **list + delete**, not full create/edit forms yet. Admin's own
+  Assignments view is still a placeholder. Search bar and notification bell are
+  **visual only**, not wired to real data.
 
-## Data model (20 collections)
-User, Course, Batch, Enrollment, Session, Attendance, Assignment, Announcement,
-PlacementDrive, Notification, Lead, Review, Resource, Payment, Certificate,
-JoinRequest, Company, MockInterview, Alumni, OfficeHourSlot.
+**What's next, roughly in priority order:**
+1. Full create/edit forms for the entities that only have list+delete (Batch, Course,
+   Certificate issuance, Company, Announcement edit, MockInterview scheduling).
+2. Admin's Assignments oversight page (currently placeholder).
+3. Wire the search bar (backend `/search` endpoint exists) and notification bell
+   (backend notification endpoints exist) to real data.
+4. Add a `resume` field to the Profile page — right now a student can't self-serve
+   past the "add a resume before applying" placement block since Profile doesn't
+   expose that field.
+5. Root `package.json`'s `dev/start/seed/portal` scripts may still reference stale
+   paths from the reorg — verify before relying on them; use `cd backend && npm run
+   dev` / `cd frontend && npm run dev` directly if in doubt.
+6. Longer-term, deferred pending real business need (not technical blockers): Phase
+   4/5 finance-depth and comms-queue work from `docs/PLATFORM_UPGRADE_PLAN.md` (path
+   may have moved in the reorg — check `prompts_and_plans/`).
 
-## Auth & roles
-`POST /auth/login` → `{ accessToken, user }`, sent as `Authorization: Bearer <token>`.
-Roles: `admin`, `mentor`, `student`, enforced by `protect` + `authorize(...roles)`
-middleware. Token currently in `localStorage` (httpOnly-cookie migration pending —
-see Known limitations).
-
-## Demo/test logins (seeded)
+## Demo/test logins (seeded, live on Atlas)
 | Role | Email | Password |
 |---|---|---|
 | Admin | admin@placeonix.in | Password123 |
@@ -67,25 +67,24 @@ see Known limitations).
 
 ## Run locally
 ```bash
-cd placeonix-hub-backend && npm install
-copy .env.example .env      # set MONGO_URI + JWT secrets
+cd backend && npm install
+copy .env.example .env      # set MONGO_URI (see Atlas note above) + JWT secrets
 npm run seed && npm run dev  # API → :5000
-# repo root, separate terminal:
-node _serve.js               # portal → :8080
+# separate terminal:
+cd frontend && npm install
+npm run dev                  # Next.js → :3000
 ```
-Root `package.json` also exposes `npm run dev|start|seed|portal` as delegating scripts.
 
-## Known limitations (as of last audit)
+## Known limitations
 - File uploads are link-based by default; S3 deps exist (`@aws-sdk/client-s3`,
   `multer-s3`) but persistence on serverless isn't guaranteed unless S3 is wired up.
 - No SMTP/provider keys configured → email/WhatsApp/SMS not actually sent, notifications
-  stay in-app only.
+  stay in-app only (and the new frontend's notification bell isn't wired up yet either).
 - No Razorpay/payment gateway integration; admin records payments manually.
-- "Real-time chat" is simulated — no WebSocket server on serverless (Vercel).
-- Auth token in `localStorage`, not httpOnly cookies.
-- Demo-mode fallback: if API/DB unreachable, frontend loads with sample data (can look
-  like a real outage if seen in prod — hard refresh usually fixes stale service-worker
-  "Demo Mode" banners).
+- "Real-time chat" (old portal) was simulated — no WebSocket server on serverless.
+- Demo-mode fallback in the **old** vanilla portal only: if API/DB unreachable, it
+  loads with sample data. The new Next.js frontend has no equivalent fallback — it
+  just shows real errors, which is the intended behavior going forward.
 
 ## Where things are tracked
 - Bugs: `Placeonix-Hub-Bug-Tracker.xlsx`, `Placeonix_Bug_Register.xlsx` (root).
@@ -98,6 +97,21 @@ Root `package.json` also exposes `npm run dev|start|seed|portal` as delegating s
 ## Changelog
 > Newest entries at the top. Format: `### YYYY-MM-DD — short title` then 1-3 bullets:
 > what changed, why, anything the next session should know.
+
+### 2026-08-07 — Brain refresh: header sections rewritten to match current reality
+- The top-of-file sections (`What this is`, `Structure`, `Stack`, `Data model`, `Auth`,
+  `Known limitations`) hadn't been touched since the very first brain entry
+  (2026-08-05) and had drifted badly out of date after the reorg + full frontend
+  build-out: still described the old vanilla-JS SPA, `placeonix-hub-backend/` paths,
+  "not currently a git repo," and 20 collections with no mention of RBAC/Quiz/Coding
+  Challenge/AuditLog. Consolidated into a single **"Current status"** section (new,
+  right after "What this is") that's meant to be the fast-orientation read — current
+  backend/frontend state and a concrete, priority-ordered "what's next" list — with
+  the detailed *why* left in the dated entries below it, which are unchanged.
+- Not a code change — no `git diff` outside `prompts_and_plans/BRAIN.md`.
+- Note for next session: **keep "Current status" current** going forward — when it
+  drifts noticeably from a changelog entry's "Next session" notes, that's the signal
+  to refresh it again, same as this entry did.
 
 ### 2026-08-07 — Frontend: every nav item now a real page, all 3 roles (20 new pages)
 - User asked for every page (Dashboard through Settings) across all three role
