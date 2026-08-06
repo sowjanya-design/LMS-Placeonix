@@ -42,21 +42,14 @@ as a feature-complete reference for anything not yet migrated):
   Assignments view is still a placeholder. Search bar and notification bell are
   **visual only**, not wired to real data.
 
-**What's next, roughly in priority order:**
-1. Full create/edit forms for the entities that only have list+delete (Batch, Course,
-   Certificate issuance, Company, Announcement edit, MockInterview scheduling).
-2. Admin's Assignments oversight page (currently placeholder).
-3. Wire the search bar (backend `/search` endpoint exists) and notification bell
-   (backend notification endpoints exist) to real data.
-4. Add a `resume` field to the Profile page — right now a student can't self-serve
-   past the "add a resume before applying" placement block since Profile doesn't
-   expose that field.
-5. Root `package.json`'s `dev/start/seed/portal` scripts may still reference stale
-   paths from the reorg — verify before relying on them; use `cd backend && npm run
-   dev` / `cd frontend && npm run dev` directly if in doubt.
-6. Longer-term, deferred pending real business need (not technical blockers): Phase
-   4/5 finance-depth and comms-queue work from `docs/PLATFORM_UPGRADE_PLAN.md` (path
-   may have moved in the reorg — check `prompts_and_plans/`).
+**What's next**: full field-by-field, endpoint-by-endpoint detail lives in
+[`NEXT_STEPS_PLAN.md`](./NEXT_STEPS_PLAN.md) — keep that file current as items ship
+instead of duplicating its detail here. Short version: create/edit forms for
+Batch/Course/Certificate/Company/Announcement/MockInterview, an admin Assignments
+oversight page (needs a product decision on which variant first), wiring the search
+bar and notification bell to real data, a `resume` field on Profile (currently
+dead-ends student placement applications), and a `package.json` script sanity check.
+Finance-depth/comms-queue phases stay deferred pending real business need.
 
 ## Demo/test logins (seeded, live on Atlas)
 | Role | Email | Password |
