@@ -99,6 +99,64 @@ Root `package.json` also exposes `npm run dev|start|seed|portal` as delegating s
 > Newest entries at the top. Format: `### YYYY-MM-DD — short title` then 1-3 bullets:
 > what changed, why, anything the next session should know.
 
+### 2026-08-06 — Repo reorg: placeonix-hub-backend → backend/, fresh Next.js frontend/
+- Mid-session, the working tree changed outside of this conversation:
+  `placeonix-hub-backend/` became `backend/` (same content, including everything
+  through Phase 2 above), the old vanilla-JS SPA moved to `frontend/legacy_html/`,
+  a fresh Next.js app now lives at `frontend/`, and the loose root-level report/xlsx
+  files (including this BRAIN.md) moved into `prompts_and_plans/`. Confirmed
+  intentional by the user before proceeding — not something this session did.
+- **This file (`BRAIN.md`) now lives at `prompts_and_plans/BRAIN.md`, not the repo
+  root.** Update the pointer in your head accordingly; the "Structure" section above
+  still describes the pre-reorg layout and needs a refresh by whoever owns the
+  reorg — deliberately left alone here to avoid clobbering in-progress work.
+- Root `package.json`'s `dev`/`start`/`seed`/`portal` scripts still point at the old
+  `placeonix-hub-backend` path and `_serve.js` — now stale, not fixed as part of this
+  entry since it's part of the broader reorg, not the Phase 3 feature work below.
+- All backend work below (Phase 3) was written against the new `backend/` path.
+
+### 2026-08-06 — Phase 3: Coding Challenges — sandboxed code execution (highest-risk item, handled carefully)
+- **Execution approach, decided with the user before writing any code**: a managed
+  third-party sandboxed-execution API, not a self-hosted Docker sandbox — no sandbox
+  infra for us to build/harden/own the container-escape risk of. Using **Piston**
+  (open-source, free, no API key, self-hostable if ever needed —
+  github.com/engineer-man/piston, public instance at emkc.org). Swappable for a paid
+  provider later by changing one env var (`CODE_EXEC_API_URL`) — `codeExecutionService.js`
+  is the only file that talks to the executor.
+- Untrusted student code is **never executed on this server** — always forwarded to
+  the external sandbox. Three specific guardrails, each deliberate:
+  1. **Server-side language/version whitelist** (`config/codeLanguages.js`) — the
+     client sends a short code like `'python'`, never a raw executor language/version
+     string, so a request can't target an unreviewed runtime.
+  2. **Timeouts are hardcoded server-side**, never taken from the client — otherwise a
+     request could ask for an unbounded run and exhaust the executor.
+  3. **Hidden test cases never leak their expected output or the program's actual
+     stdout/stderr** — only pass/fail + points. Verified by a test.
+- New `CodingChallenge` (test cases embedded, capped at 20 — each submission executes
+  every case sequentially, so this bounds per-submission latency/cost) and
+  `CodingSubmission` (one doc per attempt) models. `codingChallengeController.js` /
+  `codingChallengeRoutes.js` (`/api/v1/coding-challenges`) mirror the Quiz/Assignment
+  shape: role-aware listing, mentor ownership guard, mentor/admin CRUD, student
+  `run` (manual test, ungraded, not persisted) and `submit` (graded, persisted) flow.
+- **Grading is entirely server-side**, comparing trimmed stdout to the stored
+  `expectedOutput` — never trusts any correctness claim in the submitted payload.
+  Covered by a test that mocks the executor to return wrong output and asserts the
+  score is still computed correctly (not from client input).
+- `run`/`submit` are on their own strict rate limiter (15/min by default, separate
+  from the global API limiter) since each call spends real external-executor quota —
+  this is the one part of the API that isn't "free" per request.
+- 7 new tests, all mocking `codeExecutionService` (no real network calls in tests).
+  Full suite now 49 tests passing, lint clean.
+- **Not committed to git by this session** — see the reorg entry above; `backend/` is
+  currently untracked pending the reorg's own commit, so committing just the Phase 3
+  slice would produce a confusing partial state. Code is done, tested, and lint-clean
+  on disk; committing is deferred until the reorg itself is committed.
+- Next session: this was the last item explicitly flagged as high-risk in the
+  original phased plan (`docs/PLATFORM_UPGRADE_PLAN.md` — note: that file's path may
+  have moved in the reorg too, check `prompts_and_plans/` and the new `frontend/`
+  app's own docs). Remaining phases (finance/CRM depth, comms queues, multi-branch)
+  were already flagged as lower-priority / gated on real business decisions.
+
 ### 2026-08-06 — Phase 2: Quizzes (auto-graded assessments, no execution risk)
 - New `Quiz` model (questions + options **embedded**, same pattern as
   `Assignment.submissions` — one document read/write instead of a 3-collection join;
