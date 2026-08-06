@@ -3,7 +3,7 @@ const router = express.Router();
 const { body } = require('express-validator');
 
 const userCtrl = require('../controllers/userController');
-const { protect, authorize, ownerOrAdmin } = require('../middleware/auth');
+const { protect, authorize, ownerOrAdmin, can } = require('../middleware/auth');
 const validate = require('../middleware/validate');
 
 router.use(protect);
@@ -34,7 +34,10 @@ router.post(
 router.get('/:id/enrollments', authorize('admin', 'mentor'), userCtrl.userEnrollments);
 router.get('/:id', userCtrl.getUser);
 router.patch('/:id', ownerOrAdmin('id'), userCtrl.updateUser);
-router.delete('/:id', authorize('admin'), userCtrl.deleteUser);
-router.patch('/:id/role', authorize('admin'), userCtrl.updateRole);
+// can() lets these two be granted to a non-admin role later (via the Role
+// document) without a code change; today's default role permissions keep
+// behavior identical to the old authorize('admin')-only check.
+router.delete('/:id', can('users.delete'), userCtrl.deleteUser);
+router.patch('/:id/role', can('users.manage_role'), userCtrl.updateRole);
 
 module.exports = router;

@@ -99,6 +99,37 @@ Root `package.json` also exposes `npm run dev|start|seed|portal` as delegating s
 > Newest entries at the top. Format: `### YYYY-MM-DD — short title` then 1-3 bullets:
 > what changed, why, anything the next session should know.
 
+### 2026-08-06 — Phase 1: RBAC (Roles/Permissions), additive on top of the 3 existing roles
+- New `Permission` (catalog) and `Role` (code → array of permission codes) models.
+  `User.role` is unchanged — still the plain `admin`/`mentor`/`student` string; Role
+  documents are keyed by that same code, so this is purely additive, no data migration.
+- New `can(...permissionCodes)` middleware in `middleware/auth.js`, sitting alongside
+  the existing `authorize(...roles)` (untouched). `admin` always passes `can()`
+  (hardcoded bypass — matches today's behavior). For everyone else it checks the
+  Role doc's `permissions` array; if no Role doc exists yet, it fails closed rather
+  than silently allowing.
+- Swapped `authorize('admin')` → `can(...)` on the routes we audit-log (Phase 0):
+  `DELETE /users/:id` → `users.delete`, `PATCH /users/:id/role` → `users.manage_role`,
+  `POST /payments` → `payments.record`, `POST /payments/:id/refund` →
+  `payments.refund`, `GET /audit-logs` → `audit_logs.view`. Default role grants mirror
+  the old admin-only behavior exactly, so nothing changes for existing users — the
+  point is these can now be granted to mentor/student later via one Role edit, no
+  code change.
+- `seedRoles.js`: idempotent upsert of the permission catalog + default roles.
+  Runs via `npm run seed` (full reseed), standalone via `npm run seed:roles`, **and
+  automatically on every DB connect** (`config/database.js` for local/server.js,
+  `api/index.js` for the Vercel serverless entrypoint) — so `can()` never fails
+  closed just because an environment was never manually seeded.
+- New admin-only role-management API: `GET /roles`, `GET /roles/permissions`,
+  `PATCH /roles/:code` (body: `{ permissions: [...] }`). The `admin` role's grants
+  can't be edited — it's hardcoded to always pass in `can()`, so a partial admin
+  grant list there would be misleading. No frontend UI for this yet.
+- All 36 backend tests + lint pass unchanged (tests all authenticate as admin on the
+  routes that changed, which bypasses `can()` either way).
+- Next session: no frontend surface for role/permission management exists yet — if
+  the next phase needs it, it's plain CRUD against the new `/roles` endpoints. Phase 2
+  (Quizzes/Questions/Options/Results) is next per the upgrade plan.
+
 ### 2026-08-06 — Phase 0 foundations: audit logging + cookie-only auth on frontend
 - **AuditLog**: new model (`src/models/AuditLog.js`) + `auditLog()` helper
   (`src/utils/audit.js`, fire-and-forget, never throws) wired into the highest-value

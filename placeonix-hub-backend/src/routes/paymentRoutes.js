@@ -2,7 +2,7 @@ const express = require('express');
 const router = express.Router();
 const { body, param } = require('express-validator');
 const ctrl = require('../controllers/paymentController');
-const { protect, authorize } = require('../middleware/auth');
+const { protect, authorize, can } = require('../middleware/auth');
 const validate = require('../middleware/validate');
 
 const methodEnum = ['cash', 'upi', 'card', 'bank_transfer', 'razorpay', 'stripe', 'other'];
@@ -28,7 +28,7 @@ router.get('/:id', authorize('student', 'admin'), [param('id').isMongoId()], val
 
 router.post(
   '/',
-  authorize('admin'),
+  can('payments.record'),
   [
     body('enrollmentId').isMongoId().withMessage('enrollmentId must be a valid id'),
     body('amount').isFloat({ gt: 0 }).withMessage('amount must be a positive number'),
@@ -54,7 +54,7 @@ router.patch(
 );
 router.post(
   '/:id/refund',
-  authorize('admin'),
+  can('payments.refund'),
   [
     param('id').isMongoId(),
     body('amount').optional().isFloat({ gt: 0 }),

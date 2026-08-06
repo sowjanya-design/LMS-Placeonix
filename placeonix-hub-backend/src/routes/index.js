@@ -25,6 +25,7 @@ router.use('/mock-interviews', require('./mockInterviewRoutes'));
 router.use('/alumni', require('./alumniRoutes'));
 router.use('/office-hours', require('./officeHourRoutes'));
 router.use('/audit-logs', require('./auditLogRoutes'));
+router.use('/roles', require('./roleRoutes'));
 
 router.get('/', (req, res) => {
   res.json({

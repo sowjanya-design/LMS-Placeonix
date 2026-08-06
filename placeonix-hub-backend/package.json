@@ -7,6 +7,7 @@
     "start": "node src/server.js",
     "dev": "nodemon src/server.js",
     "seed": "node src/seeders/seed.js",
+    "seed:roles": "node src/seeders/seedRoles.js",
     "migrate:alumni-refs": "node src/scripts/migrateAlumniRefs.js",
     "hygiene:report": "node src/scripts/dataHygieneReport.js",
     "lint": "eslint src/",

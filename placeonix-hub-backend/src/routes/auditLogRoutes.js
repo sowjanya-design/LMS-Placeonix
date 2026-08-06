@@ -2,8 +2,8 @@ const express = require('express');
 const router = express.Router();
 
 const { listAuditLogs } = require('../controllers/auditLogController');
-const { protect, authorize } = require('../middleware/auth');
+const { protect, can } = require('../middleware/auth');
 
-router.get('/', protect, authorize('admin'), listAuditLogs);
+router.get('/', protect, can('audit_logs.view'), listAuditLogs);
 
 module.exports = router;

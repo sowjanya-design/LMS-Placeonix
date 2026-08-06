@@ -1,5 +1,6 @@
 const { verifyToken } = require('../utils/jwt');
 const User = require('../models/User');
+const Role = require('../models/Role');
 const AppError = require('../utils/AppError');
 const asyncHandler = require('../utils/asyncHandler');
 
@@ -67,4 +68,30 @@ const ownerOrAdmin = (paramKey = 'id') => (req, res, next) => {
   return next(new AppError('Forbidden — you can only access your own resources', 403));
 };
 
-module.exports = { protect, authorize, ownerOrAdmin };
+/**
+ * Fine-grained, permission-code based access control — a second layer on top
+ * of authorize(...roles). admin always passes (super-role), everyone else is
+ * checked against their Role document's `permissions` array. If no Role
+ * document exists yet for a role code (fresh install before seeding), this
+ * fails closed rather than silently allowing — seed roles before relying on
+ * can() in production.
+ *
+ * Usage: router.patch('/:id/role', protect, can('users.manage_role'), handler)
+ */
+const can = (...permissionCodes) => async (req, res, next) => {
+  if (!req.user) return next(new AppError('Not authenticated', 401));
+  if (req.user.role === 'admin') return next();
+
+  const role = await Role.findOne({ code: req.user.role });
+  const granted = role?.permissions || [];
+  const hasPermission = permissionCodes.some((code) => granted.includes(code));
+
+  if (!hasPermission) {
+    return next(
+      new AppError(`Forbidden — role '${req.user.role}' lacks permission: ${permissionCodes.join(', ')}`, 403)
+    );
+  }
+  next();
+};
+
+module.exports = { protect, authorize, ownerOrAdmin, can };

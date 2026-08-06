@@ -15,6 +15,17 @@ async function ensureDB() {
         serverSelectionTimeoutMS: 8000,
         maxPoolSize: 5,
       })
+      .then(async (conn) => {
+        // Idempotent — ensures can() middleware's Role lookups never fail
+        // closed on a fresh serverless DB that was never `npm run seed`ed.
+        try {
+          const { seedRolesAndPermissions } = require('../src/seeders/seedRoles');
+          await seedRolesAndPermissions();
+        } catch (err) {
+          console.warn(`Role/permission auto-seed skipped: ${err.message}`);
+        }
+        return conn;
+      })
       .catch((err) => {
         connPromise = null; // allow a retry on the next invocation
         throw err;

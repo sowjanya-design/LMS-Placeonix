@@ -26,7 +26,6 @@ auditLogSchema.statics.record = async function (entry) {
   try {
     await this.create(entry);
   } catch (err) {
-    // eslint-disable-next-line global-require
     require('../utils/logger').error(`AuditLog write failed: ${err.message}`);
   }
 };

@@ -20,6 +20,16 @@ const connectDB = async () => {
 
     logger.info(`✓ MongoDB connected: ${conn.connection.host}`);
 
+    // Ensure the default Roles/Permissions exist so can() middleware never
+    // fails closed just because nobody ran `npm run seed` on this environment.
+    // Idempotent upsert — safe to run on every boot.
+    try {
+      const { seedRolesAndPermissions } = require('../seeders/seedRoles');
+      await seedRolesAndPermissions();
+    } catch (err) {
+      logger.warn(`Role/permission auto-seed skipped: ${err.message}`);
+    }
+
     mongoose.connection.on('error', (err) => {
       logger.error(`MongoDB error: ${err.message}`);
     });

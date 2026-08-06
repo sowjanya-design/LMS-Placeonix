@@ -18,6 +18,7 @@ const Payment = require('../models/Payment');
 const Certificate = require('../models/Certificate');
 const Review = require('../models/Review');
 const JoinRequest = require('../models/JoinRequest');
+const { seedRolesAndPermissions } = require('./seedRoles');
 
 const seedData = async () => {
   try {
@@ -444,6 +445,9 @@ const seedData = async () => {
       title: 'New Assignment', message: 'React Portfolio Project — Due in 7 days',
       link: '/dashboard/assignments',
     });
+
+    logger.info('Seeding roles & permissions...');
+    await seedRolesAndPermissions();
 
     logger.info('===========================================');
     logger.info('  Seeding complete!');
