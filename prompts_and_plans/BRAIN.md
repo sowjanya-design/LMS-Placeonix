@@ -99,6 +99,24 @@ Root `package.json` also exposes `npm run dev|start|seed|portal` as delegating s
 > Newest entries at the top. Format: `### YYYY-MM-DD — short title` then 1-3 bullets:
 > what changed, why, anything the next session should know.
 
+### 2026-08-06 — Next.js frontend: Student "My Courses" (first real content page)
+- `app/dashboard/my-courses/page.tsx` — first real content page (not a placeholder),
+  fetches `GET /users/me/enrollments`, renders each enrollment as a card: course
+  title/category, status badge, progress bar, batch name/mode/mentor, and a fee-due
+  callout only when `fee.due > 0`. Next.js file-based routing means this static route
+  automatically takes precedence over the `[section]` catch-all placeholder — no
+  extra wiring needed to "graduate" a section from placeholder to real page.
+- Added `Course`/`Batch`/`Enrollment` types to `lib/types.ts` matching the backend's
+  `Enrollment` model shape (`backend/src/models/Enrollment.js`).
+- Verified in-browser as the seeded student (`student@placeonix.in`): both real
+  enrollments render correctly (SAP FICO 40%, Full Stack Web Development 72%, the
+  latter showing "₹5,000 due of ₹25,000"), sidebar highlights "My Courses" as active,
+  zero console errors. `tsc`/lint/build all clean.
+- Next session: this is the pattern for graduating any other placeholder section —
+  add a real `page.tsx` at the matching route, fetch the relevant endpoint, done.
+  Good next candidates: student Assignments/Attendance (both already fully backed by
+  the existing API), or start on admin's Students/Mentors/Courses tables.
+
 ### 2026-08-06 — Next.js frontend: role-aware sidebar navigation
 - `lib/nav.ts`: the exact `ROLES[role].nav` config from
   `frontend/legacy_html/placeonix-hub-portal.html` (admin 20 items, mentor 14,
