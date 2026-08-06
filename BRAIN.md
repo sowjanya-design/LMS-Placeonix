@@ -99,6 +99,35 @@ Root `package.json` also exposes `npm run dev|start|seed|portal` as delegating s
 > Newest entries at the top. Format: `### YYYY-MM-DD — short title` then 1-3 bullets:
 > what changed, why, anything the next session should know.
 
+### 2026-08-06 — Phase 2: Quizzes (auto-graded assessments, no execution risk)
+- New `Quiz` model (questions + options **embedded**, same pattern as
+  `Assignment.submissions` — one document read/write instead of a 3-collection join;
+  trades away question-bank reuse across quizzes for simplicity) and `QuizResult`
+  (one doc per student attempt, unique on `(quiz, student, attemptNumber)`).
+- `quizController.js` / `quizRoutes.js` (`/api/v1/quizzes`) mirror the Assignment
+  controller's shape: role-aware listing, `assertTeachesBatch` ownership guard for
+  mentors, mentor/admin CRUD, student attempt flow.
+- **Security-critical design point**: `Quiz.toStudentView()` strips every
+  `option.isCorrect` before a student can see a question — verified by a test that
+  greps the raw JSON response for `isCorrect` and asserts it's absent. Grading itself
+  (`submitAttempt`) recomputes correctness server-side from the stored answer key and
+  **ignores** any `isCorrect`/`pointsAwarded` fields a client submits — covered by a
+  test that deliberately sends a tampered "this wrong answer is correct" payload and
+  asserts the server-computed score is still right. This is the same class of bug
+  that would make the Phase 3 IDE/coding-assessment work dangerous if rushed — grading
+  logic must never trust the client, full stop.
+- `maxAttempts` enforcement, `isOpen` (status + availability window) gating, and
+  resume-in-progress-attempt behavior all covered by tests.
+- 6 new tests in `quizzes.test.js`; full suite now 42 tests, all passing (lint clean).
+- Skipped for this pass, consistent with keeping scope tight: audit-logging quiz
+  events (not finance/security-sensitive like Phase 0's targets) and a question bank /
+  free-text grading workflow — MCQ/multi-select only, auto-graded.
+- Next session: **Phase 3 (IDE / code execution) is next per the plan, and is flagged
+  as the highest-risk item in the whole roadmap** — it needs real sandboxing
+  (isolated, no-network, resource-capped execution), not just schema. Don't start it
+  without deciding on an execution/sandboxing approach first; see
+  [docs/PLATFORM_UPGRADE_PLAN.md](docs/PLATFORM_UPGRADE_PLAN.md) §3 Phase 3.
+
 ### 2026-08-06 — Phase 1: RBAC (Roles/Permissions), additive on top of the 3 existing roles
 - New `Permission` (catalog) and `Role` (code → array of permission codes) models.
   `User.role` is unchanged — still the plain `admin`/`mentor`/`student` string; Role

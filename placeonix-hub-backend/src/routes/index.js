@@ -7,6 +7,7 @@ router.use('/courses', require('./courseRoutes'));
 router.use('/batches', require('./batchRoutes'));
 router.use('/sessions', require('./sessionRoutes'));
 router.use('/assignments', require('./assignmentRoutes'));
+router.use('/quizzes', require('./quizRoutes'));
 router.use('/attendance', require('./attendanceRoutes'));
 router.use('/placements', require('./placementRoutes'));
 router.use('/announcements', require('./announcementRoutes'));
