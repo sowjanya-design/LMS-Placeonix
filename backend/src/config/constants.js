@@ -1,8 +1,11 @@
 module.exports = {
   ROLES: {
+    SUPER_ADMIN: 'super_admin',
     ADMIN: 'admin',
     MENTOR: 'mentor',
     STUDENT: 'student',
+    HR: 'hr',
+    RECRUITER: 'recruiter',
   },
 
   USER_STATUS: {

@@ -3,6 +3,9 @@
 import { useEffect, useState } from "react";
 import { api, ApiError } from "@/lib/api";
 import type { User } from "@/lib/types";
+import { Modal } from "@/components/ui/modal";
+import { Field, Input, Select, ErrorText, ModalActions } from "@/components/ui/form";
+import { EmptyState } from "@/components/ui/empty-state";
 
 const STATUS_STYLE: Record<string, string> = {
   active: "bg-green-lt text-green",
@@ -43,67 +46,142 @@ function AddStudentModal({ onClose, onAdded }: { onClose: () => void; onAdded: (
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4" onClick={onClose}>
-      <div
-        className="w-full max-w-md rounded-2xl bg-white p-6 shadow-xl"
-        onClick={(e) => e.stopPropagation()}
+    <Modal title="Add Student" onClose={onClose}>
+      <form
+        className="flex flex-col gap-3"
+        onSubmit={(e) => {
+          e.preventDefault();
+          handleSubmit();
+        }}
       >
-        <h2 className="mb-4 text-lg font-bold text-ink">Add Student</h2>
-        <div className="flex flex-col gap-3">
-          <div className="grid grid-cols-2 gap-3">
-            <input
+        <div className="grid grid-cols-2 gap-3">
+          <Field label="First name" required>
+            <Input
               placeholder="First name"
               value={form.firstName}
               onChange={(e) => setForm({ ...form, firstName: e.target.value })}
-              className="rounded-lg border-[1.5px] border-line bg-[#fbfbfd] px-3 py-2 text-sm text-ink outline-none focus:border-purple focus:bg-white"
             />
-            <input
+          </Field>
+          <Field label="Last name" required>
+            <Input
               placeholder="Last name"
               value={form.lastName}
               onChange={(e) => setForm({ ...form, lastName: e.target.value })}
-              className="rounded-lg border-[1.5px] border-line bg-[#fbfbfd] px-3 py-2 text-sm text-ink outline-none focus:border-purple focus:bg-white"
             />
-          </div>
-          <input
+          </Field>
+        </div>
+        <Field label="Email" required>
+          <Input
             type="email"
             placeholder="Email"
             value={form.email}
             onChange={(e) => setForm({ ...form, email: e.target.value })}
-            className="rounded-lg border-[1.5px] border-line bg-[#fbfbfd] px-3 py-2 text-sm text-ink outline-none focus:border-purple focus:bg-white"
           />
-          <input
-            placeholder="Phone (optional)"
+        </Field>
+        <Field label="Phone" hint="Optional">
+          <Input
+            placeholder="Phone"
             value={form.phone}
             onChange={(e) => setForm({ ...form, phone: e.target.value })}
-            className="rounded-lg border-[1.5px] border-line bg-[#fbfbfd] px-3 py-2 text-sm text-ink outline-none focus:border-purple focus:bg-white"
           />
-          <input
+        </Field>
+        <Field label="Temporary password" required hint="Min 8 characters">
+          <Input
             type="password"
-            placeholder="Temporary password (min 8 chars)"
+            placeholder="Temporary password"
             value={form.password}
             onChange={(e) => setForm({ ...form, password: e.target.value })}
-            className="rounded-lg border-[1.5px] border-line bg-[#fbfbfd] px-3 py-2 text-sm text-ink outline-none focus:border-purple focus:bg-white"
           />
-          {error && <p className="text-sm text-red">{error}</p>}
-          <div className="mt-1 flex justify-end gap-2">
-            <button
-              onClick={onClose}
-              className="rounded-lg border-[1.5px] border-line px-4 py-2 text-sm font-semibold text-ink2 hover:bg-bg"
-            >
-              Cancel
-            </button>
-            <button
-              onClick={handleSubmit}
-              disabled={submitting}
-              className="rounded-lg px-4 py-2 text-sm font-bold text-white shadow-[0_4px_14px_rgba(108,63,245,0.28)] disabled:opacity-50"
-              style={{ background: "linear-gradient(135deg, var(--purple), var(--purple-dk))" }}
-            >
-              {submitting ? "Adding…" : "Add Student"}
-            </button>
-          </div>
+        </Field>
+        {error && <ErrorText>{error}</ErrorText>}
+        <ModalActions onCancel={onClose} submitting={submitting} submitLabel="Add Student" />
+      </form>
+    </Modal>
+  );
+}
+
+interface EditStudentForm {
+  firstName: string;
+  lastName: string;
+  phone: string;
+  status: string;
+}
+
+function EditStudentModal({
+  student,
+  onClose,
+  onUpdated,
+}: {
+  student: User;
+  onClose: () => void;
+  onUpdated: (u: User) => void;
+}) {
+  const [form, setForm] = useState<EditStudentForm>({
+    firstName: student.firstName ?? "",
+    lastName: student.lastName ?? "",
+    phone: student.phone ?? "",
+    status: student.status ?? "active",
+  });
+  const [error, setError] = useState<string | null>(null);
+  const [submitting, setSubmitting] = useState(false);
+
+  async function handleSubmit() {
+    setSubmitting(true);
+    setError(null);
+    try {
+      const res = await api.patch<{ user: User }>(`/users/${student._id}`, form);
+      onUpdated(res.user);
+      onClose();
+    } catch (err) {
+      setError(err instanceof ApiError ? err.message : "Failed to update student");
+    } finally {
+      setSubmitting(false);
+    }
+  }
+
+  return (
+    <Modal title="Edit Student" onClose={onClose}>
+      <form
+        className="flex flex-col gap-3"
+        onSubmit={(e) => {
+          e.preventDefault();
+          handleSubmit();
+        }}
+      >
+        <div className="grid grid-cols-2 gap-3">
+          <Field label="First name" required>
+            <Input
+              placeholder="First name"
+              value={form.firstName}
+              onChange={(e) => setForm({ ...form, firstName: e.target.value })}
+            />
+          </Field>
+          <Field label="Last name" required>
+            <Input
+              placeholder="Last name"
+              value={form.lastName}
+              onChange={(e) => setForm({ ...form, lastName: e.target.value })}
+            />
+          </Field>
         </div>
-      </div>
-    </div>
+        <Field label="Phone" hint="Optional">
+          <Input
+            placeholder="Phone"
+            value={form.phone}
+            onChange={(e) => setForm({ ...form, phone: e.target.value })}
+          />
+        </Field>
+        <Field label="Status" required>
+          <Select value={form.status} onChange={(e) => setForm({ ...form, status: e.target.value })}>
+            <option value="active">Active</option>
+            <option value="inactive">Inactive</option>
+            <option value="suspended">Suspended</option>
+          </Select>
+        </Field>
+        {error && <ErrorText>{error}</ErrorText>}
+        <ModalActions onCancel={onClose} submitting={submitting} submitLabel="Save Changes" />
+      </form>
+    </Modal>
   );
 }
 
@@ -112,6 +190,7 @@ export default function StudentsPage() {
   const [error, setError] = useState<string | null>(null);
   const [showAdd, setShowAdd] = useState(false);
   const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [editing, setEditing] = useState<User | null>(null);
 
   function load() {
     api
@@ -192,21 +271,29 @@ export default function StudentsPage() {
                       </span>
                     </td>
                     <td className="px-4 py-3">
-                      <button
-                        onClick={() => handleDelete(s)}
-                        disabled={deletingId === s._id}
-                        className="rounded-lg border-[1.5px] border-line px-3 py-1.5 text-xs font-semibold text-red transition-colors hover:border-red hover:bg-red-lt disabled:opacity-50"
-                      >
-                        {deletingId === s._id ? "Removing…" : "Delete"}
-                      </button>
+                      <div className="flex gap-2">
+                        <button
+                          onClick={() => setEditing(s)}
+                          className="rounded-lg border-[1.5px] border-line px-3 py-1.5 text-xs font-semibold text-ink2 transition-colors hover:border-purple hover:bg-purple-lt hover:text-purple"
+                        >
+                          Edit
+                        </button>
+                        <button
+                          onClick={() => handleDelete(s)}
+                          disabled={deletingId === s._id}
+                          className="rounded-lg border-[1.5px] border-line px-3 py-1.5 text-xs font-semibold text-red transition-colors hover:border-red hover:bg-red-lt disabled:opacity-50"
+                        >
+                          {deletingId === s._id ? "Removing…" : "Delete"}
+                        </button>
+                      </div>
                     </td>
                   </tr>
                 );
               })}
               {students.length === 0 && (
                 <tr>
-                  <td colSpan={6} className="px-4 py-8 text-center text-muted">
-                    No students yet.
+                  <td colSpan={6} className="px-4">
+                    <EmptyState message="No students yet." />
                   </td>
                 </tr>
               )}
@@ -219,6 +306,16 @@ export default function StudentsPage() {
         <AddStudentModal
           onClose={() => setShowAdd(false)}
           onAdded={(u) => setStudents((prev) => (prev ? [u, ...prev] : [u]))}
+        />
+      )}
+
+      {editing && (
+        <EditStudentModal
+          student={editing}
+          onClose={() => setEditing(null)}
+          onUpdated={(u) =>
+            setStudents((prev) => prev?.map((s) => (s._id === u._id ? u : s)) ?? prev)
+          }
         />
       )}
     </div>

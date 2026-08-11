@@ -1,7 +1,7 @@
 "use client";
 
 import { createContext, useContext, useEffect, useState, useCallback } from "react";
-import { api, ApiError } from "./api";
+import { api, ApiError, isApiError } from "./api";
 import type { User } from "./types";
 
 interface AuthContextValue {
@@ -55,4 +55,4 @@ export function useAuth() {
   return ctx;
 }
 
-export { ApiError };
+export { ApiError, isApiError };

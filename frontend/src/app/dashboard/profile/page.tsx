@@ -4,29 +4,54 @@ import { useState } from "react";
 import { useAuth, ApiError } from "@/lib/auth-context";
 import { api } from "@/lib/api";
 import { ROLE_COLOR } from "@/lib/roles";
-
-const inputClass =
-  "rounded-lg border-[1.5px] border-line bg-[#fbfbfd] px-3 py-2 text-sm text-ink outline-none focus:border-purple focus:bg-white";
+import { Field, Input, Textarea, PrimaryButton } from "@/components/ui/form";
 
 export default function ProfilePage() {
   const { user } = useAuth();
+  const sp = user?.studentProfile;
+
   const [firstName, setFirstName] = useState(user?.firstName ?? "");
   const [lastName, setLastName] = useState(user?.lastName ?? "");
   const [phone, setPhone] = useState(user?.phone ?? "");
+  const [bio, setBio] = useState(user?.bio ?? "");
+  // Student career fields — resume is the one that actually gates placement applications.
+  const [resume, setResume] = useState(sp?.resume ?? "");
+  const [skills, setSkills] = useState((sp?.skills ?? []).join(", "));
+  const [college, setCollege] = useState(sp?.college ?? "");
+  const [degree, setDegree] = useState(sp?.degree ?? "");
+  const [graduationYear, setGraduationYear] = useState(sp?.graduationYear ? String(sp.graduationYear) : "");
+  const [linkedIn, setLinkedIn] = useState(sp?.linkedIn ?? "");
+  const [github, setGithub] = useState(sp?.github ?? "");
+  const [portfolio, setPortfolio] = useState(sp?.portfolio ?? "");
+
   const [saving, setSaving] = useState(false);
-  const [message, setMessage] = useState<string | null>(null);
+  const [message, setMessage] = useState<{ ok: boolean; text: string } | null>(null);
 
   if (!user) return null;
+  const isStudent = user.role === "student";
   const initials = `${user.firstName?.[0] ?? ""}${user.lastName?.[0] ?? ""}`;
 
   async function handleSave() {
     setSaving(true);
     setMessage(null);
     try {
-      await api.patch(`/users/${user!._id}`, { firstName, lastName, phone });
-      setMessage("Profile updated.");
+      const payload: Record<string, unknown> = { firstName, lastName, phone, bio };
+      if (isStudent) {
+        payload.studentProfile = {
+          resume: resume.trim(),
+          skills: skills.split(",").map((s) => s.trim()).filter(Boolean),
+          college: college.trim(),
+          degree: degree.trim(),
+          graduationYear: graduationYear ? Number(graduationYear) : undefined,
+          linkedIn: linkedIn.trim(),
+          github: github.trim(),
+          portfolio: portfolio.trim(),
+        };
+      }
+      await api.patch(`/users/${user!._id}`, payload);
+      setMessage({ ok: true, text: "Profile updated." });
     } catch (err) {
-      setMessage(err instanceof ApiError ? err.message : "Failed to update profile");
+      setMessage({ ok: false, text: err instanceof ApiError ? err.message : "Failed to update profile" });
     } finally {
       setSaving(false);
     }
@@ -57,29 +82,86 @@ export default function ProfilePage() {
         </div>
 
         <div className="grid grid-cols-2 gap-4">
-          <div className="flex flex-col gap-1.5">
-            <label className="text-sm font-semibold text-ink">First name</label>
-            <input value={firstName} onChange={(e) => setFirstName(e.target.value)} className={inputClass} />
-          </div>
-          <div className="flex flex-col gap-1.5">
-            <label className="text-sm font-semibold text-ink">Last name</label>
-            <input value={lastName} onChange={(e) => setLastName(e.target.value)} className={inputClass} />
-          </div>
+          <Field label="First name">
+            <Input value={firstName} onChange={(e) => setFirstName(e.target.value)} />
+          </Field>
+          <Field label="Last name">
+            <Input value={lastName} onChange={(e) => setLastName(e.target.value)} />
+          </Field>
         </div>
-        <div className="mt-4 flex flex-col gap-1.5">
-          <label className="text-sm font-semibold text-ink">Phone</label>
-          <input value={phone} onChange={(e) => setPhone(e.target.value)} className={inputClass} />
+        <div className="mt-4">
+          <Field label="Phone">
+            <Input value={phone} onChange={(e) => setPhone(e.target.value)} />
+          </Field>
+        </div>
+        <div className="mt-4">
+          <Field label="Bio">
+            <Textarea rows={2} value={bio} onChange={(e) => setBio(e.target.value)} />
+          </Field>
         </div>
 
-        {message && <p className="mt-3 text-sm text-ink2">{message}</p>}
-        <button
-          onClick={handleSave}
-          disabled={saving}
-          className="mt-4 rounded-lg px-4 py-2 text-sm font-bold text-white disabled:opacity-50"
-          style={{ background: "linear-gradient(135deg, var(--purple), var(--purple-dk))" }}
-        >
-          {saving ? "Saving…" : "Save Profile"}
-        </button>
+        {isStudent && (
+          <>
+            <div className="mt-6 mb-3 border-t border-line pt-5 text-sm font-bold text-ink">
+              Career profile
+            </div>
+            <div className="mt-1">
+              <Field
+                label="Resume link"
+                hint="A public link (Google Drive, Dropbox, etc.). Required before you can apply to placement drives."
+              >
+                <Input
+                  type="url"
+                  placeholder="https://…"
+                  value={resume}
+                  onChange={(e) => setResume(e.target.value)}
+                />
+              </Field>
+            </div>
+            <div className="mt-4">
+              <Field label="Skills" hint="Comma-separated (e.g. React, Node.js, MongoDB)">
+                <Input value={skills} onChange={(e) => setSkills(e.target.value)} />
+              </Field>
+            </div>
+            <div className="mt-4 grid grid-cols-2 gap-4">
+              <Field label="College">
+                <Input value={college} onChange={(e) => setCollege(e.target.value)} />
+              </Field>
+              <Field label="Degree">
+                <Input value={degree} onChange={(e) => setDegree(e.target.value)} />
+              </Field>
+            </div>
+            <div className="mt-4 grid grid-cols-2 gap-4">
+              <Field label="Graduation year">
+                <Input
+                  type="number"
+                  value={graduationYear}
+                  onChange={(e) => setGraduationYear(e.target.value)}
+                />
+              </Field>
+              <Field label="LinkedIn">
+                <Input type="url" value={linkedIn} onChange={(e) => setLinkedIn(e.target.value)} />
+              </Field>
+            </div>
+            <div className="mt-4 grid grid-cols-2 gap-4">
+              <Field label="GitHub">
+                <Input type="url" value={github} onChange={(e) => setGithub(e.target.value)} />
+              </Field>
+              <Field label="Portfolio">
+                <Input type="url" value={portfolio} onChange={(e) => setPortfolio(e.target.value)} />
+              </Field>
+            </div>
+          </>
+        )}
+
+        {message && (
+          <p className={`mt-3 text-sm ${message.ok ? "text-green" : "text-red"}`}>{message.text}</p>
+        )}
+        <div className="mt-4">
+          <PrimaryButton onClick={handleSave} disabled={saving}>
+            {saving ? "Saving…" : "Save Profile"}
+          </PrimaryButton>
+        </div>
       </div>
     </div>
   );

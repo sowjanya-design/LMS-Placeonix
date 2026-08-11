@@ -37,10 +37,10 @@ export default function AttendanceMarkPage() {
     api
       .get<{ students: StudentRow[] }>("/users/my-students")
       .then((res) => {
-        const filtered = res.students.filter((s) => (s as unknown as { batch?: { _id: string } }).batch?._id === batchId);
-        setStudents(filtered.length ? filtered : res.students);
+        const filtered = res.students.filter((s: any) => s.student).filter((s) => (s as unknown as { batch?: { _id: string } }).batch?._id === batchId);
+        setStudents(filtered.length ? filtered : res.students.filter((s: any) => s.student));
         const initial: Record<string, AttendanceStatus> = {};
-        (filtered.length ? filtered : res.students).forEach((s) => (initial[s.student._id] = "present"));
+        (filtered.length ? filtered : res.students.filter((s: any) => s.student)).forEach((s) => (initial[s.student._id] = "present"));
         setMarks(initial);
       })
       .catch((err) => setError(err instanceof ApiError ? err.message : "Failed to load students"));
@@ -108,7 +108,7 @@ export default function AttendanceMarkPage() {
           {students.map((s) => (
             <div key={s._id} className="flex items-center justify-between gap-4 border-b border-line px-3 py-2.5 last:border-0">
               <span className="font-semibold text-ink">
-                {s.student.firstName} {s.student.lastName}
+                {s.student?.firstName || "Unknown"} {s.student?.lastName || "Student"}
               </span>
               <div className="flex gap-1.5">
                 {STATUSES.map((st) => (

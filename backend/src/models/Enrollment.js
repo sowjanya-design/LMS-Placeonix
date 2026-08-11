@@ -29,21 +29,6 @@ const enrollmentSchema = new mongoose.Schema(
       ],
     },
 
-    fee: {
-      total: { type: Number, required: true },
-      paid: { type: Number, default: 0 },
-      due: { type: Number, default: 0 },
-      payments: [
-        {
-          amount: Number,
-          method: { type: String, enum: ['cash', 'upi', 'card', 'bank_transfer'] },
-          transactionId: String,
-          paidOn: { type: Date, default: Date.now },
-          notes: String,
-        },
-      ],
-    },
-
     certificateIssued: { type: Boolean, default: false },
     certificateUrl: String,
 
@@ -64,8 +49,6 @@ const enrollmentSchema = new mongoose.Schema(
 enrollmentSchema.index({ student: 1, batch: 1 }, { unique: true });
 enrollmentSchema.index({ status: 1, batch: 1 });
 
-enrollmentSchema.virtual('isPaidFull').get(function () {
-  return this.fee.paid >= this.fee.total;
-});
+
 
 module.exports = mongoose.model('Enrollment', enrollmentSchema);

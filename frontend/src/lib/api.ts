@@ -9,8 +9,14 @@ export class ApiError extends Error {
   status: number;
   constructor(message: string, status: number) {
     super(message);
+    this.name = "ApiError";
     this.status = status;
+    Object.setPrototypeOf(this, ApiError.prototype);
   }
+}
+
+export function isApiError(error: unknown): error is ApiError {
+  return error instanceof Error && error.name === "ApiError";
 }
 
 export async function apiFetch<T = unknown>(

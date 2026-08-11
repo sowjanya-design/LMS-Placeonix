@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useAuth } from "@/lib/auth-context";
 import { api, ApiError } from "@/lib/api";
 import type { LeaderboardRow } from "@/lib/types";
+import { EmptyState } from "@/components/ui/empty-state";
 
 const MEDAL = ["🥇", "🥈", "🥉"];
 
@@ -56,7 +57,7 @@ export default function LeaderboardPage() {
               </div>
             );
           })}
-          {rows.length === 0 && <p className="py-8 text-center text-sm text-muted">No data yet.</p>}
+          {rows.length === 0 && <EmptyState message="No data yet." />}
         </div>
       )}
     </div>

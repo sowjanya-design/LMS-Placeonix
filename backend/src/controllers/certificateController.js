@@ -1,6 +1,7 @@
 const Certificate = require('../models/Certificate');
 const Enrollment = require('../models/Enrollment');
 const AppError = require('../utils/AppError');
+const { auditLog } = require('../utils/audit');
 const ApiResponse = require('../utils/ApiResponse');
 const asyncHandler = require('../utils/asyncHandler');
 
@@ -34,10 +35,7 @@ exports.myCertificates = asyncHandler(async (req, res) => {
     .populate('batch', 'name')
     .sort('-issuedDate');
 
-  return ApiResponse.success(res, 200, 'My certificates', {
-    certificates,
-    count: certificates.length,
-  });
+  return ApiResponse.success(res, 200, 'My certificates', certificates);
 });
 
 // @desc   Issue certificate (admin)
@@ -70,6 +68,7 @@ exports.issueCertificate = asyncHandler(async (req, res, next) => {
   // Build verification URL
   cert.verificationUrl = `${process.env.CLIENT_URL}/verify/${cert.certificateNumber}`;
   await cert.save();
+  auditLog(req, { module: 'certificates', action: 'issue_certificate', resource: 'Certificate', resourceId: cert._id, userId: cert.student, newValue: { certificateNumber: cert.certificateNumber, type: cert.type } });
 
   // Mark enrollment as certified
   enrollment.certificateIssued = true;

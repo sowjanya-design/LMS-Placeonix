@@ -27,9 +27,14 @@ exports.listSlots = asyncHandler(async (req, res) => {
 
 // @desc   Create a slot (mentor/admin)
 // @route  POST /api/v1/office-hours
-exports.createSlot = asyncHandler(async (req, res) => {
+exports.createSlot = asyncHandler(async (req, res, next) => {
   const body = { ...req.body, createdBy: req.user._id };
   if (req.user.role === 'mentor') body.mentor = req.user._id;
+  // Admin has no mentor identity of their own — a slot must be created on
+  // behalf of a real mentor, so require the client to pick one explicitly.
+  else if (!body.mentor) {
+    return next(new AppError('Select a mentor for this slot', 400));
+  }
   const slot = await OfficeHourSlot.create(body);
   return ApiResponse.created(res, 'Slot created', { slot });
 });

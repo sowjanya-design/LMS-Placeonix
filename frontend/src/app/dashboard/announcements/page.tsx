@@ -4,6 +4,9 @@ import { useEffect, useState } from "react";
 import { useAuth } from "@/lib/auth-context";
 import { api, ApiError } from "@/lib/api";
 import type { Announcement } from "@/lib/types";
+import { Modal } from "@/components/ui/modal";
+import { EmptyState } from "@/components/ui/empty-state";
+import { Field, Input, Textarea, Select, ErrorText, ModalActions } from "@/components/ui/form";
 
 const TYPE_STYLE: Record<string, string> = {
   general: "bg-blue-lt text-blue",
@@ -12,6 +15,8 @@ const TYPE_STYLE: Record<string, string> = {
   urgent: "bg-red-lt text-red",
   event: "bg-purple-lt text-purple",
 };
+
+const TYPES = ["general", "placement", "holiday", "urgent", "event"] as const;
 
 function fmt(iso: string) {
   return new Date(iso).toLocaleDateString(undefined, { day: "numeric", month: "short", year: "numeric" });
@@ -67,10 +72,59 @@ function NewAnnouncementForm({ onCreated }: { onCreated: (a: Announcement) => vo
   );
 }
 
+function EditAnnouncementForm({ announcement, onClose, onSaved }: { announcement: Announcement; onClose: () => void; onSaved: (a: Announcement) => void }) {
+  const [title, setTitle] = useState(announcement.title);
+  const [body, setBody] = useState(announcement.body);
+  const [type, setType] = useState(announcement.type);
+  const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  async function handleSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    if (!title.trim() || !body.trim()) return;
+    setSubmitting(true);
+    setError(null);
+    try {
+      const res = await api.patch<{ announcement: Announcement }>(`/announcements/${announcement._id}`, { title, body, type });
+      onSaved(res.announcement);
+      onClose();
+    } catch (err) {
+      setError(err instanceof ApiError ? err.message : "Failed to save");
+    } finally {
+      setSubmitting(false);
+    }
+  }
+
+  return (
+    <Modal title="Edit Announcement" onClose={onClose}>
+      <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+        <Field label="Title" required>
+          <Input value={title} onChange={(e) => setTitle(e.target.value)} maxLength={200} />
+        </Field>
+        <Field label="Body" required>
+          <Textarea value={body} onChange={(e) => setBody(e.target.value)} rows={4} />
+        </Field>
+        <Field label="Type" required>
+          <Select value={type} onChange={(e) => setType(e.target.value as typeof type)}>
+            {TYPES.map((t) => (
+              <option key={t} value={t}>
+                {t}
+              </option>
+            ))}
+          </Select>
+        </Field>
+        {error && <ErrorText>{error}</ErrorText>}
+        <ModalActions onCancel={onClose} submitting={submitting} submitLabel="Save" disabled={!title.trim() || !body.trim()} />
+      </form>
+    </Modal>
+  );
+}
+
 export default function AnnouncementsPage() {
   const { user } = useAuth();
   const [items, setItems] = useState<Announcement[] | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [editing, setEditing] = useState<Announcement | null>(null);
   const canPost = user?.role === "admin" || user?.role === "mentor";
 
   useEffect(() => {
@@ -112,6 +166,11 @@ export default function AnnouncementsPage() {
                 </div>
                 <div className="flex items-center gap-2">
                   <span className={`rounded-full px-2.5 py-1 text-xs font-semibold ${TYPE_STYLE[a.type]}`}>{a.type}</span>
+                  {canPost && (
+                    <button onClick={() => setEditing(a)} className="text-xs font-semibold text-purple hover:text-purple-dk" aria-label="Edit">
+                      Edit
+                    </button>
+                  )}
                   {user?.role === "admin" && (
                     <button onClick={() => handleDelete(a)} className="text-muted hover:text-red" aria-label="Delete">
                       ✕
@@ -122,8 +181,16 @@ export default function AnnouncementsPage() {
               <p className="mt-2 text-sm text-ink2">{a.body}</p>
             </div>
           ))}
-          {items.length === 0 && <p className="py-8 text-center text-sm text-muted">No announcements yet.</p>}
+          {items.length === 0 && <EmptyState message="No announcements yet." />}
         </div>
+      )}
+
+      {editing && (
+        <EditAnnouncementForm
+          announcement={editing}
+          onClose={() => setEditing(null)}
+          onSaved={(updated) => setItems((prev) => prev?.map((x) => (x._id === updated._id ? updated : x)) ?? prev)}
+        />
       )}
     </div>
   );

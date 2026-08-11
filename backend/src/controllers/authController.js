@@ -17,7 +17,14 @@ const cookieOptions = () => ({
 const sendTokens = async (user, res, statusCode = 200, message = 'Success') => {
   const { accessToken, refreshToken } = generateTokenPair(user);
 
-  user.refreshToken = refreshToken;
+  user.refreshTokens = user.refreshTokens || [];
+  user.refreshTokens.push(refreshToken);
+  
+  // limit to 5 devices
+  if (user.refreshTokens.length > 5) {
+    user.refreshTokens.shift();
+  }
+  
   await user.save({ validateBeforeSave: false });
 
   res.cookie('accessToken', accessToken, cookieOptions());
@@ -25,7 +32,7 @@ const sendTokens = async (user, res, statusCode = 200, message = 'Success') => {
 
   const userObj = user.toObject();
   delete userObj.password;
-  delete userObj.refreshToken;
+  delete userObj.refreshTokens;
 
   return ApiResponse.success(res, statusCode, message, {
     user: userObj,
@@ -47,9 +54,56 @@ exports.register = asyncHandler(async (req, res, next) => {
   const existing = await User.findOne({ email });
   if (existing) return next(new AppError('Email already registered', 409));
 
-  const user = await User.create({ ...req.body, role: 'student' });
+  const verifyTokenRaw = crypto.randomBytes(32).toString('hex');
+  const hashedVerifyToken = crypto.createHash('sha256').update(verifyTokenRaw).digest('hex');
+
+  const user = await User.create({ 
+    ...req.body, 
+    role: 'student', 
+    emailVerified: false,
+    emailVerifyToken: hashedVerifyToken
+  });
+  
   auditLog(req, { module: 'auth', action: 'register', resource: 'User', resourceId: user._id, userId: user._id, userEmail: user.email });
-  return await sendTokens(user, res, 201, 'Registration successful');
+
+  let emailed = false;
+  if (process.env.SMTP_HOST && process.env.SMTP_PORT) {
+    try {
+      const sendEmail = require('../utils/email');
+      const verifyUrl = `${process.env.CLIENT_URL || 'http://localhost:3000'}/verify-email?token=${verifyTokenRaw}`;
+      await sendEmail({
+        email: user.email,
+        subject: 'Verify your email for Placeonix',
+        html: `<h2>Welcome!</h2><p>Please click below to verify your email address:</p><a href="${verifyUrl}">${verifyUrl}</a>`,
+      });
+      emailed = true;
+    } catch (err) {
+      logger.error('Email send failed', err);
+    }
+  } else {
+    logger.info(`[dev] Email verify token for ${user.email}: ${verifyTokenRaw}`);
+  }
+
+  return ApiResponse.success(res, 201, 'Registration successful. Please check your email to verify your account.', {
+    emailed,
+    verifyToken: !emailed && process.env.NODE_ENV !== 'production' ? verifyTokenRaw : undefined,
+  });
+});
+
+// @desc   Verify email
+// @route  GET /api/v1/auth/verify-email/:token
+exports.verifyEmail = asyncHandler(async (req, res, next) => {
+  const hashed = crypto.createHash('sha256').update(req.params.token).digest('hex');
+
+  const user = await User.findOne({ emailVerifyToken: hashed });
+  if (!user) return next(new AppError('Invalid or expired verify token', 400));
+
+  user.emailVerified = true;
+  user.emailVerifyToken = undefined;
+  await user.save({ validateBeforeSave: false });
+
+  auditLog(req, { module: 'auth', action: 'verify_email', userId: user._id, userEmail: user.email });
+  return ApiResponse.success(res, 200, 'Email verified successfully. You may now log in.');
 });
 
 // @desc   Login
@@ -61,7 +115,7 @@ exports.login = asyncHandler(async (req, res, next) => {
     return next(new AppError('Please provide email and password', 400));
   }
 
-  const user = await User.findOne({ email }).select('+password');
+  const user = await User.findOne({ email }).select('+password +emailVerified +loginAttempts +lockUntil');
   if (!user) {
     auditLog(req, { module: 'auth', action: 'login', userEmail: email, status: 'failure', message: 'No such account' });
     return next(new AppError('Invalid credentials', 401));
@@ -85,6 +139,10 @@ exports.login = asyncHandler(async (req, res, next) => {
     return next(new AppError(`Account is ${user.status}`, 403));
   }
 
+  if (!user.emailVerified) {
+    return next(new AppError('Please verify your email before logging in', 403));
+  }
+
   await user.resetLoginAttempts();
   auditLog(req, { module: 'auth', action: 'login', userId: user._id, userEmail: user.email });
   return await sendTokens(user, res, 200, 'Login successful');
@@ -102,22 +160,28 @@ exports.refreshToken = asyncHandler(async (req, res, next) => {
   } catch {
     return next(new AppError('Invalid refresh token', 401));
   }
-
-  const user = await User.findById(decoded.id).select('+refreshToken');
-  if (!user || user.refreshToken !== refresh) {
+  const user = await User.findById(decoded.id).select('+refreshTokens');
+  if (!user || !user.refreshTokens || !user.refreshTokens.includes(refresh)) {
     return next(new AppError('Invalid refresh token', 401));
   }
 
+  // Token rotation: remove old refresh token
+  user.refreshTokens = user.refreshTokens.filter(t => t !== refresh);
   return await sendTokens(user, res, 200, 'Token refreshed');
 });
 
 // @desc   Logout
-// @route  POST /api/v1/auth/logout
 exports.logout = asyncHandler(async (req, res) => {
+  const { allDevices } = req.body || {};
   if (req.user) {
-    req.user.refreshToken = undefined;
+    const currentRefresh = req.cookies?.refreshToken;
+    if (allDevices) {
+      req.user.refreshTokens = [];
+    } else if (currentRefresh && req.user.refreshTokens) {
+      req.user.refreshTokens = req.user.refreshTokens.filter(t => t !== currentRefresh);
+    }
     await req.user.save({ validateBeforeSave: false });
-    auditLog(req, { module: 'auth', action: 'logout', userId: req.user._id, userEmail: req.user.email });
+    auditLog(req, { module: 'auth', action: 'logout', userId: req.user._id, userEmail: req.user.email, message: allDevices ? 'All devices' : 'Current device' });
   }
   res.clearCookie('accessToken');
   res.clearCookie('refreshToken');

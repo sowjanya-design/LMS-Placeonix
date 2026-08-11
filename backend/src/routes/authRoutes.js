@@ -19,6 +19,8 @@ router.post(
   auth.register
 );
 
+router.get('/verify-email/:token', auth.verifyEmail);
+
 router.post(
   '/login',
   [

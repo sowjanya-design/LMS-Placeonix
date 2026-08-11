@@ -1,29 +1,58 @@
 @import "tailwindcss";
 
-/* Brand tokens ported 1:1 from frontend/legacy_html/placeonix-hub-portal.html
-   (:root CSS vars) so the Next.js frontend matches the live site
-   (https://placeonix-dashboard.vercel.app/) instead of a generic default theme.
-   Deliberately no dark-mode variant — the brand itself doesn't have one; letting
-   prefers-color-scheme flip this to black/white was the bug that prompted this file. */
+/* ============================================================================
+   CLAYMORPHISM DESIGN SYSTEM
+   ----------------------------------------------------------------------------
+   Pure re-theme: every semantic token below (--purple, --green, --ink, etc.)
+   is the SAME token already consumed by every page/component in the app
+   (text-ink, bg-purple-lt, border-line, ...). Changing values here recolors
+   the entire UI with zero per-file edits — no component, prop, route, or
+   logic changed anywhere.
+   The 4 required pastel backgrounds (lavender/peach/blue/mint) are mapped
+   directly onto the existing "-lt" tokens, which are already used site-wide
+   for badges, icon chips, avatar fills, and hover backgrounds.
+   ============================================================================ */
 :root {
-  --purple: #5b5fc7;
-  --purple-dk: #4a4eb0;
-  --purple-lt: #eef0fb;
-  --purple-mid: #6d71d4;
-  --ink: #19191f;
-  --ink2: #3f3f46;
-  --muted: #71717a;
-  --line: #ecece9;
-  --bg: #f7f7f5;
+  /* Brand / accent */
+  --purple: #7c6ce6;
+  --purple-dk: #6355c7;
+  --purple-lt: #e8e0f7; /* clay lavender */
+  --purple-mid: #8f82ea;
+
+  /* Ink / neutrals */
+  --ink: #111827; /* also the spec's dark button-fill color */
+  --ink2: #3f3f52;
+  --muted: #7a7a8c;
+  --line: #ede7f7; /* soft, barely-visible clay line */
+  --bg: #f5f2fc; /* soft lavender-white section background */
   --white: #ffffff;
-  --green: #3f9c6d;
-  --green-lt: #e7f1ec;
-  --amber: #b58a3a;
-  --amber-lt: #f5efe2;
-  --red: #c2554f;
-  --red-lt: #f6e9e8;
-  --blue: #4f6db0;
-  --blue-lt: #eaeff7;
+
+  /* Status */
+  --green: #3fa47a;
+  --green-lt: #d6f0e8; /* clay mint */
+  --amber: #d89a4a;
+  --amber-lt: #f9d9c0; /* clay peach */
+  --red: #e2726b;
+  --red-lt: #fce3e1;
+  --blue: #5b8fd1;
+  --blue-lt: #d6e8f7; /* clay light blue */
+
+  /* Clay primitives */
+  --clay-lavender: #e8e0f7;
+  --clay-peach: #f9d9c0;
+  --clay-blue: #d6e8f7;
+  --clay-mint: #d6f0e8;
+  --clay-ink: #111827;
+  --clay-radius-sm: 20px;
+  --clay-radius-md: 24px;
+  --clay-radius-lg: 28px;
+  --clay-radius-xl: 32px;
+  --clay-radius-pill: 999px;
+  --clay-shadow-card:
+    0 20px 60px rgba(17, 24, 39, 0.12), inset 0 -4px 0 rgba(17, 24, 39, 0.08),
+    inset 0 4px 8px rgba(255, 255, 255, 0.6);
+  --clay-shadow-btn: 0 8px 20px rgba(17, 24, 39, 0.2);
+  --clay-shadow-soft: 0 10px 30px rgba(17, 24, 39, 0.08);
 }
 
 @theme inline {
@@ -48,6 +77,132 @@
 }
 
 body {
-  background: var(--bg);
+  background: linear-gradient(160deg, #ede7fb 0%, #e3f0f9 35%, #e1f5ee 65%, #fbe9da 100%);
+  background-attachment: fixed;
   color: var(--ink2);
+}
+
+/* Friendly, bold typography per the clay spec. */
+h1,
+h2,
+h3 {
+  font-weight: 800;
+  letter-spacing: -0.01em;
+}
+
+/* ============================================================================
+   GLOBAL CLAY STRUCTURAL OVERRIDES
+   ----------------------------------------------------------------------------
+   Targets the exact, already-compiled Tailwind utility classnames every page
+   already uses (verified across the whole codebase) via attribute selectors
+   ([class~="..."] matches a literal whitespace-delimited class token, so no
+   bracket/parenthesis escaping is needed). This reskins radius/shadow/shape
+   everywhere without touching component JSX, props, or logic.
+   Ordered lowest → highest priority: later same-specificity !important rules
+   win, so generic radius rules sit above the more specific card/button rules
+   they should be overridden by.
+   Colors are deliberately left off this list (handled via the CSS variables
+   above instead) so hover/focus states defined by Tailwind utilities keep
+   working exactly as before — only shape/depth is touched here.
+   ============================================================================ */
+
+/* Small badges/pills/tags → full clay pill. */
+[class~="rounded-md"] {
+  border-radius: var(--clay-radius-pill) !important;
+}
+
+/* Icon chips, small inputs, compact controls → soft clay radius. */
+[class~="rounded-lg"],
+[class~="rounded-[10px]"],
+[class~="rounded-[9px]"] {
+  border-radius: var(--clay-radius-sm) !important;
+}
+
+/* Medium icon boxes / secondary containers. */
+[class~="rounded-xl"] {
+  border-radius: var(--clay-radius-md) !important;
+}
+
+/* Large feature panels (welcome banner, big avatars). */
+[class~="rounded-2xl"] {
+  border-radius: var(--clay-radius-xl) !important;
+}
+
+/* Secondary/outline buttons + form inputs share this exact signature
+   (border-[1.5px] + border-line) everywhere in the app. */
+[class~="border-[1.5px]"][class~="border-line"] {
+  border-radius: var(--clay-radius-sm) !important;
+}
+
+/* THE dominant card/table/list-item signature across every page:
+   plain `border` (never paired with border-[1.5px]) + border-line + bg-white. */
+[class~="border"][class~="border-line"][class~="bg-white"] {
+  border-radius: var(--clay-radius-lg) !important;
+  box-shadow: var(--clay-shadow-card) !important;
+}
+
+/* Subtle stat-card shadow used on a few pages → promote to full clay shadow. */
+[class~="shadow-[0_1px_2px_rgba(24,24,27,.04)]"] {
+  box-shadow: var(--clay-shadow-card) !important;
+}
+
+/* Primary CTA buttons: every "add / create / submit" button across the app
+   shares one of these two exact purple-gradient shadow signatures (including
+   the shared PrimaryButton component and the login button). !important wins
+   over the inline gradient `style` these buttons also carry. */
+[class~="shadow-[0_4px_14px_rgba(108,63,245,0.28)]"],
+[class~="shadow-[0_8px_22px_rgba(108,63,245,0.32)]"] {
+  border-radius: var(--clay-radius-pill) !important;
+  background: var(--clay-ink) !important;
+  box-shadow: var(--clay-shadow-btn) !important;
+}
+
+/* Modal / dropdown panels (search, notifications). */
+[class~="shadow-xl"] {
+  box-shadow: var(--clay-shadow-card) !important;
+}
+
+/* ============================================================================
+   MASCOT UTILITY
+   ----------------------------------------------------------------------------
+   Overlaps the top edge of its parent card for the "popping out of clay"
+   depth effect the spec calls for.
+   ============================================================================ */
+.clay-mascot {
+  display: block;
+  width: 180px;
+  height: auto;
+  margin: 0 auto;
+  transform: translateY(-34%);
+  filter: drop-shadow(0 14px 22px rgba(17, 24, 39, 0.18));
+  pointer-events: none;
+  user-select: none;
+}
+
+@media (min-width: 768px) {
+  .clay-mascot {
+    width: 240px;
+  }
+}
+
+.clay-mascot-lg {
+  width: 220px;
+}
+
+@media (min-width: 768px) {
+  .clay-mascot-lg {
+    width: 280px;
+  }
+}
+
+/* Hides the scrollbar on the floating login card while keeping it scrollable
+   as a safety net on short viewports — the card should never show a visible
+   "adjustable" scrollbar track. */
+.no-scrollbar {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
 }

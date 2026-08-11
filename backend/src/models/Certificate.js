@@ -34,7 +34,7 @@ const certificateSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
-certificateSchema.pre('save', async function (next) {
+certificateSchema.pre('validate', async function (next) {
   if (this.isNew && !this.certificateNumber) {
     const year = new Date().getFullYear();
     const count = await mongoose.model('Certificate').countDocuments();

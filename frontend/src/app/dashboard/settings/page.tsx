@@ -4,10 +4,10 @@ import { useState } from "react";
 import { useAuth, ApiError } from "@/lib/auth-context";
 import { api } from "@/lib/api";
 
-function Field({ label, children }: { label: string; children: React.ReactNode }) {
+function Field({ label, id, children }: { label: string; id?: string; children: React.ReactNode }) {
   return (
     <div className="flex flex-col gap-1.5">
-      <label className="text-sm font-semibold text-ink">{label}</label>
+      <label htmlFor={id} className="text-sm font-semibold text-ink">{label}</label>
       {children}
     </div>
   );
@@ -42,16 +42,16 @@ function ProfileSection() {
     <div className="rounded-[14px] border border-line bg-white p-5">
       <div className="mb-4 text-base font-bold text-ink">Profile</div>
       <div className="grid grid-cols-2 gap-4">
-        <Field label="First name">
-          <input value={firstName} onChange={(e) => setFirstName(e.target.value)} className={inputClass} />
+        <Field label="First name" id="firstName">
+          <input id="firstName" value={firstName} onChange={(e) => setFirstName(e.target.value)} className={inputClass} />
         </Field>
-        <Field label="Last name">
-          <input value={lastName} onChange={(e) => setLastName(e.target.value)} className={inputClass} />
+        <Field label="Last name" id="lastName">
+          <input id="lastName" value={lastName} onChange={(e) => setLastName(e.target.value)} className={inputClass} />
         </Field>
       </div>
       <div className="mt-4">
-        <Field label="Phone">
-          <input value={phone} onChange={(e) => setPhone(e.target.value)} className={inputClass} />
+        <Field label="Phone" id="phone">
+          <input id="phone" value={phone} onChange={(e) => setPhone(e.target.value)} className={inputClass} />
         </Field>
       </div>
       {message && <p className="mt-3 text-sm text-ink2">{message}</p>}
@@ -92,11 +92,11 @@ function PasswordSection() {
     <div className="rounded-[14px] border border-line bg-white p-5">
       <div className="mb-4 text-base font-bold text-ink">Security</div>
       <div className="grid grid-cols-2 gap-4">
-        <Field label="Current password">
-          <input type="password" value={currentPassword} onChange={(e) => setCurrentPassword(e.target.value)} className={inputClass} />
+        <Field label="Current password" id="currentPassword">
+          <input id="currentPassword" type="password" value={currentPassword} onChange={(e) => setCurrentPassword(e.target.value)} className={inputClass} />
         </Field>
-        <Field label="New password">
-          <input type="password" value={newPassword} onChange={(e) => setNewPassword(e.target.value)} className={inputClass} />
+        <Field label="New password" id="newPassword">
+          <input id="newPassword" type="password" value={newPassword} onChange={(e) => setNewPassword(e.target.value)} className={inputClass} />
         </Field>
       </div>
       {message && <p className="mt-3 text-sm text-ink2">{message}</p>}
@@ -111,6 +111,37 @@ function PasswordSection() {
   );
 }
 
+function SessionsSection() {
+  const { logout } = useAuth();
+  const [saving, setSaving] = useState(false);
+
+  async function handleLogoutAll() {
+    if (!confirm("Are you sure you want to log out of all devices?")) return;
+    setSaving(true);
+    try {
+      await api.post("/auth/logout", { allDevices: true });
+      logout();
+    } catch (err) {
+      alert(err instanceof ApiError ? err.message : "Failed to logout from all devices");
+      setSaving(false);
+    }
+  }
+
+  return (
+    <div className="rounded-[14px] border border-line bg-white p-5">
+      <div className="mb-2 text-base font-bold text-ink">Active Sessions</div>
+      <p className="text-sm text-muted mb-4">Manage the devices you are currently logged into.</p>
+      <button
+        onClick={handleLogoutAll}
+        disabled={saving}
+        className="rounded-lg border-[1.5px] border-line px-4 py-2 text-sm font-bold text-red hover:border-red hover:bg-red-lt disabled:opacity-50"
+      >
+        {saving ? "Logging out…" : "Logout from all devices"}
+      </button>
+    </div>
+  );
+}
+
 export default function SettingsPage() {
   return (
     <div className="flex flex-col gap-6">
@@ -120,6 +151,7 @@ export default function SettingsPage() {
       </div>
       <ProfileSection />
       <PasswordSection />
+      <SessionsSection />
     </div>
   );
 }

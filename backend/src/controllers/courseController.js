@@ -1,6 +1,7 @@
 const Course = require('../models/Course');
 const AppError = require('../utils/AppError');
 const ApiResponse = require('../utils/ApiResponse');
+const { auditLog } = require('../utils/audit');
 const asyncHandler = require('../utils/asyncHandler');
 
 // @desc   List courses (public)
@@ -55,6 +56,7 @@ exports.createCourse = asyncHandler(async (req, res) => {
     ...req.body,
     createdBy: req.user._id,
   });
+  auditLog(req, { module: 'courses', action: 'create_course', resource: 'Course', resourceId: course._id, newValue: { title: course.title } });
   return ApiResponse.created(res, 'Course created', { course });
 });
 

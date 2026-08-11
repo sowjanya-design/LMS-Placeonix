@@ -11,7 +11,7 @@ router.get('/', ctrl.listSlots);
 router.post(
   '/',
   authorize('mentor', 'admin'),
-  [body('startTime').isISO8601(), body('endTime').optional().isISO8601()],
+  [body('startTime').isISO8601(), body('endTime').optional().isISO8601(), body('mentor').optional().isMongoId()],
   validate,
   ctrl.createSlot
 );

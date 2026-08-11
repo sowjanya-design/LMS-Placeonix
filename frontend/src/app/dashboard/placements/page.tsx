@@ -4,6 +4,9 @@ import { useEffect, useState } from "react";
 import { useAuth } from "@/lib/auth-context";
 import { api, ApiError } from "@/lib/api";
 import type { PlacementDrive } from "@/lib/types";
+import { Modal } from "@/components/ui/modal";
+import { Field, Input, ModalActions, ErrorText } from "@/components/ui/form";
+import { EmptyState } from "@/components/ui/empty-state";
 
 const STATUS_STYLE: Record<string, string> = {
   open: "bg-green-lt text-green",
@@ -15,12 +18,88 @@ function fmt(iso: string) {
   return new Date(iso).toLocaleDateString(undefined, { day: "numeric", month: "short", year: "numeric" });
 }
 
+function toDateInput(iso?: string) {
+  if (!iso) return "";
+  const d = new Date(iso);
+  return Number.isNaN(d.getTime()) ? "" : d.toISOString().slice(0, 10);
+}
+
+function DriveModal({
+  drive,
+  onClose,
+  onSaved,
+}: {
+  drive?: PlacementDrive;
+  onClose: () => void;
+  onSaved: (d: PlacementDrive) => void;
+}) {
+  const editing = Boolean(drive);
+  const [company, setCompany] = useState(drive?.company ?? "");
+  const [role, setRole] = useState(drive?.role ?? "");
+  const [deadline, setDeadline] = useState(toDateInput(drive?.applicationDeadline));
+  const [pkgMin, setPkgMin] = useState(drive ? String(drive.package.min) : "");
+  const [pkgMax, setPkgMax] = useState(drive ? String(drive.package.max) : "");
+  const [error, setError] = useState<string | null>(null);
+  const [submitting, setSubmitting] = useState(false);
+
+  async function handleSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    setError(null);
+    setSubmitting(true);
+    try {
+      const payload = {
+        company: company.trim(),
+        role: role.trim(),
+        applicationDeadline: new Date(deadline).toISOString(),
+        package: { min: Number(pkgMin) || 0, max: Number(pkgMax) || 0 },
+      };
+      const res = editing
+        ? await api.patch<{ drive: PlacementDrive }>(`/placements/${drive!._id}`, payload)
+        : await api.post<{ drive: PlacementDrive }>("/placements", payload);
+      onSaved(res.drive);
+      onClose();
+    } catch (err) {
+      setError(err instanceof ApiError ? err.message : "Failed to save drive");
+    } finally {
+      setSubmitting(false);
+    }
+  }
+
+  return (
+    <Modal title={editing ? "Edit Drive" : "New Drive"} onClose={onClose}>
+      <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+        <Field label="Company" required>
+          <Input value={company} onChange={(e) => setCompany(e.target.value)} required />
+        </Field>
+        <Field label="Role" required>
+          <Input value={role} onChange={(e) => setRole(e.target.value)} required />
+        </Field>
+        <Field label="Application deadline" required>
+          <Input type="date" value={deadline} onChange={(e) => setDeadline(e.target.value)} required />
+        </Field>
+        <div className="grid grid-cols-2 gap-4">
+          <Field label="Package min" hint="LPA" required>
+            <Input type="number" step="0.1" min="0" value={pkgMin} onChange={(e) => setPkgMin(e.target.value)} required />
+          </Field>
+          <Field label="Package max" hint="LPA" required>
+            <Input type="number" step="0.1" min="0" value={pkgMax} onChange={(e) => setPkgMax(e.target.value)} required />
+          </Field>
+        </div>
+        <ErrorText>{error}</ErrorText>
+        <ModalActions onCancel={onClose} submitting={submitting} submitLabel={editing ? "Save" : "Create"} />
+      </form>
+    </Modal>
+  );
+}
+
 export default function PlacementsPage() {
   const { user } = useAuth();
   const [drives, setDrives] = useState<PlacementDrive[] | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [busyId, setBusyId] = useState<string | null>(null);
   const [applied, setApplied] = useState<Set<string>>(new Set());
+  const [showNew, setShowNew] = useState(false);
+  const [editDrive, setEditDrive] = useState<PlacementDrive | null>(null);
 
   useEffect(() => {
     api
@@ -60,11 +139,33 @@ export default function PlacementsPage() {
     }
   }
 
+  function handleSaved(saved: PlacementDrive) {
+    setDrives((prev) => {
+      if (!prev) return [saved];
+      const idx = prev.findIndex((x) => x._id === saved._id);
+      if (idx === -1) return [saved, ...prev];
+      const next = [...prev];
+      next[idx] = saved;
+      return next;
+    });
+  }
+
   return (
     <div className="flex flex-col gap-6">
-      <div>
-        <h1 className="text-xl font-bold text-ink">Placements</h1>
-        <p className="text-sm text-muted">Open placement drives.</p>
+      <div className="flex items-start justify-between gap-4">
+        <div>
+          <h1 className="text-xl font-bold text-ink">Placements</h1>
+          <p className="text-sm text-muted">Open placement drives.</p>
+        </div>
+        {user?.role === "admin" && (
+          <button
+            onClick={() => setShowNew(true)}
+            className="shrink-0 rounded-[10px] px-4 py-2.5 text-sm font-bold text-white shadow-[0_4px_14px_rgba(108,63,245,0.28)]"
+            style={{ background: "linear-gradient(135deg, var(--purple), var(--purple-dk))" }}
+          >
+            + New Drive
+          </button>
+        )}
       </div>
 
       {error && <p className="text-sm text-red">{error}</p>}
@@ -97,6 +198,14 @@ export default function PlacementsPage() {
                 )}
                 {user?.role === "admin" && (
                   <button
+                    onClick={() => setEditDrive(d)}
+                    className="rounded-lg border-[1.5px] border-line px-3 py-1.5 text-xs font-semibold text-ink2 hover:bg-bg"
+                  >
+                    Edit
+                  </button>
+                )}
+                {user?.role === "admin" && (
+                  <button
                     onClick={() => handleDelete(d)}
                     disabled={busyId === d._id}
                     className="rounded-lg border-[1.5px] border-line px-3 py-1.5 text-xs font-semibold text-red hover:border-red hover:bg-red-lt"
@@ -107,9 +216,12 @@ export default function PlacementsPage() {
               </div>
             </div>
           ))}
-          {drives.length === 0 && <p className="col-span-full py-8 text-center text-sm text-muted">No placement drives yet.</p>}
+          {drives.length === 0 && <EmptyState message="No placement drives yet." className="col-span-full" />}
         </div>
       )}
+
+      {showNew && <DriveModal onClose={() => setShowNew(false)} onSaved={handleSaved} />}
+      {editDrive && <DriveModal drive={editDrive} onClose={() => setEditDrive(null)} onSaved={handleSaved} />}
     </div>
   );
 }

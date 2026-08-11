@@ -59,7 +59,6 @@ export default function CoursesPage() {
                 </div>
                 <div className="mt-auto flex items-center justify-between border-t border-line pt-3 text-xs text-muted">
                   <span>{c.duration}</span>
-                  {c.fee && <span className="font-bold text-ink">₹{c.fee.amount.toLocaleString("en-IN")}</span>}
                 </div>
               </div>
             ))}

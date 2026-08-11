@@ -1,4 +1,4 @@
-export type Role = "admin" | "mentor" | "student";
+export type Role = "super_admin" | "admin" | "mentor" | "student" | "hr" | "recruiter";
 
 export interface User {
   _id: string;
@@ -10,7 +10,7 @@ export interface User {
   status: string;
   avatar?: string | null;
   createdAt: string;
-  studentProfile?: { enrollmentId?: string };
+  studentProfile?: { enrollmentId?: string; resume?: string; skills?: string[]; college?: string; degree?: string; graduationYear?: number; linkedIn?: string; github?: string; portfolio?: string; }; bio?: string;
   mentorProfile?: { studentCount?: number };
 }
 

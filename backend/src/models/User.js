@@ -59,7 +59,7 @@ const userSchema = new mongoose.Schema(
     emailVerifyToken: String,
     passwordResetToken: String,
     passwordResetExpiry: Date,
-    refreshToken: { type: String, select: false },
+    refreshTokens: { type: [String], select: false, default: [] },
     lastLogin: Date,
     loginAttempts: { type: Number, default: 0 },
     lockUntil: Date,

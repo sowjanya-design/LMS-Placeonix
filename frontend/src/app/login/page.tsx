@@ -3,7 +3,7 @@
 import { useState, type FormEvent } from "react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
-import { useAuth, ApiError } from "@/lib/auth-context";
+import { useAuth, ApiError, isApiError } from "@/lib/auth-context";
 
 const DEMO_ACCOUNTS = [
   { role: "Admin", email: "admin@placeonix.in", initial: "A", color: "#5b5fc7" },
@@ -29,7 +29,7 @@ export default function LoginPage() {
       await login(loginEmail, loginPassword);
       router.push("/dashboard");
     } catch (err) {
-      setError(err instanceof ApiError ? err.message : "Something went wrong");
+      setError(isApiError(err) ? err.message : "Something went wrong (is the backend running?)");
     } finally {
       setSubmitting(false);
     }
@@ -47,183 +47,194 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="fixed inset-0 flex bg-white">
-      {/* Left — brand panel */}
-      <div
-        className="hidden flex-1 flex-col p-14 md:flex"
-        style={{ background: "linear-gradient(165deg, #f7f5ff 0%, #efeafe 100%)" }}
-      >
-        <div className="mb-7 flex flex-col gap-1.5">
-          <Image
-            src="/brand/placeonix-logo.png"
-            alt="Placeonix"
-            width={855}
-            height={277}
-            className="h-14 w-auto self-start"
-            priority
-          />
-          <div className="pl-0.5 text-xs font-bold tracking-[1.5px] text-purple uppercase">
-            Training | Placement | Future
-          </div>
-        </div>
-
-        <h1 className="mb-4 text-[2.5rem] leading-[1.12] font-extrabold text-ink">
-          Learn Today.
-          <br />
-          Lead <span className="text-purple">Tomorrow.</span>
-        </h1>
-
-        <p className="max-w-[330px] text-[0.95rem] leading-[1.7] text-muted">
-          Placeonix is a software training institute in Hyderabad (Ameerpet) offering SAP, Data
-          Science, and Generative AI courses with placement support.
-        </p>
-
-        <div className="mt-5 flex flex-1 items-end justify-center">
-          <Image
-            src="/brand/login-illustration.svg"
-            alt="Learning illustration"
-            width={1094}
-            height={760}
-            className="h-auto max-h-full w-auto max-w-[400px] object-contain"
-            priority
-          />
-        </div>
-
-        <div className="mt-6 text-xs text-muted">&copy; 2026 placeonix. All rights reserved.</div>
-      </div>
-
-      {/* Right — login form */}
-      <div className="flex w-full flex-col overflow-y-auto px-6 py-6 md:w-[440px] md:shrink-0 md:px-10">
-        <div className="m-auto w-full max-w-[360px]">
-          <h2 className="mb-1 text-center text-[1.55rem] font-extrabold text-ink">Welcome Back!</h2>
-          <p className="mb-6 text-center text-sm text-muted">Login to access your dashboard</p>
-
-          <form onSubmit={handleSubmit}>
-            <div className="mb-4 flex flex-col gap-1.5">
-              <label htmlFor="email" className="text-[0.78rem] font-bold text-ink">
-                Student ID / Email
-              </label>
-              <div className="relative flex items-center">
-                <span className="pointer-events-none absolute left-3.5 text-muted">
-                  <svg viewBox="0 0 24 24" className="h-[17px] w-[17px] stroke-current" fill="none" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
-                    <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
-                    <circle cx="12" cy="7" r="4" />
-                  </svg>
-                </span>
-                <input
-                  id="email"
-                  type="email"
-                  autoComplete="email"
-                  required
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  placeholder="Enter your Student ID or Email"
-                  className="w-full rounded-[10px] border-[1.5px] border-line bg-[#fbfbfd] py-3.5 pl-11 pr-4 text-sm text-ink outline-none transition-colors focus:border-purple focus:bg-white focus:shadow-[0_0_0_3px_rgba(108,63,245,0.12)]"
-                />
+    <div
+      className="fixed inset-0 h-screen w-screen overflow-hidden bg-[#f6f5fa]"
+    >
+      <div className="flex h-full">
+        {/* Left — brand panel: logo top-left, illustration centered, headline/description/copyright */}
+        <div className="relative hidden h-full md:flex md:w-[60%] md:flex-col" style={{ padding: 0 }}>
+          <div className="flex h-full flex-col" style={{ padding: "40px 60px" }}>
+            <div className="flex flex-col gap-1.5">
+              <Image
+                src="/brand/placeonix-logo.png"
+                alt="Placeonix"
+                width={855}
+                height={277}
+                className="h-10 w-auto self-start"
+                priority
+              />
+              <div className="text-[0.75rem] font-bold tracking-[1.5px] text-[#6c3ff5] uppercase mt-4">
+                Training | Placement | Future
               </div>
             </div>
 
-            <div className="mb-3.5 flex flex-col gap-1.5">
-              <label htmlFor="password" className="text-[0.78rem] font-bold text-ink">
-                Password
-              </label>
-              <div className="relative flex items-center">
-                <span className="pointer-events-none absolute left-3.5 text-muted">
-                  <svg viewBox="0 0 24 24" className="h-[17px] w-[17px] stroke-current" fill="none" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
-                    <rect x="3" y="11" width="18" height="11" rx="2" />
-                    <path d="M7 11V7a5 5 0 0 1 10 0v4" />
-                  </svg>
-                </span>
-                <input
-                  id="password"
-                  type={showPassword ? "text" : "password"}
-                  autoComplete="current-password"
-                  required
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  placeholder="Enter your password"
-                  className="w-full rounded-[10px] border-[1.5px] border-line bg-[#fbfbfd] py-3.5 pr-11 pl-11 text-sm text-ink outline-none transition-colors focus:border-purple focus:bg-white focus:shadow-[0_0_0_3px_rgba(108,63,245,0.12)]"
-                />
+            <h1 className="mt-10 mb-3 text-[3.2rem] leading-[1.1] font-extrabold text-[#1c1c1c]">
+              Learn Today.
+              <br />
+              Lead <span className="text-[#6c3ff5]">Tomorrow.</span>
+            </h1>
+
+            <p className="max-w-[400px] text-[1rem] leading-[1.6] text-gray-500">
+              Skill up. Stand out. We help you build the skills and
+              confidence to launch your dream career.
+            </p>
+
+            <div className="mt-auto flex min-h-0 flex-1 items-end justify-center pt-8 pb-4">
+              <Image
+                src="/brand/login-illustration.svg"
+                alt="Placeonix career process"
+                width={1094}
+                height={760}
+                className="h-full w-full max-w-[85%] object-contain object-bottom"
+              />
+            </div>
+
+            <div className="pt-2 text-[0.85rem] text-gray-500">&copy; 2026 placeonix. All rights reserved.</div>
+          </div>
+        </div>
+        {/* Right — solid white full-height column */}
+        <div className="flex h-full w-full items-center justify-center bg-white px-8 md:w-[40%] md:px-12 lg:px-16">
+          <div
+            className="no-scrollbar flex max-h-[94vh] w-full max-w-[420px] flex-col overflow-y-auto"
+            style={{
+              padding: "40px 0",
+            }}
+          >
+            <div className="m-auto w-full">
+              <h2 className="mb-1 text-center text-[1.55rem] font-extrabold text-ink">Welcome Back!</h2>
+              <p className="mb-5 text-center text-sm text-muted">Login to access your dashboard</p>
+
+              <form onSubmit={handleSubmit}>
+                <div className="mb-3 flex flex-col gap-1.5">
+                  <label htmlFor="email" className="text-[0.78rem] font-bold text-ink">
+                    Student ID / Email
+                  </label>
+                  <div className="relative flex items-center">
+                    <span className="pointer-events-none absolute left-4 text-muted">
+                      <svg viewBox="0 0 24 24" className="h-[17px] w-[17px] stroke-current" fill="none" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+                        <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+                        <circle cx="12" cy="7" r="4" />
+                      </svg>
+                    </span>
+                    <input
+                      id="email"
+                      type="email"
+                      autoComplete="email"
+                      required
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                      placeholder="Enter your Student ID or Email"
+                      className="w-full border-none py-3 pl-11 pr-4 text-sm text-ink outline-none transition-colors focus:bg-white/80"
+                      style={{ background: "rgba(255,255,255,0.6)", borderRadius: "16px", boxShadow: "inset 0 2px 8px rgba(0,0,0,0.08)" }}
+                    />
+                  </div>
+                </div>
+
+                <div className="mb-3 flex flex-col gap-1.5">
+                  <label htmlFor="password" className="text-[0.78rem] font-bold text-ink">
+                    Password
+                  </label>
+                  <div className="relative flex items-center">
+                    <span className="pointer-events-none absolute left-4 text-muted">
+                      <svg viewBox="0 0 24 24" className="h-[17px] w-[17px] stroke-current" fill="none" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+                        <rect x="3" y="11" width="18" height="11" rx="2" />
+                        <path d="M7 11V7a5 5 0 0 1 10 0v4" />
+                      </svg>
+                    </span>
+                    <input
+                      id="password"
+                      type={showPassword ? "text" : "password"}
+                      autoComplete="current-password"
+                      required
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                      placeholder="Enter your password"
+                      className="w-full border-none py-3 pr-11 pl-11 text-sm text-ink outline-none transition-colors focus:bg-white/80"
+                      style={{ background: "rgba(255,255,255,0.6)", borderRadius: "16px", boxShadow: "inset 0 2px 8px rgba(0,0,0,0.08)" }}
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowPassword((v) => !v)}
+                      aria-label={showPassword ? "Hide password" : "Show password"}
+                      className="absolute right-2 flex border-none bg-transparent p-1.5 text-muted hover:text-purple"
+                    >
+                      <svg viewBox="0 0 24 24" className="h-[18px] w-[18px] stroke-current" fill="none" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+                        <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
+                        <circle cx="12" cy="12" r="3" />
+                      </svg>
+                    </button>
+                  </div>
+                </div>
+
+                <div className="mb-4 flex items-center justify-between text-[0.82rem]">
+                  <label className="flex cursor-pointer items-center gap-2 text-muted">
+                    <input type="checkbox" className="accent-purple" />
+                    Remember me
+                  </label>
+                  <a href="#" className="font-bold text-purple no-underline">
+                    Forgot Password?
+                  </a>
+                </div>
+
                 <button
-                  type="button"
-                  onClick={() => setShowPassword((v) => !v)}
-                  aria-label={showPassword ? "Hide password" : "Show password"}
-                  className="absolute right-2 flex border-none bg-transparent p-1.5 text-muted hover:text-purple"
+                  type="submit"
+                  disabled={submitting}
+                  className="flex w-full items-center justify-center gap-2 border-none py-3 text-[0.95rem] font-bold tracking-[0.3px] text-white transition-all hover:-translate-y-0.5 active:scale-95 disabled:translate-y-0 disabled:scale-100 disabled:opacity-70"
+                  style={{ background: "#111827", borderRadius: "50px" }}
                 >
-                  <svg viewBox="0 0 24 24" className="h-[18px] w-[18px] stroke-current" fill="none" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
-                    <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
-                    <circle cx="12" cy="12" r="3" />
+                  {submitting ? "Signing in…" : "Login"}
+                  <svg viewBox="0 0 24 24" className="h-4 w-4 stroke-current" fill="none" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round">
+                    <line x1="5" y1="12" x2="19" y2="12" />
+                    <polyline points="12 5 19 12 12 19" />
                   </svg>
                 </button>
+
+                {error && (
+                  <p role="alert" className="mt-3 text-center text-[0.82rem] text-red">
+                    {error}
+                  </p>
+                )}
+
+                <p className="mt-3 text-center text-[0.8rem] text-muted">
+                  Need help?{" "}
+                  <a href="mailto:support@placeonix.in?subject=Placeonix%20Support" className="font-bold text-purple no-underline">
+                    Contact your administrator
+                  </a>
+                </p>
+              </form>
+
+              <div className="relative my-4 text-center">
+                <div className="absolute top-1/2 right-0 left-0 h-px bg-line" />
+                <span className="relative px-3 text-[0.72rem] font-bold tracking-[0.5px] text-muted uppercase" style={{ background: "rgba(245,240,235,0.85)" }}>
+                  Quick Demo Access
+                </span>
+              </div>
+
+              <div className="flex flex-col gap-1.5">
+                {DEMO_ACCOUNTS.map((acc) => (
+                  <button
+                    key={acc.email}
+                    type="button"
+                    onClick={() => handleQuickLogin(acc.email)}
+                    disabled={submitting}
+                    className="flex items-center gap-3 border-none px-3.5 py-2 text-left transition-all hover:bg-white/50 active:scale-95 disabled:opacity-60 disabled:scale-100"
+                    style={{ background: "rgba(255,255,255,0.6)", borderRadius: "16px", boxShadow: "inset 0 2px 8px rgba(0,0,0,0.08)" }}
+                  >
+                    <div
+                      className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl text-[0.85rem] font-extrabold text-white"
+                      style={{ background: acc.color }}
+                    >
+                      {acc.initial}
+                    </div>
+                    <div className="flex-1">
+                      <div className="text-[0.8rem] font-bold text-ink">{acc.role}</div>
+                      <div className="font-mono text-[0.7rem] text-muted">{acc.email}</div>
+                    </div>
+                    <span className="text-[0.7rem] text-muted">&#8594;</span>
+                  </button>
+                ))}
               </div>
             </div>
-
-            <div className="mb-5 flex items-center justify-between text-[0.82rem]">
-              <label className="flex cursor-pointer items-center gap-2 text-muted">
-                <input type="checkbox" className="accent-purple" />
-                Remember me
-              </label>
-              <a href="#" className="font-bold text-purple no-underline">
-                Forgot Password?
-              </a>
-            </div>
-
-            <button
-              type="submit"
-              disabled={submitting}
-              className="flex w-full items-center justify-center gap-2 rounded-[10px] border-none py-3.5 text-[0.95rem] font-bold tracking-[0.3px] text-white shadow-[0_8px_22px_rgba(108,63,245,0.32)] transition-transform hover:-translate-y-0.5 disabled:translate-y-0 disabled:opacity-70"
-              style={{ background: "linear-gradient(135deg, var(--purple), var(--purple-dk))" }}
-            >
-              {submitting ? "Signing in…" : "Login"}
-              <svg viewBox="0 0 24 24" className="h-4 w-4 stroke-current" fill="none" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round">
-                <line x1="5" y1="12" x2="19" y2="12" />
-                <polyline points="12 5 19 12 12 19" />
-              </svg>
-            </button>
-
-            {error && (
-              <p role="alert" className="mt-3 text-center text-[0.82rem] text-red">
-                {error}
-              </p>
-            )}
-
-            <p className="mt-4 text-center text-[0.8rem] text-muted">
-              Need help?{" "}
-              <a href="mailto:support@placeonix.in?subject=Placeonix%20Support" className="font-bold text-purple no-underline">
-                Contact your administrator
-              </a>
-            </p>
-          </form>
-
-          <div className="relative my-5 text-center">
-            <div className="absolute top-1/2 right-0 left-0 h-px bg-line" />
-            <span className="relative bg-white px-3 text-[0.72rem] font-bold tracking-[0.5px] text-muted uppercase">
-              Quick Demo Access
-            </span>
-          </div>
-
-          <div className="flex flex-col gap-2">
-            {DEMO_ACCOUNTS.map((acc) => (
-              <button
-                key={acc.email}
-                type="button"
-                onClick={() => handleQuickLogin(acc.email)}
-                disabled={submitting}
-                className="flex items-center gap-3 rounded-[10px] border-[1.5px] border-line bg-white px-3.5 py-2.5 text-left transition-colors hover:border-purple hover:bg-purple-lt disabled:opacity-60"
-              >
-                <div
-                  className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-[0.85rem] font-extrabold text-white"
-                  style={{ background: acc.color }}
-                >
-                  {acc.initial}
-                </div>
-                <div className="flex-1">
-                  <div className="text-[0.8rem] font-bold text-ink">{acc.role}</div>
-                  <div className="font-mono text-[0.7rem] text-muted">{acc.email}</div>
-                </div>
-                <span className="text-[0.7rem] text-muted">&#8594;</span>
-              </button>
-            ))}
           </div>
         </div>
       </div>

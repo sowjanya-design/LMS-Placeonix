@@ -63,6 +63,51 @@ describe('Payments API — self-report integrity + access scope', () => {
     expect(updated.fee.due).toBe(5000);
   });
 
+  it('refunding with no amount (= full refund) sets status to refunded, not partial-refund, and blocks a second refund', async () => {
+    // Regression test: refundPayment used `amount >= payment.amount` where a
+    // blank/omitted `amount` is `undefined` — `undefined >= N` is always false
+    // in JS, so every full refund (the documented "leave blank" UX) silently
+    // landed on 'partial-refund' instead of 'refunded'. That defeats the
+    // `if (payment.status === 'refunded') return ...already refunded` guard,
+    // letting the same payment be "refunded" over and over.
+    const { user: mentor } = await createUserAndLogin({ role: 'mentor' });
+    const { user: student } = await createUserAndLogin({ role: 'student' });
+    const { user: admin, token: adminToken } = await createUserAndLogin({ role: 'admin' });
+    const { batch, course } = await createCourseAndBatch(mentor._id, admin._id);
+    const enrollment = await Enrollment.create({
+      student: student._id,
+      course: course._id,
+      batch: batch._id,
+      fee: { total: 5000, paid: 0, due: 5000 },
+    });
+
+    const recordRes = await request(app)
+      .post('/api/v1/payments')
+      .set(auth(adminToken))
+      .send({ enrollmentId: enrollment._id, amount: 5000, method: 'cash' });
+    const paymentId = recordRes.body.data.payment._id;
+
+    const refundRes = await request(app)
+      .post(`/api/v1/payments/${paymentId}/refund`)
+      .set(auth(adminToken))
+      .send({ reason: 'test' }); // no `amount` — the "refund in full" path
+
+    expect(refundRes.statusCode).toBe(200);
+    expect(refundRes.body.data.payment.status).toBe('refunded');
+    expect(refundRes.body.data.payment.refund.amount).toBe(5000);
+
+    const updated = await Enrollment.findById(enrollment._id);
+    expect(updated.fee.paid).toBe(0);
+    expect(updated.fee.due).toBe(5000);
+
+    const secondRefundRes = await request(app)
+      .post(`/api/v1/payments/${paymentId}/refund`)
+      .set(auth(adminToken))
+      .send({ reason: 'test again' });
+    expect(secondRefundRes.statusCode).toBe(400);
+    expect(secondRefundRes.body.message).toMatch(/already refunded/i);
+  });
+
   it('rejects amount/status fields updatePayment does not whitelist (cannot inflate the amount post-hoc)', async () => {
     const { user: mentor } = await createUserAndLogin({ role: 'mentor' });
     const { user: student, token: studentToken } = await createUserAndLogin({ role: 'student' });

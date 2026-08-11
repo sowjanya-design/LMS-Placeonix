@@ -4,6 +4,7 @@ const AppError = require('../utils/AppError');
 const ApiResponse = require('../utils/ApiResponse');
 const asyncHandler = require('../utils/asyncHandler');
 const { auditLog } = require('../utils/audit');
+const { USER_STATUS } = require('../config/constants');
 
 // @desc   List users (admin)
 // @route  GET /api/v1/users?role=&status=&page=&limit=&search=
@@ -117,6 +118,11 @@ exports.updateUser = asyncHandler(async (req, res, next) => {
   // role-specific profile subdocument; a self-editing user is restricted to
   // their own role's fields (a student can't set mentorProfile and vice versa).
   const isAdmin = req.user.role === 'admin';
+  // Only an admin may change a user's account status (active/inactive/suspended);
+  // a self-editing user cannot, mirroring the profile-field restriction above.
+  if (isAdmin && req.body.status && Object.values(USER_STATUS).includes(req.body.status)) {
+    updates.status = req.body.status;
+  }
   if ((isAdmin || target.role === 'student') && req.body.studentProfile) {
     updates.studentProfile = { ...target.studentProfile, ...pick(req.body.studentProfile, STUDENT_PROFILE_FIELDS) };
   }

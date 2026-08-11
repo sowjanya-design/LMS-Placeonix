@@ -2,7 +2,14 @@
 
 import { useEffect, useState } from "react";
 import { api, ApiError } from "@/lib/api";
-import type { Session } from "@/lib/types";
+import { useAuth } from "@/lib/auth-context";
+import type { Session, Batch } from "@/lib/types";
+import { Modal } from "@/components/ui/modal";
+import { Field, Input, Textarea, Select, PrimaryButton, DangerButton, SecondaryButton, ErrorText, ModalActions } from "@/components/ui/form";
+
+// Backend stores mentor notes/homework on the session; the shared Session type
+// only models the read-only list fields, so extend it locally for the edit form.
+type SessionFull = Session & { notes?: string; homework?: string };
 
 const STATUS_STYLE: Record<string, string> = {
   scheduled: "bg-blue-lt text-blue",
@@ -15,22 +22,215 @@ function fmt(iso: string) {
   return new Date(iso).toLocaleString(undefined, { weekday: "short", month: "short", day: "numeric", hour: "numeric", minute: "2-digit" });
 }
 
-export default function SessionsPage() {
-  const [sessions, setSessions] = useState<Session[] | null>(null);
+// ISO → value for <input type="datetime-local"> (local wall-clock, minute precision).
+function toLocalInput(iso?: string) {
+  if (!iso) return "";
+  const d = new Date(iso);
+  const local = new Date(d.getTime() - d.getTimezoneOffset() * 60000);
+  return local.toISOString().slice(0, 16);
+}
+
+interface ScheduleForm {
+  batch: string;
+  title: string;
+  startTime: string;
+  endTime: string;
+  meetingLink: string;
+}
+
+function ScheduleSessionModal({ onClose, onSaved }: { onClose: () => void; onSaved: () => void }) {
+  const [batches, setBatches] = useState<Batch[] | null>(null);
+  const [form, setForm] = useState<ScheduleForm>({ batch: "", title: "", startTime: "", endTime: "", meetingLink: "" });
   const [error, setError] = useState<string | null>(null);
+  const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
     api
-      .get<Session[]>("/sessions?limit=100")
+      .get<Batch[]>("/batches?limit=100")
+      .then(setBatches)
+      .catch(() => setBatches([]));
+  }, []);
+
+  async function handleSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    setSubmitting(true);
+    setError(null);
+    try {
+      await api.post("/sessions", {
+        batch: form.batch,
+        title: form.title,
+        startTime: new Date(form.startTime).toISOString(),
+        endTime: new Date(form.endTime).toISOString(),
+        ...(form.meetingLink ? { meetingLink: form.meetingLink } : {}),
+      });
+      onSaved();
+      onClose();
+    } catch (err) {
+      setError(err instanceof ApiError ? err.message : "Failed to schedule session");
+      setSubmitting(false);
+    }
+  }
+
+  return (
+    <Modal title="Schedule Session" onClose={onClose}>
+      <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+        <Field label="Batch" required>
+          <Select required value={form.batch} onChange={(e) => setForm({ ...form, batch: e.target.value })}>
+            <option value="">Select a batch…</option>
+            {batches?.map((b) => (
+              <option key={b._id} value={b._id}>
+                {b.name} ({b.code})
+              </option>
+            ))}
+          </Select>
+        </Field>
+        <Field label="Title" required>
+          <Input required value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} />
+        </Field>
+        <Field label="Start time" required>
+          <Input type="datetime-local" required value={form.startTime} onChange={(e) => setForm({ ...form, startTime: e.target.value })} />
+        </Field>
+        <Field label="End time" required>
+          <Input type="datetime-local" required value={form.endTime} onChange={(e) => setForm({ ...form, endTime: e.target.value })} />
+        </Field>
+        <Field label="Meeting link" hint="Optional — full URL for online sessions.">
+          <Input type="url" placeholder="https://…" value={form.meetingLink} onChange={(e) => setForm({ ...form, meetingLink: e.target.value })} />
+        </Field>
+        {error && <ErrorText>{error}</ErrorText>}
+        <ModalActions onCancel={onClose} submitting={submitting} submitLabel="Schedule" />
+      </form>
+    </Modal>
+  );
+}
+
+interface EditForm {
+  title: string;
+  startTime: string;
+  endTime: string;
+  meetingLink: string;
+  notes: string;
+  homework: string;
+}
+
+function EditSessionModal({ session, onClose, onSaved }: { session: SessionFull; onClose: () => void; onSaved: () => void }) {
+  const [form, setForm] = useState<EditForm>({
+    title: session.title,
+    startTime: toLocalInput(session.startTime),
+    endTime: toLocalInput(session.endTime),
+    meetingLink: session.meetingLink ?? "",
+    notes: session.notes ?? "",
+    homework: session.homework ?? "",
+  });
+  const [error, setError] = useState<string | null>(null);
+  const [submitting, setSubmitting] = useState(false);
+
+  async function handleSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    setSubmitting(true);
+    setError(null);
+    try {
+      await api.patch(`/sessions/${session._id}`, {
+        title: form.title,
+        startTime: new Date(form.startTime).toISOString(),
+        endTime: new Date(form.endTime).toISOString(),
+        meetingLink: form.meetingLink,
+        notes: form.notes,
+        homework: form.homework,
+      });
+      onSaved();
+      onClose();
+    } catch (err) {
+      setError(err instanceof ApiError ? err.message : "Failed to update session");
+      setSubmitting(false);
+    }
+  }
+
+  return (
+    <Modal title="Edit Session" onClose={onClose}>
+      <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+        <Field label="Title" required>
+          <Input required value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} />
+        </Field>
+        <Field label="Start time" required>
+          <Input type="datetime-local" required value={form.startTime} onChange={(e) => setForm({ ...form, startTime: e.target.value })} />
+        </Field>
+        <Field label="End time" required>
+          <Input type="datetime-local" required value={form.endTime} onChange={(e) => setForm({ ...form, endTime: e.target.value })} />
+        </Field>
+        <Field label="Meeting link">
+          <Input type="url" placeholder="https://…" value={form.meetingLink} onChange={(e) => setForm({ ...form, meetingLink: e.target.value })} />
+        </Field>
+        <Field label="Notes">
+          <Textarea rows={3} value={form.notes} onChange={(e) => setForm({ ...form, notes: e.target.value })} />
+        </Field>
+        <Field label="Homework">
+          <Textarea rows={3} value={form.homework} onChange={(e) => setForm({ ...form, homework: e.target.value })} />
+        </Field>
+        {error && <ErrorText>{error}</ErrorText>}
+        <ModalActions onCancel={onClose} submitting={submitting} submitLabel="Save changes" />
+      </form>
+    </Modal>
+  );
+}
+
+export default function SessionsPage() {
+  const { user } = useAuth();
+  const canManage = user?.role === "admin" || user?.role === "mentor";
+
+  const [sessions, setSessions] = useState<SessionFull[] | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const [showSchedule, setShowSchedule] = useState(false);
+  const [editing, setEditing] = useState<SessionFull | null>(null);
+  const [busyId, setBusyId] = useState<string | null>(null);
+
+  function load() {
+    api
+      .get<SessionFull[]>("/sessions?limit=100")
       .then(setSessions)
       .catch((err) => setError(err instanceof ApiError ? err.message : "Failed to load sessions"));
-  }, []);
+  }
+
+  useEffect(load, []);
+
+  async function runAction(id: string, action: "start" | "complete") {
+    setBusyId(id);
+    setError(null);
+    try {
+      await api.patch(`/sessions/${id}/${action}`);
+      load();
+    } catch (err) {
+      setError(err instanceof ApiError ? err.message : `Failed to ${action} session`);
+    } finally {
+      setBusyId(null);
+    }
+  }
+
+  async function handleDelete(s: SessionFull) {
+    if (!confirm(`Cancel session "${s.title}"?`)) return;
+    setBusyId(s._id);
+    setError(null);
+    try {
+      await api.delete(`/sessions/${s._id}`);
+      load();
+    } catch (err) {
+      setError(err instanceof ApiError ? err.message : "Failed to cancel session");
+    } finally {
+      setBusyId(null);
+    }
+  }
 
   return (
     <div className="flex flex-col gap-6">
-      <div>
-        <h1 className="text-xl font-bold text-ink">Sessions</h1>
-        <p className="text-sm text-muted">Live classes and recordings.</p>
+      <div className="flex flex-wrap items-start justify-between gap-4">
+        <div>
+          <h1 className="text-xl font-bold text-ink">Sessions</h1>
+          <p className="text-sm text-muted">Live classes and recordings.</p>
+        </div>
+        {canManage && (
+          <PrimaryButton type="button" onClick={() => setShowSchedule(true)}>
+            + Schedule Session
+          </PrimaryButton>
+        )}
       </div>
 
       {error && <p className="text-sm text-red">{error}</p>}
@@ -72,11 +272,36 @@ export default function SessionsPage() {
                   Recording
                 </a>
               )}
+              {canManage && (
+                <div className="flex flex-wrap items-center gap-2">
+                  {s.status === "scheduled" && (
+                    <SecondaryButton type="button" disabled={busyId === s._id} onClick={() => runAction(s._id, "start")} className="!px-3 !py-1.5 !text-xs">
+                      Start
+                    </SecondaryButton>
+                  )}
+                  {s.status === "live" && (
+                    <SecondaryButton type="button" disabled={busyId === s._id} onClick={() => runAction(s._id, "complete")} className="!px-3 !py-1.5 !text-xs">
+                      Complete
+                    </SecondaryButton>
+                  )}
+                  <SecondaryButton type="button" onClick={() => setEditing(s)} className="!px-3 !py-1.5 !text-xs">
+                    Edit
+                  </SecondaryButton>
+                  {(s.status === "scheduled" || s.status === "live") && (
+                    <DangerButton type="button" disabled={busyId === s._id} onClick={() => handleDelete(s)}>
+                      Cancel
+                    </DangerButton>
+                  )}
+                </div>
+              )}
             </div>
           ))}
           {sessions.length === 0 && <p className="py-8 text-center text-sm text-muted">No sessions scheduled.</p>}
         </div>
       )}
+
+      {showSchedule && <ScheduleSessionModal onClose={() => setShowSchedule(false)} onSaved={load} />}
+      {editing && <EditSessionModal session={editing} onClose={() => setEditing(null)} onSaved={load} />}
     </div>
   );
 }

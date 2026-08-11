@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { api, ApiError } from "@/lib/api";
+import { EmptyState } from "@/components/ui/empty-state";
 
 interface MyStudentRow {
   _id: string;
@@ -47,9 +48,9 @@ export default function MyStudentsPage() {
                 <tr key={r._id} className="border-b border-line last:border-0">
                   <td className="px-4 py-3">
                     <div className="font-semibold text-ink">
-                      {r.student.firstName} {r.student.lastName}
+                      {r.student?.firstName || "Unknown"} {r.student?.lastName || "Student"}
                     </div>
-                    <div className="text-xs text-muted">{r.student.email}</div>
+                    <div className="text-xs text-muted">{r.student?.email || "No email provided"}</div>
                   </td>
                   <td className="px-4 py-3 text-ink2">{r.batch?.name}</td>
                   <td className="px-4 py-3 text-ink2">{r.course?.title}</td>
@@ -65,8 +66,8 @@ export default function MyStudentsPage() {
               ))}
               {rows.length === 0 && (
                 <tr>
-                  <td colSpan={4} className="px-4 py-8 text-center text-muted">
-                    No students in your batches yet.
+                  <td colSpan={4} className="px-4">
+                    <EmptyState message="No students in your batches yet." />
                   </td>
                 </tr>
               )}

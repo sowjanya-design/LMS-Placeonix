@@ -207,9 +207,10 @@ exports.refundPayment = asyncHandler(async (req, res, next) => {
   if (payment.status === 'refunded') return next(new AppError('Already refunded', 400));
 
   const { amount, reason, refundTransactionId } = req.body;
-  payment.status = amount >= payment.amount ? 'refunded' : 'partial-refund';
+  const refundAmount = amount || payment.amount;
+  payment.status = refundAmount >= payment.amount ? 'refunded' : 'partial-refund';
   payment.refund = {
-    amount: amount || payment.amount,
+    amount: refundAmount,
     reason,
     refundTransactionId,
     refundedOn: new Date(),
@@ -218,7 +219,7 @@ exports.refundPayment = asyncHandler(async (req, res, next) => {
 
   // Update enrollment
   await Enrollment.findByIdAndUpdate(payment.enrollment, {
-    $inc: { 'fee.paid': -(amount || payment.amount), 'fee.due': amount || payment.amount },
+    $inc: { 'fee.paid': -refundAmount, 'fee.due': refundAmount },
   });
 
   auditLog(req, {
@@ -226,7 +227,7 @@ exports.refundPayment = asyncHandler(async (req, res, next) => {
     action: 'refund',
     resource: 'Payment',
     resourceId: payment._id,
-    newValue: { amount: amount || payment.amount, reason, status: payment.status },
+    newValue: { amount: refundAmount, reason, status: payment.status },
   });
 
   return ApiResponse.success(res, 200, 'Refund processed', { payment });

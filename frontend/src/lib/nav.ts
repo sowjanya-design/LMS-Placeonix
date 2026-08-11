@@ -71,3 +71,22 @@ export const NAV: Record<Role, NavItem[]> = {
     { id: "support", label: "Support", icon: "help" },
   ],
 };
+
+NAV.super_admin = [...NAV.admin];
+NAV.hr = [
+  { id: "dashboard", label: "Dashboard", icon: "home" },
+  { id: "students", label: "Students", icon: "users" },
+  { id: "placements", label: "Placements", icon: "briefcase" },
+  { id: "companies", label: "Companies", icon: "briefcase" },
+  { id: "alumni", label: "Alumni", icon: "award" },
+  { id: "reports", label: "Reports", icon: "chart" },
+  { id: "settings", label: "Settings", icon: "settings" },
+];
+NAV.recruiter = [
+  { id: "dashboard", label: "Dashboard", icon: "home" },
+  { id: "placements", label: "Placements", icon: "briefcase" },
+  { id: "companies", label: "Companies", icon: "briefcase" },
+  { id: "students", label: "Students", icon: "users" },
+  { id: "alumni", label: "Alumni", icon: "award" },
+  { id: "settings", label: "Settings", icon: "settings" },
+];

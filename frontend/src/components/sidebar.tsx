@@ -29,9 +29,10 @@ export function Sidebar() {
   return (
     <nav
       aria-label="Primary"
-      className="hidden h-screen w-[248px] shrink-0 flex-col border-r border-line bg-white md:flex"
+      className="hidden h-screen w-[264px] shrink-0 flex-col bg-[linear-gradient(180deg,#ffffff_0%,#f7f4fd_100%)] md:flex"
+      style={{ boxShadow: "8px 0 40px rgba(17,24,39,0.06)" }}
     >
-      <div className="flex items-center justify-center border-b border-line px-5 py-5">
+      <div className="flex items-center justify-center px-5 py-6">
         <Image
           src="/brand/placeonix-logo.png"
           alt="Placeonix"
@@ -42,10 +43,13 @@ export function Sidebar() {
         />
       </div>
 
-      <div className="mx-4 mt-3.5 flex items-center gap-2.5 rounded-xl border border-line bg-bg p-3">
+      <div
+        className="mx-4 mt-2 flex items-center gap-2.5 rounded-[22px] bg-white p-3"
+        style={{ boxShadow: "var(--clay-shadow-soft)" }}
+      >
         <div
-          className="flex h-9 w-9 shrink-0 items-center justify-center rounded-[10px] text-[0.82rem] font-extrabold text-white"
-          style={{ background: ROLE_COLOR[user.role] }}
+          className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl text-[0.82rem] font-extrabold text-white"
+          style={{ background: ROLE_COLOR[user.role], boxShadow: "0 4px 10px rgba(17,24,39,0.18)" }}
         >
           {initials}
         </div>
@@ -57,7 +61,7 @@ export function Sidebar() {
         </div>
       </div>
 
-      <div className="flex-1 overflow-y-auto px-2.5 py-2">
+      <div className="flex-1 overflow-y-auto px-3 py-4">
         {items.map((item) => {
           const href = hrefFor(item.id);
           const active = pathname === href;
@@ -66,13 +70,11 @@ export function Sidebar() {
               key={item.id}
               href={href}
               aria-current={active ? "page" : undefined}
-              className={`relative mb-0.5 flex items-center gap-3 rounded-[9px] px-3.5 py-2.5 text-[0.84rem] font-semibold transition-colors ${
-                active ? "bg-purple-lt text-purple" : "text-muted hover:bg-bg hover:text-ink"
+              className={`relative mb-1 flex items-center gap-3 rounded-full px-4 py-2.5 text-[0.84rem] font-bold transition-all ${
+                active ? "bg-purple text-white" : "text-muted hover:bg-purple-lt hover:text-purple"
               }`}
+              style={active ? { boxShadow: "0 6px 16px rgba(124,108,230,0.35)" } : undefined}
             >
-              {active && (
-                <span className="absolute top-1/2 -left-[7px] h-[18px] w-[3px] -translate-y-1/2 rounded-[3px] bg-purple" />
-              )}
               <Icon name={item.icon} className="h-[18px] w-[18px] shrink-0" />
               {item.label}
             </Link>
@@ -80,10 +82,10 @@ export function Sidebar() {
         })}
       </div>
 
-      <div className="border-t border-line p-3.5">
+      <div className="p-4">
         <button
           onClick={handleLogout}
-          className="flex w-full items-center justify-center gap-2 rounded-[9px] border border-line bg-white py-2.5 text-[0.82rem] font-semibold text-muted transition-colors hover:border-red hover:bg-red-lt hover:text-red"
+          className="flex w-full items-center justify-center gap-2 rounded-full bg-[rgba(226,114,107,0.1)] py-2.5 text-[0.82rem] font-bold text-red transition-all hover:bg-red hover:text-white active:scale-95"
         >
           <Icon name="logout" className="h-4 w-4" />
           Logout

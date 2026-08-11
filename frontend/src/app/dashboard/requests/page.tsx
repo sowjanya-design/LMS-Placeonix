@@ -59,7 +59,7 @@ export default function RequestsPage() {
             <div key={r._id} className="flex flex-wrap items-center gap-4 rounded-[14px] border border-line bg-white p-4">
               <div className="min-w-[200px] flex-1">
                 <div className="font-bold text-ink">
-                  {r.student.firstName} {r.student.lastName}
+                  {r.student?.firstName || "Unknown"} {r.student?.lastName || "Student"}
                 </div>
                 <div className="text-xs text-muted">
                   {r.batch?.name} {r.reason && `· ${r.reason}`}

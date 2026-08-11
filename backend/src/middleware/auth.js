@@ -49,12 +49,12 @@ const protect = asyncHandler(async (req, res, next) => {
  */
 const authorize = (...roles) => (req, res, next) => {
   if (!req.user) return next(new AppError('Not authenticated', 401));
-  if (!roles.includes(req.user.role)) {
-    return next(
-      new AppError(`Forbidden — role '${req.user.role}' cannot access this resource`, 403)
-    );
+  if (req.user.role === 'super_admin' || roles.includes(req.user.role)) {
+    return next();
   }
-  next();
+  return next(
+    new AppError(`Forbidden — role '${req.user.role}' cannot access this resource`, 403)
+  );
 };
 
 /**
@@ -63,7 +63,7 @@ const authorize = (...roles) => (req, res, next) => {
  */
 const ownerOrAdmin = (paramKey = 'id') => (req, res, next) => {
   const targetId = req.params[paramKey];
-  if (req.user.role === 'admin') return next();
+  if (req.user.role === 'super_admin' || req.user.role === 'admin') return next();
   if (String(req.user._id) === String(targetId)) return next();
   return next(new AppError('Forbidden — you can only access your own resources', 403));
 };
@@ -80,7 +80,7 @@ const ownerOrAdmin = (paramKey = 'id') => (req, res, next) => {
  */
 const can = (...permissionCodes) => async (req, res, next) => {
   if (!req.user) return next(new AppError('Not authenticated', 401));
-  if (req.user.role === 'admin') return next();
+  if (req.user.role === 'super_admin' || req.user.role === 'admin') return next();
 
   const role = await Role.findOne({ code: req.user.role });
   const granted = role?.permissions || [];

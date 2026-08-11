@@ -23,10 +23,7 @@ app.use(
   })
 );
 
-// A '*' whitelist combined with credentials:true undermines cookie-based
-// auth's cross-site protections — any site could read the response with
-// the user's cookies attached. '*' is only tolerable in development; a
-// production deploy must fail fast rather than silently run wide open.
+
 if (process.env.NODE_ENV === 'production' && (process.env.CLIENT_URL || '*').split(',').includes('*')) {
   throw new Error(
     'CLIENT_URL is unset or "*" in production. Set it to an explicit, comma-separated list of allowed origins before starting the server.'
@@ -49,7 +46,7 @@ app.use(
 
 // Rate limiting
 const limiter = rateLimit({
-  windowMs: (Number(process.env.RATE_LIMIT_WINDOW) || 15) * 60 * 1000,
+  windowMs: (Number(process.env.RATE_LIMIT_WINDOW) || 150) * 60 * 1000,
   max: Number(process.env.RATE_LIMIT_MAX) || 100,
   standardHeaders: true,
   legacyHeaders: false,
@@ -58,7 +55,7 @@ const limiter = rateLimit({
 app.use('/api', limiter);
 
 const authLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000,
+  windowMs: 150 * 60 * 1000,
   max: 10,
   message: { success: false, message: 'Too many authentication attempts' },
 });
@@ -81,7 +78,10 @@ if (process.env.NODE_ENV !== 'production') {
 
 // Static — uploaded files
 const uploadDir = process.env.FILE_UPLOAD_PATH || path.join(__dirname, '../uploads');
-app.use('/uploads', express.static(uploadDir));
+const { protect } = require('./middleware/auth');
+
+app.use('/uploads/avatars', express.static(path.join(uploadDir, 'avatars'))); // avatars can be public
+app.use('/uploads', protect, express.static(uploadDir));
 
 // ─── Friendly Landing Page at / ───
 app.get('/', (req, res) => {
@@ -176,7 +176,6 @@ app.get('/', (req, res) => {
   `);
 });
 
-// Health
 app.get('/health', (req, res) => {
   res.json({
     success: true,
