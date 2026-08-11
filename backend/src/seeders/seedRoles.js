@@ -38,6 +38,27 @@ const ROLE_DEFAULTS = [
     isSystem: true,
     permissions: [],
   },
+  {
+    code: 'super_admin',
+    name: 'Super Admin',
+    description: 'Ultimate platform access, bypasses all restrictions',
+    isSystem: true,
+    permissions: PERMISSIONS.map((p) => p.code),
+  },
+  {
+    code: 'hr',
+    name: 'Human Resources',
+    description: 'Manages placements and companies',
+    isSystem: true,
+    permissions: [],
+  },
+  {
+    code: 'recruiter',
+    name: 'Recruiter',
+    description: 'Views student profiles and placement drives',
+    isSystem: true,
+    permissions: [],
+  },
 ];
 
 /**
