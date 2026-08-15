@@ -5,7 +5,7 @@ import { api, ApiError } from "@/lib/api";
 import { useAuth } from "@/lib/auth-context";
 import type { Session, Batch } from "@/lib/types";
 import { Modal } from "@/components/ui/modal";
-import { Field, Input, Textarea, Select, PrimaryButton, DangerButton, SecondaryButton, ErrorText, ModalActions } from "@/components/ui/form";
+import VideoUpload from "@/components/video/VideoUpload";
 
 // Backend stores mentor notes/homework on the session; the shared Session type
 // only models the read-only list fields, so extend it locally for the edit form.
@@ -173,6 +173,31 @@ function EditSessionModal({ session, onClose, onSaved }: { session: SessionFull;
   );
 }
 
+function UploadRecordingModal({ session, onClose, onSaved }: { session: SessionFull; onClose: () => void; onSaved: () => void }) {
+  return (
+    <Modal title="Upload Class Recording" onClose={onClose}>
+      <div className="flex flex-col gap-4 p-2">
+        <p className="text-sm text-muted">
+          The session <strong>{session.title}</strong> has been marked as completed. Please upload the recording for the students.
+        </p>
+        <VideoUpload 
+          courseId={session.course?._id || "course_id"} 
+          lessonId={session._id} 
+          onUploadComplete={async (data) => {
+            try {
+              await api.patch(`/sessions/${session._id}`, { recordingUrl: `cloudflare_stream_${data.videoUID}` });
+              onSaved();
+              onClose();
+            } catch (err) {
+              alert("Failed to save recording link to session.");
+            }
+          }} 
+        />
+      </div>
+    </Modal>
+  );
+}
+
 export default function SessionsPage() {
   const { user } = useAuth();
   const canManage = user?.role === "admin" || user?.role === "mentor";
@@ -181,6 +206,7 @@ export default function SessionsPage() {
   const [error, setError] = useState<string | null>(null);
   const [showSchedule, setShowSchedule] = useState(false);
   const [editing, setEditing] = useState<SessionFull | null>(null);
+  const [uploadingFor, setUploadingFor] = useState<SessionFull | null>(null);
   const [busyId, setBusyId] = useState<string | null>(null);
 
   function load() {
@@ -192,12 +218,15 @@ export default function SessionsPage() {
 
   useEffect(load, []);
 
-  async function runAction(id: string, action: "start" | "complete") {
-    setBusyId(id);
+  async function runAction(session: SessionFull, action: "start" | "complete") {
+    setBusyId(session._id);
     setError(null);
     try {
-      await api.patch(`/sessions/${id}/${action}`);
+      await api.patch(`/sessions/${session._id}/${action}`);
       load();
+      if (action === "complete") {
+        setUploadingFor(session);
+      }
     } catch (err) {
       setError(err instanceof ApiError ? err.message : `Failed to ${action} session`);
     } finally {
@@ -264,23 +293,23 @@ export default function SessionsPage() {
               )}
               {s.status === "completed" && s.recordingUrl && (
                 <a
-                  href={s.recordingUrl}
+                  href={s.recordingUrl.startsWith('cloudflare_stream_') ? `/dashboard/videos/player?uid=${s.recordingUrl.replace('cloudflare_stream_', '')}` : s.recordingUrl}
                   target="_blank"
                   rel="noreferrer"
-                  className="rounded-lg border-[1.5px] border-line px-3 py-1.5 text-xs font-semibold text-ink2 hover:border-purple hover:text-purple"
+                  className="rounded-lg border-[1.5px] border-line px-3 py-1.5 text-xs font-semibold text-ink2 hover:border-purple hover:text-purple flex items-center gap-2"
                 >
-                  Recording
+                  ▶ Watch Recording
                 </a>
               )}
               {canManage && (
                 <div className="flex flex-wrap items-center gap-2">
                   {s.status === "scheduled" && (
-                    <SecondaryButton type="button" disabled={busyId === s._id} onClick={() => runAction(s._id, "start")} className="!px-3 !py-1.5 !text-xs">
+                    <SecondaryButton type="button" disabled={busyId === s._id} onClick={() => runAction(s, "start")} className="!px-3 !py-1.5 !text-xs">
                       Start
                     </SecondaryButton>
                   )}
                   {s.status === "live" && (
-                    <SecondaryButton type="button" disabled={busyId === s._id} onClick={() => runAction(s._id, "complete")} className="!px-3 !py-1.5 !text-xs">
+                    <SecondaryButton type="button" disabled={busyId === s._id} onClick={() => runAction(s, "complete")} className="!px-3 !py-1.5 !text-xs">
                       Complete
                     </SecondaryButton>
                   )}
@@ -302,6 +331,7 @@ export default function SessionsPage() {
 
       {showSchedule && <ScheduleSessionModal onClose={() => setShowSchedule(false)} onSaved={load} />}
       {editing && <EditSessionModal session={editing} onClose={() => setEditing(null)} onSaved={load} />}
+      {uploadingFor && <UploadRecordingModal session={uploadingFor} onClose={() => setUploadingFor(null)} onSaved={load} />}
     </div>
   );
 }

@@ -32,7 +32,7 @@ router.patch(
     body('startTime').optional().isISO8601(),
     body('endTime').optional().isISO8601(),
     body('meetingLink').optional({ checkFalsy: true }).isURL(),
-    body('recordingUrl').optional({ checkFalsy: true }).isURL(),
+    body('recordingUrl').optional({ checkFalsy: true }).isString(),
     body('notes').optional().isString().isLength({ max: 5000 }),
     body('homework').optional().isString().isLength({ max: 5000 }),
   ],
@@ -46,7 +46,7 @@ router.patch(
   '/:id/complete',
   authorize('mentor', 'admin'),
   [
-    body('recordingUrl').optional({ checkFalsy: true }).isURL(),
+    body('recordingUrl').optional({ checkFalsy: true }).isString(),
     body('notes').optional().isString().isLength({ max: 5000 }),
     body('homework').optional().isString().isLength({ max: 5000 }),
   ],

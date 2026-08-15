@@ -1,0 +1,39 @@
+"use client";
+
+import { useSearchParams } from 'next/navigation';
+import { Suspense } from 'react';
+
+function Player() {
+  const searchParams = useSearchParams();
+  const uid = searchParams.get('uid');
+
+  if (!uid) {
+    return <div className="p-8 text-center text-red-600">Video UID not found.</div>;
+  }
+
+  return (
+    <div className="flex flex-col gap-6">
+      <h1 className="text-xl font-bold text-ink mb-4">Class Recording</h1>
+      <div className="aspect-video w-full max-w-4xl mx-auto rounded-lg overflow-hidden border border-line bg-black">
+        {/* Replace your-subdomain with your actual Cloudflare Stream subdomain when known */}
+        <iframe
+          src={`https://customer-xxxxxxxxxxxx.cloudflarestream.com/${uid}/iframe`}
+          style={{ border: "none", width: "100%", height: "100%" }}
+          allow="accelerometer; gyroscope; autoplay; encrypted-media; picture-in-picture;"
+          allowFullScreen={true}
+        ></iframe>
+      </div>
+      <p className="text-sm text-muted text-center">
+        Powered by Cloudflare Stream. This video is securely embedded.
+      </p>
+    </div>
+  );
+}
+
+export default function VideoPlayerPage() {
+  return (
+    <Suspense fallback={<div className="p-8 text-center">Loading player...</div>}>
+      <Player />
+    </Suspense>
+  );
+}
