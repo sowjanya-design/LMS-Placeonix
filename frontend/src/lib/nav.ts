@@ -34,6 +34,7 @@ export const NAV: Record<Role, NavItem[]> = {
     { id: "announcements", label: "Announcements", icon: "bell" },
     { id: "reports", label: "Reports", icon: "chart" },
     { id: "settings", label: "Settings", icon: "settings" },
+    { id: "upload-video", label: "Upload Video", icon: "chalkboard" },
   ],
   mentor: [
     { id: "dashboard", label: "Dashboard", icon: "home" },
@@ -50,6 +51,7 @@ export const NAV: Record<Role, NavItem[]> = {
     { id: "reviews", label: "Feedback", icon: "star" },
     { id: "leaderboard", label: "Leaderboard", icon: "award" },
     { id: "profile", label: "Profile", icon: "user" },
+    { id: "upload-video", label: "Upload Video", icon: "chalkboard" },
   ],
   student: [
     { id: "dashboard", label: "Dashboard", icon: "home" },
