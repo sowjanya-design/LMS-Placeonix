@@ -6,6 +6,7 @@ import { useAuth } from "@/lib/auth-context";
 import type { Session, Batch } from "@/lib/types";
 import { Modal } from "@/components/ui/modal";
 import VideoUpload from "@/components/video/VideoUpload";
+import { Field, Input, Textarea, Select, PrimaryButton, DangerButton, SecondaryButton, ErrorText, ModalActions } from "@/components/ui/form";
 
 // Backend stores mentor notes/homework on the session; the shared Session type
 // only models the read-only list fields, so extend it locally for the edit form.
