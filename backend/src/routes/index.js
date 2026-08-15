@@ -26,6 +26,7 @@ router.use('/companies', require('./companyRoutes'));
 router.use('/mock-interviews', require('./mockInterviewRoutes'));
 router.use('/alumni', require('./alumniRoutes'));
 router.use('/office-hours', require('./officeHourRoutes'));
+router.use('/videos', require('../modules/video/video.routes'));
 router.use('/audit-logs', require('./auditLogRoutes'));
 router.use('/roles', require('./roleRoutes'));
 
@@ -44,6 +45,7 @@ router.get('/', (req, res) => {
       attendance: '/api/v1/attendance',
       placements: '/api/v1/placements',
       announcements: '/api/v1/announcements',
+      videos: '/api/v1/videos',
       notifications: '/api/v1/notifications',
       leads: '/api/v1/leads',
       reviews: '/api/v1/reviews',
