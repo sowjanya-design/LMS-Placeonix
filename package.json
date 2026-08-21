@@ -9,6 +9,7 @@
   "description": "Placeonix Hub — convenience scripts that delegate to the backend + frontend",
   "scripts": {
     "dev": "npm --prefix backend run dev",
+    "start": "node run.js",
     "start:backend": "npm --prefix backend start",
     "start:frontend": "npm --prefix frontend start",
     "seed": "npm --prefix backend run seed",
