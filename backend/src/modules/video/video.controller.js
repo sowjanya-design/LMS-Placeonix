@@ -1,77 +1,73 @@
 const videoService = require('./video.service');
+const asyncHandler = require('../../utils/asyncHandler');
+const AppError = require('../../utils/AppError');
 
 class VideoController {
-  async getDirectUploadUrl(req, res) {
-    try {
-      const payload = req.body;
-      const user = req.user; 
-      const result = await videoService.getDirectUploadUrl(user, payload);
-      res.status(200).json({ success: true, data: result });
-    } catch (error) {
-      res.status(403).json({ success: false, message: error.message });
-    }
-  }
+  // Get a direct upload URL (e.g., from Cloudflare Stream) so the client uploads directly
+  // without bottlenecking our Node server.
+  getDirectUploadUrl = asyncHandler(async (req, res) => {
+    const payload = req.body;
+    const user = req.user; 
+    
+    const result = await videoService.getDirectUploadUrl(user, payload);
+    res.status(200).json({ success: true, data: result });
+  });
 
-  async handleWebhook(req, res) {
-    try {
-      // Cloudflare webhook payload
-      const payload = req.body;
-      // Verification logic can be added here
-      await videoService.handleWebhook(payload);
-      res.status(200).send('Webhook processed');
-    } catch (error) {
-      res.status(400).send('Webhook failed');
-    }
-  }
+  // Called when the client finishes pushing bytes to the external provider
+  finalizeUpload = asyncHandler(async (req, res) => {
+    const { uid, duration, thumbnail } = req.body;
+    
+    await videoService.finalizeUpload(uid, duration, thumbnail);
+    res.status(200).json({ success: true, message: 'Upload finalized' });
+  });
 
-  async getVideoById(req, res) {
-    try {
-      const { id } = req.params;
-      const user = req.user;
-      
-      const result = await videoService.getVideoById(user, id);
-      res.status(200).json({ success: true, data: result });
-    } catch (error) {
-      res.status(404).json({ success: false, message: error.message });
-    }
-  }
+  // Cloudflare webhook receiver (handles encoding ready, errors, etc.)
+  handleWebhook = asyncHandler(async (req, res) => {
+    const payload = req.body;
+    // TODO: Verify the Cloudflare webhook signature to prevent spoofing
+    
+    await videoService.handleWebhook(payload);
+    res.status(200).send('Webhook processed');
+  });
 
-  async updateVideo(req, res) {
-    try {
-      const { id } = req.params;
-      const updateData = req.body;
-      const user = req.user;
+  getVideoById = asyncHandler(async (req, res) => {
+    const { id } = req.params;
+    const user = req.user;
+    
+    const result = await videoService.getVideoById(user, id);
+    res.status(200).json({ success: true, data: result });
+  });
 
-      const result = await videoService.updateVideo(user, id, updateData);
-      res.status(200).json({ success: true, data: result });
-    } catch (error) {
-      res.status(403).json({ success: false, message: error.message });
-    }
-  }
+  updateVideo = asyncHandler(async (req, res) => {
+    const { id } = req.params;
+    const updateData = req.body;
+    const user = req.user;
 
-  async deleteVideo(req, res) {
-    try {
-      const { id } = req.params;
-      const user = req.user;
+    const result = await videoService.updateVideo(user, id, updateData);
+    res.status(200).json({ success: true, data: result });
+  });
 
-      await videoService.deleteVideo(user, id);
-      res.status(200).json({ success: true, message: 'Video deleted successfully' });
-    } catch (error) {
-      res.status(403).json({ success: false, message: error.message });
-    }
-  }
+  deleteVideo = asyncHandler(async (req, res) => {
+    const { id } = req.params;
+    const user = req.user;
 
-  async getVideosByCourse(req, res) {
-    try {
-      const { courseId } = req.params;
-      const user = req.user;
-      
-      const result = await videoService.getVideosByCourse(user, courseId);
-      res.status(200).json({ success: true, data: result });
-    } catch (error) {
-      res.status(403).json({ success: false, message: error.message });
-    }
-  }
+    await videoService.deleteVideo(user, id);
+    res.status(200).json({ success: true, message: 'Video deleted successfully' });
+  });
+
+  getVideosByCourse = asyncHandler(async (req, res) => {
+    const { courseId } = req.params;
+    const user = req.user;
+    
+    const result = await videoService.getVideosByCourse(user, courseId);
+    res.status(200).json({ success: true, data: result });
+  });
+
+  // Local fallback for dev environment without Cloudflare keys
+  mockCloudflareUpload = asyncHandler(async (req, res) => {
+    const uid = req.file ? `local_video_${req.file.filename}` : `mock-cf-video-${Date.now()}`;
+    res.status(200).json({ success: true, result: { uid } });
+  });
 }
 
 module.exports = new VideoController();

@@ -227,14 +227,26 @@ export default function ResourcesPage() {
               {r.course && <div className="text-xs text-muted">{r.course.title}</div>}
               {r.description && <div className="text-xs text-ink2">{r.description}</div>}
               <div className="mt-auto flex gap-2">
-                <a
-                  href={r.externalUrl || r.fileUrl || "#"}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="flex-1 rounded-lg border-[1.5px] border-purple px-3 py-1.5 text-center text-xs font-bold text-purple"
-                >
-                  Open
-                </a>
+                {(() => {
+                  let url = r.externalUrl || r.fileUrl || "#";
+                  if (!canManage) {
+                    if (r.type === "pdf" && url.includes("http")) {
+                      url = `${url}#toolbar=0`;
+                    } else if (r.type === "document" && url.includes("http")) {
+                      url = `https://docs.google.com/gview?url=${encodeURIComponent(url)}&embedded=true`;
+                    }
+                  }
+                  return (
+                    <a
+                      href={url}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="flex-1 rounded-lg border-[1.5px] border-purple px-3 py-1.5 text-center text-xs font-bold text-purple"
+                    >
+                      Open
+                    </a>
+                  );
+                })()}
                 {canManage && (
                   <button
                     onClick={() => setEditing(r)}

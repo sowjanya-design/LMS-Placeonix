@@ -3,7 +3,7 @@ const cloudflareService = require('./cloudflare.service');
 
 class VideoService {
   async getDirectUploadUrl(user, payload) {
-    if (user.role !== 'Mentor' && user.role !== 'Admin' && user.role !== 'Super Admin') {
+    if (user.role !== 'mentor' && user.role !== 'admin' && user.role !== 'super_admin') {
       throw new Error('Unauthorized to upload videos');
     }
 
@@ -39,6 +39,14 @@ class VideoService {
     }
   }
 
+  async finalizeUpload(uid, duration = 0, thumbnail = '') {
+    await videoRepository.updateVideoByUID(uid, {
+      status: 'ready',
+      duration,
+      thumbnail
+    });
+  }
+
   async getVideoById(user, id) {
     const video = await videoRepository.findVideoById(id);
     if (!video) throw new Error('Video not found');
@@ -52,7 +60,7 @@ class VideoService {
     const video = await videoRepository.findVideoById(id);
     if (!video) throw new Error('Video not found');
 
-    if (user.role !== 'Admin' && user.role !== 'Super Admin' && String(video.uploadedBy) !== String(user._id)) {
+    if (user.role !== 'admin' && user.role !== 'super_admin' && String(video.uploadedBy) !== String(user._id)) {
       throw new Error('Unauthorized to update this video');
     }
 
@@ -63,7 +71,7 @@ class VideoService {
     const video = await videoRepository.findVideoById(id);
     if (!video) throw new Error('Video not found');
 
-    if (user.role !== 'Admin' && user.role !== 'Super Admin' && String(video.uploadedBy) !== String(user._id)) {
+    if (user.role !== 'admin' && user.role !== 'super_admin' && String(video.uploadedBy) !== String(user._id)) {
       throw new Error('Unauthorized to delete this video');
     }
 

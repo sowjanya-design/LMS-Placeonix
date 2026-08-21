@@ -2,6 +2,7 @@
 
 import React, { useState } from 'react';
 import axios from 'axios';
+import { api } from '@/lib/api';
 
 interface VideoUploadProps {
   courseId: string;
@@ -36,25 +37,21 @@ export default function VideoUpload({ courseId, lessonId, onUploadComplete }: Vi
 
     try {
       // 1. Get Direct Upload URL from our backend
-      const token = localStorage.getItem('token');
-      const headers = { Authorization: `Bearer ${token}` };
-
-      const { data: uploadRes } = await axios.post(
-        `${API_BASE}/videos/direct-upload`,
-        { courseId, lessonId, title },
-        { headers }
+      const uploadRes = await api.post<{ uploadUrl: string; uid: string }>(
+        '/videos/direct-upload',
+        { courseId, lessonId, title }
       );
 
-      const { uploadUrl, uid } = uploadRes.data;
+      const { uploadUrl, uid } = uploadRes;
       
       setMessage('Uploading video directly to Cloudflare...');
       setProgress(30);
 
-      // 2. Upload file directly to Cloudflare
+      // 2. Upload file directly to Cloudflare (or our mock endpoint)
       const formData = new FormData();
       formData.append('file', file);
 
-      await axios.post(uploadUrl, formData, {
+      const { data: uploadResult } = await axios.post(uploadUrl, formData, {
         headers: {
           'Content-Type': 'multipart/form-data',
         },
@@ -66,13 +63,15 @@ export default function VideoUpload({ courseId, lessonId, onUploadComplete }: Vi
         },
       });
 
+      // If the mock backend gave us a new local UID, use it. Otherwise use the original.
+      const finalUid = uploadResult?.result?.uid || uid;
+      
       setMessage('Finalizing upload...');
       
       // 3. Notify backend that upload finished
-      const { data: finalizeRes } = await axios.post(
-        `${API_BASE}/videos/finalize`,
-        { uid, duration: 0, thumbnail: '' },
-        { headers }
+      const finalizeRes = await api.post<unknown>(
+        '/videos/finalize',
+        { uid: finalUid, duration: 0, thumbnail: '' }
       );
 
       setMessage('Video uploaded successfully!');
@@ -82,7 +81,7 @@ export default function VideoUpload({ courseId, lessonId, onUploadComplete }: Vi
       setTitle('');
 
       if (onUploadComplete) {
-        onUploadComplete(finalizeRes.data);
+        onUploadComplete({ videoUID: finalUid });
       }
       
     } catch (error: unknown) {

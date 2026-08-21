@@ -23,7 +23,9 @@ export default function ProfilePage() {
   const [linkedIn, setLinkedIn] = useState(sp?.linkedIn ?? "");
   const [github, setGithub] = useState(sp?.github ?? "");
   const [portfolio, setPortfolio] = useState(sp?.portfolio ?? "");
-
+  const [experience, setExperience] = useState(sp?.experience ?? "");
+  const [expectedSalary, setExpectedSalary] = useState(sp?.expectedSalary ?? "");
+  const [preferredLocation, setPreferredLocation] = useState(sp?.preferredLocation ?? "");
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState<{ ok: boolean; text: string } | null>(null);
 
@@ -46,6 +48,9 @@ export default function ProfilePage() {
           linkedIn: linkedIn.trim(),
           github: github.trim(),
           portfolio: portfolio.trim(),
+          experience: experience.trim(),
+          expectedSalary: expectedSalary.trim(),
+          preferredLocation: preferredLocation.trim(),
         };
       }
       await api.patch(`/users/${user!._id}`, payload);
@@ -149,6 +154,19 @@ export default function ProfilePage() {
               </Field>
               <Field label="Portfolio">
                 <Input type="url" value={portfolio} onChange={(e) => setPortfolio(e.target.value)} />
+              </Field>
+            </div>
+            <div className="mt-4 grid grid-cols-2 gap-4">
+              <Field label="Experience" hint="E.g., Fresher, 1 year, 2 years">
+                <Input value={experience} onChange={(e) => setExperience(e.target.value)} />
+              </Field>
+              <Field label="Expected Salary" hint="E.g., 5 LPA, 8 LPA">
+                <Input value={expectedSalary} onChange={(e) => setExpectedSalary(e.target.value)} />
+              </Field>
+            </div>
+            <div className="mt-4">
+              <Field label="Preferred Location" hint="E.g., Hyderabad, Bangalore, Remote">
+                <Input value={preferredLocation} onChange={(e) => setPreferredLocation(e.target.value)} />
               </Field>
             </div>
           </>

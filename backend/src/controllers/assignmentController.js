@@ -17,7 +17,7 @@ exports.listAssignments = asyncHandler(async (req, res) => {
 
   // Students only see assignments for their batches
   if (req.user.role === 'student') {
-    const enrollments = await Enrollment.find({ student: req.user._id }).select('batch');
+    const enrollments = await Enrollment.find({ student: req.user._id, status: { $ne: 'dropped' } }).select('batch');
     filter.batch = { $in: enrollments.map((e) => e.batch) };
   }
   // Mentors only see assignments for their batches

@@ -22,7 +22,7 @@ exports.listSessions = asyncHandler(async (req, res) => {
   if (req.user.role === 'mentor') {
     filter.instructor = req.user._id;
   } else if (req.user.role === 'student') {
-    const enrollments = await Enrollment.find({ student: req.user._id }).select('batch');
+    const enrollments = await Enrollment.find({ student: req.user._id, status: { $ne: 'dropped' } }).select('batch');
     filter.batch = { $in: enrollments.map((e) => e.batch) };
   }
 
@@ -50,7 +50,7 @@ exports.todaySessions = asyncHandler(async (req, res) => {
 
   if (req.user.role === 'mentor') filter.instructor = req.user._id;
   else if (req.user.role === 'student') {
-    const enrollments = await Enrollment.find({ student: req.user._id }).select('batch');
+    const enrollments = await Enrollment.find({ student: req.user._id, status: { $ne: 'dropped' } }).select('batch');
     filter.batch = { $in: enrollments.map((e) => e.batch) };
   }
 

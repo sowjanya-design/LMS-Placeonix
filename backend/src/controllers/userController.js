@@ -97,7 +97,7 @@ exports.createUser = asyncHandler(async (req, res, next) => {
 // lockUntil/emailVerified etc. are system- or admin-only managed and must
 // never be reachable here, even for the profile owner.
 const COMMON_EDITABLE_FIELDS = ['firstName', 'lastName', 'phone', 'avatar', 'address', 'city', 'bio'];
-const STUDENT_PROFILE_FIELDS = ['degree', 'college', 'graduationYear', 'skills', 'resume', 'linkedIn', 'github', 'portfolio'];
+const STUDENT_PROFILE_FIELDS = ['degree', 'college', 'graduationYear', 'skills', 'resume', 'linkedIn', 'github', 'portfolio', 'experience', 'expectedSalary', 'preferredLocation'];
 const MENTOR_PROFILE_FIELDS = ['specialization', 'experience', 'qualifications', 'hourlyRate', 'availableSlots'];
 
 const pick = (src, keys) => {
@@ -204,7 +204,7 @@ exports.myStats = asyncHandler(async (req, res) => {
     const myStudents = enrollments.filter((e) => e.batch).length;
     stats = { myStudents };
   } else if (role === 'student') {
-    const enrollments = await Enrollment.find({ student: req.user._id });
+    const enrollments = await Enrollment.find({ student: req.user._id, status: { $ne: 'dropped' } });
     const avgProgress =
       enrollments.reduce((s, e) => s + (e.progress?.overall || 0), 0) /
       Math.max(1, enrollments.length);
@@ -220,7 +220,7 @@ exports.myStats = asyncHandler(async (req, res) => {
 // @desc   Current student's enrolled courses (with batch mode + progress)
 // @route  GET /api/v1/users/me/enrollments
 exports.myEnrollments = asyncHandler(async (req, res) => {
-  const enrollments = await Enrollment.find({ student: req.user._id })
+  const enrollments = await Enrollment.find({ student: req.user._id, status: { $ne: 'dropped' } })
     .populate('course', 'title category color shortDescription description duration fee modules')
     .populate({
       path: 'batch',
@@ -281,7 +281,7 @@ exports.leaderboard = asyncHandler(async (req, res) => {
     const ens = await Enrollment.find({ course }).select('student');
     scopeIds = ens.map((e) => e.student);
   } else if (req.user.role === 'student') {
-    const myEns = await Enrollment.find({ student: req.user._id }).select('batch');
+    const myEns = await Enrollment.find({ student: req.user._id, status: { $ne: 'dropped' } }).select('batch');
     const myBatches = myEns.map((e) => e.batch).filter(Boolean);
     const peerEns = await Enrollment.find({ batch: { $in: myBatches } }).select('student');
     scopeIds = [...new Set(peerEns.map((e) => String(e.student)))];

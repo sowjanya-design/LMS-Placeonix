@@ -46,8 +46,8 @@ app.use(
 
 // Rate limiting
 const limiter = rateLimit({
-  windowMs: (Number(process.env.RATE_LIMIT_WINDOW) || 150) * 60 * 1000,
-  max: Number(process.env.RATE_LIMIT_MAX) || 100,
+  windowMs: (Number(process.env.RATE_LIMIT_WINDOW) || 15) * 60 * 1000, // 15 minutes
+  max: Number(process.env.RATE_LIMIT_MAX) || 1000, // Limit each IP to 1000 requests per windowMs
   standardHeaders: true,
   legacyHeaders: false,
   message: { success: false, message: 'Too many requests, please try again later' },
@@ -55,9 +55,13 @@ const limiter = rateLimit({
 app.use('/api', limiter);
 
 const authLimiter = rateLimit({
-  windowMs: 150 * 60 * 1000,
-  max: 10,
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 1000, // Increased to 1000 to prevent false positives
   message: { success: false, message: 'Too many authentication attempts' },
+  handler: (req, res, next, options) => {
+    require('./utils/logger').warn(`Rate limit exceeded for auth: ${req.ip} - ${req.originalUrl}`);
+    res.status(options.statusCode).send(options.message);
+  },
 });
 app.use('/api/v1/auth/login', authLimiter);
 app.use('/api/v1/auth/register', authLimiter);

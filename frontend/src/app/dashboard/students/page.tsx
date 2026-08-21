@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { api, ApiError } from "@/lib/api";
-import type { User } from "@/lib/types";
+import type { User, Batch, Enrollment } from "@/lib/types";
 import { Modal } from "@/components/ui/modal";
 import { Field, Input, Select, ErrorText, ModalActions } from "@/components/ui/form";
 import { EmptyState } from "@/components/ui/empty-state";
@@ -24,10 +24,12 @@ interface AddStudentForm {
   email: string;
   password: string;
   phone: string;
+  batchId: string;
 }
 
-function AddStudentModal({ onClose, onAdded }: { onClose: () => void; onAdded: (u: User) => void }) {
-  const [form, setForm] = useState<AddStudentForm>({ firstName: "", lastName: "", email: "", password: "", phone: "" });
+function AddStudentModal({ batches, onClose, onAdded }: { batches: Batch[]; onClose: () => void; onAdded: (u: User) => void }) {
+  const [form, setForm] = useState<AddStudentForm>({ firstName: "", lastName: "", email: "", password: "", phone: "", batchId: "" });
+
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
 
@@ -36,6 +38,14 @@ function AddStudentModal({ onClose, onAdded }: { onClose: () => void; onAdded: (
     setError(null);
     try {
       const res = await api.post<{ user: User }>("/users", { ...form, role: "student" });
+      if (form.batchId) {
+        try {
+          await api.post(`/batches/${form.batchId}/enroll`, { studentId: res.user._id });
+        } catch (enrollErr) {
+          console.error("Failed to enroll new student:", enrollErr);
+          alert("Student created, but batch enrollment failed. You can assign them manually in the Edit screen.");
+        }
+      }
       onAdded(res.user);
       onClose();
     } catch (err) {
@@ -73,10 +83,28 @@ function AddStudentModal({ onClose, onAdded }: { onClose: () => void; onAdded: (
         <Field label="Email" required>
           <Input
             type="email"
-            placeholder="Email"
+            placeholder="Email address"
             value={form.email}
             onChange={(e) => setForm({ ...form, email: e.target.value })}
           />
+        </Field>
+        <Field label="Password" required hint="Student can change this later">
+          <Input
+            type="password"
+            placeholder="Password"
+            value={form.password}
+            onChange={(e) => setForm({ ...form, password: e.target.value })}
+          />
+        </Field>
+        <Field label="Assign Batch & Course" hint="Enroll immediately upon creation (optional)">
+          <Select value={form.batchId} onChange={(e) => setForm({ ...form, batchId: e.target.value })}>
+            <option value="">No immediate enrollment</option>
+            {batches.map((b) => (
+              <option key={b._id} value={b._id}>
+                {b.name} — {b.course?.title || b.code}
+              </option>
+            ))}
+          </Select>
         </Field>
         <Field label="Phone" hint="Optional">
           <Input
@@ -106,12 +134,13 @@ interface EditStudentForm {
   phone: string;
   status: string;
 }
-
 function EditStudentModal({
+  batches,
   student,
   onClose,
   onUpdated,
 }: {
+  batches: Batch[];
   student: User;
   onClose: () => void;
   onUpdated: (u: User) => void;
@@ -124,6 +153,32 @@ function EditStudentModal({
   });
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
+
+  const [enrollments, setEnrollments] = useState<Enrollment[] | null>(null);
+  const [enrollingBatch, setEnrollingBatch] = useState("");
+  const [enrollingStatus, setEnrollingStatus] = useState(false);
+
+  useEffect(() => {
+    api.get<Enrollment[]>(`/users/${student._id}/enrollments`)
+       .then(setEnrollments)
+       .catch(() => setEnrollments([]));
+  }, [student._id]);
+
+  async function handleEnroll() {
+    if (!enrollingBatch) return;
+    setEnrollingStatus(true);
+    try {
+      await api.post(`/batches/${enrollingBatch}/enroll`, { studentId: student._id });
+      const newEnrollments = await api.get<Enrollment[]>(`/users/${student._id}/enrollments`);
+      setEnrollments(newEnrollments);
+      setEnrollingBatch("");
+      alert("Successfully enrolled student in batch.");
+    } catch (err) {
+      alert(err instanceof ApiError ? err.message : "Failed to enroll student");
+    } finally {
+      setEnrollingStatus(false);
+    }
+  }
 
   async function handleSubmit() {
     setSubmitting(true);
@@ -180,12 +235,58 @@ function EditStudentModal({
         </Field>
         {error && <ErrorText>{error}</ErrorText>}
         <ModalActions onCancel={onClose} submitting={submitting} submitLabel="Save Changes" />
+        <div className="my-4 border-t border-line" />
+        <div className="flex flex-col gap-2">
+          <h3 className="text-sm font-bold text-ink">Current Enrollments</h3>
+          {enrollments === null ? (
+            <p className="text-xs text-muted">Loading enrollments...</p>
+          ) : enrollments.length === 0 ? (
+            <p className="text-xs text-muted">Not enrolled in any batches.</p>
+          ) : (
+            <ul className="flex flex-col gap-2">
+              {enrollments.map((e) => (
+                <li key={e._id} className="flex items-center justify-between rounded-lg bg-gray-50 px-3 py-2 text-xs">
+                  <div>
+                    <div className="font-semibold text-ink">{e.course?.title || "Unknown Course"}</div>
+                    <div className="text-muted">{e.batch?.name || "Unknown Batch"}</div>
+                  </div>
+                  <span className="rounded bg-white px-2 py-1 text-xs font-semibold text-green">
+                    {e.status}
+                  </span>
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
+        
+        <div className="flex flex-col gap-2">
+          <Field label="Enroll in New Batch">
+            <div className="flex gap-2">
+              <Select value={enrollingBatch} onChange={(e) => setEnrollingBatch(e.target.value)} disabled={enrollingStatus}>
+                <option value="">Select a batch...</option>
+                {batches.map((b) => (
+                  <option key={b._id} value={b._id}>
+                    {b.name} — {b.course?.title || b.code}
+                  </option>
+                ))}
+              </Select>
+              <button
+                type="button"
+                onClick={handleEnroll}
+                disabled={!enrollingBatch || enrollingStatus}
+                className="rounded-lg bg-purple px-4 py-2 text-sm font-bold text-white transition-colors hover:bg-purple-dk disabled:opacity-50"
+              >
+                {enrollingStatus ? "..." : "Enroll"}
+              </button>
+            </div>
+          </Field>
+        </div>
       </form>
     </Modal>
   );
 }
-
 export default function StudentsPage() {
+  const [batches, setBatches] = useState<Batch[]>([]);
   const [students, setStudents] = useState<User[] | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [showAdd, setShowAdd] = useState(false);
@@ -193,6 +294,7 @@ export default function StudentsPage() {
   const [editing, setEditing] = useState<User | null>(null);
 
   function load() {
+    api.get<Batch[]>("/batches?limit=100").then(setBatches).catch(console.error);
     api
       .get<User[]>("/users?role=student&sort=-createdAt&limit=100")
       .then(setStudents)
@@ -304,6 +406,7 @@ export default function StudentsPage() {
 
       {showAdd && (
         <AddStudentModal
+          batches={batches}
           onClose={() => setShowAdd(false)}
           onAdded={(u) => setStudents((prev) => (prev ? [u, ...prev] : [u]))}
         />
@@ -311,6 +414,7 @@ export default function StudentsPage() {
 
       {editing && (
         <EditStudentModal
+          batches={batches}
           student={editing}
           onClose={() => setEditing(null)}
           onUpdated={(u) =>

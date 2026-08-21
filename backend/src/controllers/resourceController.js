@@ -19,7 +19,7 @@ exports.listResources = asyncHandler(async (req, res) => {
 
   // Filter by access level for non-admin
   if (req.user.role === 'student') {
-    const enrollments = await Enrollment.find({ student: req.user._id }).select('course batch');
+    const enrollments = await Enrollment.find({ student: req.user._id, status: { $ne: 'dropped' } }).select('course batch');
     const courseIds = enrollments.map((e) => e.course);
 
     filter.$or = [

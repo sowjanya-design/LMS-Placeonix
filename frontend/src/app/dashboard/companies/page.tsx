@@ -122,7 +122,7 @@ function CompanyModal({
             <Input
               value={form.contactPhone}
               onChange={(e) => set("contactPhone", e.target.value)}
-              placeholder="+91 98765 43210"
+              placeholder="+91 99494 94020"
             />
           </Field>
         </div>

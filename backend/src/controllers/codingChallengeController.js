@@ -34,7 +34,7 @@ exports.listChallenges = asyncHandler(async (req, res) => {
   if (status) filter.status = status;
 
   if (req.user.role === 'student') {
-    const enrollments = await Enrollment.find({ student: req.user._id }).select('batch');
+    const enrollments = await Enrollment.find({ student: req.user._id, status: { $ne: 'dropped' } }).select('batch');
     filter.batch = { $in: enrollments.map((e) => e.batch) };
     filter.status = 'published';
   }

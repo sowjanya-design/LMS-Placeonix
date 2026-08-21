@@ -27,7 +27,7 @@ exports.payMyFees = asyncHandler(async (req, res, next) => {
   if (enrollmentId) {
     enrollment = await Enrollment.findOne({ _id: enrollmentId, student: req.user._id });
   } else {
-    const enrollments = await Enrollment.find({ student: req.user._id });
+    const enrollments = await Enrollment.find({ student: req.user._id, status: { $ne: 'dropped' } });
     enrollment = enrollments.sort((a, b) => (b.fee.due || 0) - (a.fee.due || 0))[0];
   }
   if (!enrollment) return next(new AppError('No enrollment found to pay for', 404));
@@ -236,7 +236,7 @@ exports.refundPayment = asyncHandler(async (req, res, next) => {
 // @desc   My fee summary (student)
 // @route  GET /api/v1/payments/me/summary
 exports.mySummary = asyncHandler(async (req, res) => {
-  const enrollments = await Enrollment.find({ student: req.user._id })
+  const enrollments = await Enrollment.find({ student: req.user._id, status: { $ne: 'dropped' } })
     .populate('course', 'title fee')
     .populate('batch', 'name code');
 

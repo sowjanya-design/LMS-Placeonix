@@ -113,7 +113,7 @@ interface EditForm {
   homework: string;
 }
 
-function EditSessionModal({ session, onClose, onSaved }: { session: SessionFull; onClose: () => void; onSaved: () => void }) {
+function EditSessionModal({ session, onClose, onSaved, onRequestUpload }: { session: SessionFull; onClose: () => void; onSaved: () => void; onRequestUpload?: () => void }) {
   const [form, setForm] = useState<EditForm>({
     title: session.title,
     startTime: toLocalInput(session.startTime),
@@ -168,7 +168,16 @@ function EditSessionModal({ session, onClose, onSaved }: { session: SessionFull;
           <Textarea rows={3} value={form.homework} onChange={(e) => setForm({ ...form, homework: e.target.value })} />
         </Field>
         {error && <ErrorText>{error}</ErrorText>}
-        <ModalActions onCancel={onClose} submitting={submitting} submitLabel="Save changes" />
+        <div className="flex items-center justify-between mt-2 pt-4 border-t border-line">
+          {onRequestUpload ? (
+            <SecondaryButton type="button" onClick={onRequestUpload}>
+              {session.recordingUrl ? "Re-upload Video" : "Upload Video"}
+            </SecondaryButton>
+          ) : (
+            <div />
+          )}
+          <ModalActions onCancel={onClose} submitting={submitting} submitLabel="Save changes" />
+        </div>
       </form>
     </Modal>
   );
@@ -184,13 +193,13 @@ function UploadRecordingModal({ session, onClose, onSaved }: { session: SessionF
         <VideoUpload 
           courseId={session.course?._id || "course_id"} 
           lessonId={session._id} 
-          onUploadComplete={async (data) => {
+          onUploadComplete={async (data: { videoUID: string }) => {
             try {
               await api.patch(`/sessions/${session._id}`, { recordingUrl: `cloudflare_stream_${data.videoUID}` });
               onSaved();
               onClose();
             } catch (err) {
-              alert("Failed to save recording link to session.");
+              alert("Failed: " + (err instanceof Error ? err.message : String(err)));
             }
           }} 
         />
@@ -201,8 +210,8 @@ function UploadRecordingModal({ session, onClose, onSaved }: { session: SessionF
 
 export default function SessionsPage() {
   const { user } = useAuth();
-  const canManage = user?.role === "admin" || user?.role === "mentor";
-
+  const isAdmin = user?.role === "admin" || user?.role === "super_admin";
+  const canManage = isAdmin || user?.role === "mentor";
   const [sessions, setSessions] = useState<SessionFull[] | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [showSchedule, setShowSchedule] = useState(false);
@@ -317,9 +326,9 @@ export default function SessionsPage() {
                   <SecondaryButton type="button" onClick={() => setEditing(s)} className="!px-3 !py-1.5 !text-xs">
                     Edit
                   </SecondaryButton>
-                  {(s.status === "scheduled" || s.status === "live") && (
+                  {(s.status === "scheduled" || s.status === "live" || isAdmin) && (
                     <DangerButton type="button" disabled={busyId === s._id} onClick={() => handleDelete(s)}>
-                      Cancel
+                      {(s.status === "scheduled" || s.status === "live") && !isAdmin ? "Cancel" : "Delete"}
                     </DangerButton>
                   )}
                 </div>
@@ -331,7 +340,17 @@ export default function SessionsPage() {
       )}
 
       {showSchedule && <ScheduleSessionModal onClose={() => setShowSchedule(false)} onSaved={load} />}
-      {editing && <EditSessionModal session={editing} onClose={() => setEditing(null)} onSaved={load} />}
+      {editing && (
+        <EditSessionModal 
+          session={editing} 
+          onClose={() => setEditing(null)} 
+          onSaved={load} 
+          onRequestUpload={() => {
+            setUploadingFor(editing);
+            setEditing(null);
+          }}
+        />
+      )}
       {uploadingFor && <UploadRecordingModal session={uploadingFor} onClose={() => setUploadingFor(null)} onSaved={load} />}
     </div>
   );

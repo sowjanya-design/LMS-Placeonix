@@ -3,14 +3,8 @@ const router = express.Router();
 const videoController = require('./video.controller');
 const videoValidator = require('./video.validator');
 
-// Placeholder for protect middleware (import from your actual auth middleware)
-const protect = (req, res, next) => {
-  if (!req.user) {
-    req.user = { _id: '64b1f1c7d3f2e1a4c8a2b5e2', role: 'Mentor' }; // Mock fallback
-  }
-  next();
-};
-
+const { protect } = require('../../middleware/auth');
+const { videoUpload } = require('../../services/uploadService');
 // POST /videos/direct-upload
 router.post(
   '/direct-upload',
@@ -20,6 +14,19 @@ router.post(
   videoController.getDirectUploadUrl
 );
 
+// POST /videos/mock-cloudflare-upload (Local Dev Mock)
+router.post(
+  '/mock-cloudflare-upload',
+  videoUpload.single('file'),
+  videoController.mockCloudflareUpload
+);
+
+// POST /videos/finalize (Frontend fallback)
+router.post(
+  '/finalize',
+  protect,
+  videoController.finalizeUpload
+);
 // POST /videos/webhook
 router.post(
   '/webhook',

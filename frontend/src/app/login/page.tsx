@@ -5,14 +5,6 @@ import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { useAuth, ApiError, isApiError } from "@/lib/auth-context";
 
-const DEMO_ACCOUNTS = [
-  { role: "Admin", email: "admin@placeonix.in", initial: "A", color: "#5b5fc7" },
-  { role: "Mentor", email: "mentor@placeonix.in", initial: "M", color: "#5b7c99" },
-  { role: "Student", email: "student@placeonix.in", initial: "S", color: "#3f9c6d" },
-] as const;
-
-const DEMO_PASSWORD = "Password123";
-
 export default function LoginPage() {
   const { login } = useAuth();
   const router = useRouter();
@@ -40,11 +32,6 @@ export default function LoginPage() {
     doLogin(email, password);
   }
 
-  function handleQuickLogin(demoEmail: string) {
-    setEmail(demoEmail);
-    setPassword(DEMO_PASSWORD);
-    doLogin(demoEmail, DEMO_PASSWORD);
-  }
 
   return (
     <div
@@ -56,16 +43,13 @@ export default function LoginPage() {
           <div className="flex h-full flex-col" style={{ padding: "40px 60px" }}>
             <div className="flex flex-col gap-1.5">
               <Image
-                src="/brand/placeonix-logo.png"
+                src="/brand/placeonix-logo-v4.png"
                 alt="Placeonix"
-                width={855}
-                height={277}
-                className="h-10 w-auto self-start"
+                width={633}
+                height={588}
+                className="h-auto w-[130px] self-start"
                 priority
               />
-              <div className="text-[0.75rem] font-bold tracking-[1.5px] text-[#6c3ff5] uppercase mt-4">
-                Training | Placement | Future
-              </div>
             </div>
 
             <h1 className="mt-10 mb-3 text-[3.2rem] leading-[1.1] font-extrabold text-[#1c1c1c]">
@@ -203,37 +187,6 @@ export default function LoginPage() {
                 </p>
               </form>
 
-              <div className="relative my-4 text-center">
-                <div className="absolute top-1/2 right-0 left-0 h-px bg-line" />
-                <span className="relative px-3 text-[0.72rem] font-bold tracking-[0.5px] text-muted uppercase" style={{ background: "rgba(245,240,235,0.85)" }}>
-                  Quick Demo Access
-                </span>
-              </div>
-
-              <div className="flex flex-col gap-1.5">
-                {DEMO_ACCOUNTS.map((acc) => (
-                  <button
-                    key={acc.email}
-                    type="button"
-                    onClick={() => handleQuickLogin(acc.email)}
-                    disabled={submitting}
-                    className="flex items-center gap-3 border-none px-3.5 py-2 text-left transition-all hover:bg-white/50 active:scale-95 disabled:opacity-60 disabled:scale-100"
-                    style={{ background: "rgba(255,255,255,0.6)", borderRadius: "16px", boxShadow: "inset 0 2px 8px rgba(0,0,0,0.08)" }}
-                  >
-                    <div
-                      className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl text-[0.85rem] font-extrabold text-white"
-                      style={{ background: acc.color }}
-                    >
-                      {acc.initial}
-                    </div>
-                    <div className="flex-1">
-                      <div className="text-[0.8rem] font-bold text-ink">{acc.role}</div>
-                      <div className="font-mono text-[0.7rem] text-muted">{acc.email}</div>
-                    </div>
-                    <span className="text-[0.7rem] text-muted">&#8594;</span>
-                  </button>
-                ))}
-              </div>
             </div>
           </div>
         </div>

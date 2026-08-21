@@ -36,29 +36,31 @@ function StatCardSkeleton() {
 }
 
 function AdminDashboard({ firstName }: { firstName?: string }) {
-  const [ov, setOv] = useState<AnalyticsOverview | null>(null);
+  const [analyticsOverview, setAnalyticsOverview] = useState<AnalyticsOverview | null>(null);
   const [recentStudents, setRecentStudents] = useState<User[] | null>(null);
   const [error, setError] = useState(false);
 
   useEffect(() => {
+    // Fetch dashboard metrics and recent students in parallel
     Promise.all([
       api.get<AnalyticsOverview>("/analytics/overview"),
       api.get<User[]>("/users?role=student&limit=3&sort=-createdAt"),
     ])
       .then(([overview, students]) => {
-        setOv(overview);
+        setAnalyticsOverview(overview);
         setRecentStudents(students);
       })
       .catch(() => setError(true));
   }, []);
 
-  const metrics = ov
+  const metrics = analyticsOverview
     ? ([
-        ["Published Courses", ov.courses.published, "#ede9fe"],
-        ["Total Enrollments", ov.enrollments.total, "#dbeafe"],
-        ["Completed", ov.enrollments.completed, "#d1fae5"],
-        ["Open Drives", ov.placement.openDrives, "#fef3c7"],
-        ["New Leads", ov.leads.new, "#ffedd5"],
+        ["Published Courses", analyticsOverview.courses.pulse || analyticsOverview.courses.published, "#ede9fe"],
+        ["Active Sessions", analyticsOverview.sessions?.active || 0, "#fce7f3"],
+        ["Total Enrollments", analyticsOverview.enrollments.total, "#dbeafe"],
+        ["Completed", analyticsOverview.enrollments.completed, "#d1fae5"],
+        ["Open Drives", analyticsOverview.placement.openDrives, "#fef3c7"],
+        ["New Leads", analyticsOverview.leads.new, "#ffedd5"],
       ] as const)
     : [];
 
@@ -81,7 +83,7 @@ function AdminDashboard({ firstName }: { firstName?: string }) {
 
       {error && <p className="text-sm text-red">Could not load dashboard data.</p>}
 
-      {!ov && !error && (
+      {!analyticsOverview && !error && (
         <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
           <StatCardSkeleton />
           <StatCardSkeleton />
@@ -90,16 +92,16 @@ function AdminDashboard({ firstName }: { firstName?: string }) {
         </div>
       )}
 
-      {ov && (
+      {analyticsOverview && (
         <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
-          <StatCard icon="🎓" bg="#ede9fe" value={ov.students.total} label="Total Students" />
-          <StatCard icon="👨‍🏫" bg="#dbeafe" value={ov.mentors.total} label="Active Mentors" />
-          <StatCard icon="💼" bg="#d1fae5" value={`${ov.placement.rate}%`} label="Placement Rate" />
-          <StatCard icon="📚" bg="#fef3c7" value={ov.batches.active} label="Active Batches" />
+          <StatCard icon="🎓" bg="#ede9fe" value={analyticsOverview.students.total} label="Total Students" />
+          <StatCard icon="👨‍🏫" bg="#dbeafe" value={analyticsOverview.mentors.total} label="Active Mentors" />
+          <StatCard icon="💼" bg="#d1fae5" value={`${analyticsOverview.placement.rate}%`} label="Placement Rate" />
+          <StatCard icon="📚" bg="#fef3c7" value={analyticsOverview.batches.active} label="Active Batches" />
         </div>
       )}
 
-      {ov && (
+      {analyticsOverview && (
         <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
           <div className="rounded-[14px] border border-line bg-white p-5">
             <div className="mb-3 text-base font-bold text-ink">Key Metrics</div>
@@ -184,7 +186,7 @@ function ActivityHeatmap({ records }: { records: AttendanceRecord[] }) {
     </div>
   );
 }
-function StudentDashboard({ firstName }: { firstName?: string }) {
+function StudentDashboard({ firstName, role }: { firstName?: string; role?: string }) {
   const [enrollments, setEnrollments] = useState<Enrollment[] | null>(null);
   const [attendanceRecords, setAttendanceRecords] = useState<AttendanceRecord[]>([]);
   const [upcomingSessions, setUpcomingSessions] = useState<Session[]>([]);
@@ -200,27 +202,38 @@ function StudentDashboard({ firstName }: { firstName?: string }) {
          const records = res.records || [];
          setAttendanceRecords(records);
          
+         const ONE_DAY_MS = 24 * 60 * 60 * 1000;
          let currentStreak = 0;
+         
          const today = new Date();
-         today.setHours(0,0,0,0);
-         const sortedDates = [...new Set(records.filter(r => r.status === 'present' || r.status === 'late').map(r => {
-           const d = new Date(r.date);
-           d.setHours(0,0,0,0);
-           return d.getTime();
-         }))].sort((a,b) => b - a);
+         today.setHours(0, 0, 0, 0);
 
+         // Extract unique dates where the student was present or late, sorted newest first
+         const presentDates = records
+           .filter(r => r.status === 'present' || r.status === 'late')
+           .map(r => {
+             const d = new Date(r.date);
+             d.setHours(0, 0, 0, 0);
+             return d.getTime();
+           });
+           
+         const sortedDates = [...new Set(presentDates)].sort((a, b) => b - a);
+
+         // Walk backward from today to count consecutive attendance days
          let expectedDate = today.getTime();
-         for (const t of sortedDates) {
-           if (t === expectedDate) {
+         for (const timestamp of sortedDates) {
+           if (timestamp === expectedDate) {
              currentStreak++;
-             expectedDate -= 86400000;
-           } else if (t === expectedDate - 86400000 && currentStreak === 0) {
+             expectedDate -= ONE_DAY_MS;
+           } else if (timestamp === expectedDate - ONE_DAY_MS && currentStreak === 0) {
+             // Allow skipping today if they haven't checked in yet, but checked in yesterday
              currentStreak++;
-             expectedDate = t - 86400000;
+             expectedDate = timestamp - ONE_DAY_MS;
            } else {
              break;
            }
          }
+         
          setStreak(currentStreak);
        })
        .catch(() => setAttendanceRecords([]));
@@ -249,14 +262,14 @@ function StudentDashboard({ firstName }: { firstName?: string }) {
       type: 'session',
       date: new Date(s.startTime),
       title: s.title || 'Live Session',
-      subtitle: typeof s.instructor === 'object' && s.instructor !== null ? `with ${((s.instructor as any).firstName)}` : 'Mentor',
+      subtitle: (s.instructor as User)?.firstName ? `with ${(s.instructor as User).firstName}` : 'Mentor',
       color: 'bg-blue-50 text-blue-600'
     })),
     ...mockInterviews.map(m => ({
       type: 'mock',
       date: new Date(m.scheduledAt),
       title: m.title || 'Mock Interview',
-      subtitle: typeof m.interviewer === 'object' && m.interviewer !== null ? `with ${((m.interviewer as any).firstName)}` : 'Mentor',
+      subtitle: (m.interviewer as User)?.firstName ? `with ${(m.interviewer as User).firstName}` : 'Mentor',
       color: 'bg-purple-lt text-purple'
     }))
   ].sort((a, b) => a.date.getTime() - b.date.getTime()).slice(0, 3);
@@ -266,8 +279,12 @@ function StudentDashboard({ firstName }: { firstName?: string }) {
       {/* Welcome & Streak Banner */}
       <div className="flex items-center justify-between rounded-2xl bg-white p-6 shadow-sm border border-line">
         <div>
-          <h1 className="text-[1.5rem] font-extrabold text-ink">Ready to crush it, {firstName}? 🚀</h1>
-          <p className="mt-1 text-sm text-muted">You are on a <strong>{streak}-day learning streak</strong>. Keep it up!</p>
+          <h1 className="text-[1.5rem] font-extrabold text-ink">
+            {role === "student" ? `Ready to crush it, ${firstName}? 🚀` : `Welcome back, ${firstName} 👋`}
+          </h1>
+          {role === "student" && (
+            <p className="mt-1 text-sm text-muted">You are on a <strong>{streak}-day learning streak</strong>. Keep it up!</p>
+          )}
         </div>
         <div className="hidden items-center gap-4 md:flex">
           <div className="flex flex-col items-center justify-center rounded-xl bg-orange-50 px-4 py-2">
@@ -286,12 +303,16 @@ function StudentDashboard({ firstName }: { firstName?: string }) {
             {currentCourse ? (
               <>
                 <div className="flex items-center justify-between mb-4">
-                  <span className="rounded-md bg-purple-lt px-2.5 py-1 text-xs font-bold text-purple uppercase">{typeof currentCourse.course === 'object' && currentCourse.course !== null ? ((currentCourse.course as any).category?.replace('_', ' ')) || 'Current Path' : 'Current Path'}</span>
+                  <span className="rounded-md bg-purple-lt px-2.5 py-1 text-xs font-bold text-purple uppercase">
+                    {(currentCourse.course as any)?.category?.replace('_', ' ') || 'Current Path'}
+                  </span>
                   <span className="text-sm font-bold text-ink">{currentCourse.progress?.overall || 0}% Mastered</span>
                 </div>
-                <h2 className="text-2xl font-extrabold text-ink mb-2">{typeof currentCourse.course === 'object' && currentCourse.course !== null ? ((currentCourse.course as any).title) || 'Unknown Course' : 'Unknown Course'}</h2>
+                <h2 className="text-2xl font-extrabold text-ink mb-2">
+                  {(currentCourse.course as any)?.title || 'Unknown Course'}
+                </h2>
                 <p className="text-sm text-muted mb-6 max-w-[80%] line-clamp-2">
-                  {typeof currentCourse.course === 'object' && currentCourse.course !== null ? ((currentCourse.course as any).shortDescription) || "Keep pushing forward to unlock your next career milestone!" : "Keep pushing forward to unlock your next career milestone!"}
+                  {(currentCourse.course as any)?.shortDescription || "Keep pushing forward to unlock your next career milestone!"}
                 </p>
                 
                 {/* Progress Bar */}
@@ -397,13 +418,93 @@ function StudentDashboard({ firstName }: { firstName?: string }) {
     </div>
   );
 }
+function MentorDashboard({ firstName }: { firstName?: string }) {
+  const [stats, setStats] = useState<{ myStudents?: number } | null>(null);
+  const [sessions, setSessions] = useState<Session[]>([]);
+
+  useEffect(() => {
+    api.get<{ myStudents?: number }>("/users/me/stats").then(setStats).catch(() => {});
+    const now = new Date().toISOString();
+    api.get<Session[]>(`/sessions?from=${now}&limit=5`).then(res => setSessions(res || [])).catch(() => {});
+  }, []);
+
+  return (
+    <div className="flex flex-col gap-6 pb-10">
+      <div className="flex items-center justify-between rounded-2xl bg-white p-6 shadow-sm border border-line md:p-8">
+        <div>
+          <h1 className="text-[1.5rem] font-extrabold text-ink">Welcome back, {firstName} 👋</h1>
+          <p className="mt-1 text-sm text-muted">Here is an overview of your teaching responsibilities today.</p>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
+        <div className="flex flex-col gap-6 lg:col-span-2">
+          <div className="grid grid-cols-2 gap-4">
+            <div className="rounded-2xl border border-line bg-white p-6 shadow-sm flex items-center gap-4">
+               <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-blue-50 text-2xl">👥</div>
+               <div>
+                 <div className="text-2xl font-bold text-ink">{stats?.myStudents ?? "-"}</div>
+                 <div className="text-sm font-semibold text-muted uppercase">My Students</div>
+               </div>
+            </div>
+            <div className="rounded-2xl border border-line bg-white p-6 shadow-sm flex items-center gap-4">
+               <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-purple-50 text-2xl">📅</div>
+               <div>
+                 <div className="text-2xl font-bold text-ink">{sessions.length}</div>
+                 <div className="text-sm font-semibold text-muted uppercase">Upcoming Sessions</div>
+               </div>
+            </div>
+          </div>
+          
+          <div className="rounded-2xl border border-line bg-white p-6 shadow-sm">
+             <h3 className="text-base font-bold text-ink mb-4">Your Upcoming Sessions</h3>
+             {sessions.length > 0 ? (
+               <div className="flex flex-col gap-3">
+                 {sessions.map((s) => (
+                   <div key={s._id} className="flex items-center justify-between rounded-xl border border-line p-4">
+                     <div>
+                       <div className="font-bold text-ink">{s.title}</div>
+                       <div className="text-xs text-muted">
+                         {new Date(s.startTime).toLocaleString(undefined, { weekday: "short", month: "short", day: "numeric", hour: "numeric", minute: "2-digit" })}
+                       </div>
+                     </div>
+                     {s.meetingLink && (
+                       <a href={s.meetingLink} target="_blank" rel="noreferrer" className="rounded-lg bg-purple-lt px-3 py-1.5 text-xs font-bold text-purple hover:bg-purple hover:text-white transition-colors">
+                         Join
+                       </a>
+                     )}
+                   </div>
+                 ))}
+               </div>
+             ) : (
+               <p className="text-sm text-muted">You have no upcoming sessions scheduled.</p>
+             )}
+          </div>
+        </div>
+        
+        <div className="flex flex-col gap-6">
+           <div className="rounded-2xl border border-line bg-white p-6 shadow-sm">
+             <h3 className="text-base font-bold text-ink mb-4">Quick Links</h3>
+             <div className="flex flex-col gap-3">
+               <a href="/dashboard/my-students" className="rounded-xl border border-line p-3 text-sm font-semibold hover:bg-bg transition-colors">👨‍🎓 View My Students</a>
+               <a href="/dashboard/sessions" className="rounded-xl border border-line p-3 text-sm font-semibold hover:bg-bg transition-colors">📅 Manage Sessions</a>
+               <a href="/dashboard/assignments" className="rounded-xl border border-line p-3 text-sm font-semibold hover:bg-bg transition-colors">📝 Grade Assignments</a>
+             </div>
+           </div>
+        </div>
+      </div>
+    </div>
+  );
+}
 
 export default function DashboardPage() {
   const { user } = useAuth();
   if (!user) return null;
-  return user.role === "admin" ? (
-    <AdminDashboard firstName={user.firstName} />
-  ) : (
-    <StudentDashboard firstName={user.firstName} />
-  );
+  if (user.role === "admin" || user.role === "super_admin") {
+    return <AdminDashboard firstName={user.firstName} />;
+  }
+  if (user.role === "mentor") {
+    return <MentorDashboard firstName={user.firstName} />;
+  }
+  return <StudentDashboard firstName={user.firstName} role={user.role} />;
 }

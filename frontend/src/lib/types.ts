@@ -10,7 +10,7 @@ export interface User {
   status: string;
   avatar?: string | null;
   createdAt: string;
-  studentProfile?: { enrollmentId?: string; resume?: string; skills?: string[]; college?: string; degree?: string; graduationYear?: number; linkedIn?: string; github?: string; portfolio?: string; }; bio?: string;
+  studentProfile?: { enrollmentId?: string; resume?: string; skills?: string[]; college?: string; degree?: string; graduationYear?: number; linkedIn?: string; github?: string; portfolio?: string; experience?: string; expectedSalary?: string; preferredLocation?: string; }; bio?: string;
   mentorProfile?: { studentCount?: number };
 }
 
@@ -20,6 +20,7 @@ export interface AnalyticsOverview {
   mentors: { total: number };
   courses: { total: number; published: number };
   batches: { active: number };
+  sessions: { active: number };
   enrollments: { total: number; completed: number };
   placement: { placed: number; rate: number; openDrives: number };
   leads: { new: number };

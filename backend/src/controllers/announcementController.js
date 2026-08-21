@@ -22,7 +22,7 @@ exports.listAnnouncements = asyncHandler(async (req, res) => {
 
   // Filter by audience (unless admin)
   if (req.user.role !== 'admin') {
-    const enrollments = await Enrollment.find({ student: req.user._id }).select('batch course');
+    const enrollments = await Enrollment.find({ student: req.user._id, status: { $ne: 'dropped' } }).select('batch course');
     const batchIds = enrollments.map((e) => e.batch);
     const courseIds = enrollments.map((e) => e.course);
 

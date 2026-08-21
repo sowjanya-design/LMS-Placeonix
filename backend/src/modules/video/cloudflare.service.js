@@ -19,12 +19,22 @@ class CloudflareService {
    * This allows the frontend to upload a video directly without passing it through our backend
    */
   async createDirectUploadUrl(maxDurationSeconds = 3600) {
+    // Graceful fallback for local development without Cloudflare keys
+    if (!this.accountId || !this.apiToken) {
+      console.warn('Missing Cloudflare credentials. Using mock direct upload URL.');
+      const uid = `mock-cf-video-${Date.now()}`;
+      return {
+        uploadUrl: `http://localhost:5000/api/v1/videos/mock-cloudflare-upload`,
+        uid,
+      };
+    }
+
     try {
       const response = await axios.post(
         `${this.baseUrl}/direct_upload`,
         {
           maxDurationSeconds,
-          requireSignedURLs: true, // as per the document recommendation
+          requireSignedURLs: true,
         },
         { headers: this.getHeaders() }
       );

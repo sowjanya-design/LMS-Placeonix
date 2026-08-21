@@ -32,13 +32,13 @@ export function Sidebar() {
       className="hidden h-screen w-[264px] shrink-0 flex-col bg-[linear-gradient(180deg,#ffffff_0%,#f7f4fd_100%)] md:flex"
       style={{ boxShadow: "8px 0 40px rgba(17,24,39,0.06)" }}
     >
-      <div className="flex items-center justify-center px-5 py-6">
+      <div className="flex items-center justify-start px-6 py-8">
         <Image
-          src="/brand/placeonix-logo.png"
+          src="/brand/placeonix-logo-v4.png"
           alt="Placeonix"
-          width={855}
-          height={277}
-          className="h-[34px] w-auto"
+          width={180}
+          height={40}
+          className="h-auto w-32"
           priority
         />
       </div>
@@ -61,7 +61,7 @@ export function Sidebar() {
         </div>
       </div>
 
-      <div className="flex-1 overflow-y-auto px-3 py-4">
+      <div className="flex-1 overflow-y-auto px-3 py-4 no-scrollbar">
         {items.map((item) => {
           const href = hrefFor(item.id);
           const active = pathname === href;
@@ -70,11 +70,13 @@ export function Sidebar() {
               key={item.id}
               href={href}
               aria-current={active ? "page" : undefined}
-              className={`relative mb-1 flex items-center gap-3 rounded-full px-4 py-2.5 text-[0.84rem] font-bold transition-all ${
-                active ? "bg-purple text-white" : "text-muted hover:bg-purple-lt hover:text-purple"
+              className={`relative mb-0.5 flex items-center gap-2.5 rounded-full px-5 py-2.5 text-[0.85rem] font-bold transition-all ${
+                active ? "bg-purple-lt text-purple" : "text-muted hover:bg-purple-lt/50 hover:text-purple"
               }`}
-              style={active ? { boxShadow: "0 6px 16px rgba(124,108,230,0.35)" } : undefined}
             >
+              {active && (
+                <div className="absolute left-[-12px] top-1/2 h-[18px] w-[3px] -translate-y-1/2 rounded-r-md bg-purple" />
+              )}
               <Icon name={item.icon} className="h-[18px] w-[18px] shrink-0" />
               {item.label}
             </Link>

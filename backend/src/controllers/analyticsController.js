@@ -4,6 +4,7 @@ const Batch = require('../models/Batch');
 const Enrollment = require('../models/Enrollment');
 const PlacementDrive = require('../models/PlacementDrive');
 const Lead = require('../models/Lead');
+const Session = require('../models/Session');
 const ApiResponse = require('../utils/ApiResponse');
 const asyncHandler = require('../utils/asyncHandler');
 const { getPlacementStats } = require('../utils/placementStats');
@@ -15,7 +16,7 @@ exports.overview = asyncHandler(async (req, res) => {
     totalStudents, activeStudents, totalMentors,
     totalCourses, publishedCourses,
     activeBatches, totalEnrollments, completedEnrollments,
-    openDrives, newLeads, placement,
+    openDrives, newLeads, placement, activeSessions
   ] = await Promise.all([
     User.countDocuments({ role: 'student' }),
     User.countDocuments({ role: 'student', status: 'active' }),
@@ -28,6 +29,7 @@ exports.overview = asyncHandler(async (req, res) => {
     PlacementDrive.countDocuments({ status: 'open' }),
     Lead.countDocuments({ status: 'new' }),
     getPlacementStats(),
+    Session.countDocuments({ status: 'live' }),
   ]);
 
   return ApiResponse.success(res, 200, 'Overview fetched', {
@@ -35,6 +37,7 @@ exports.overview = asyncHandler(async (req, res) => {
     mentors: { total: totalMentors },
     courses: { total: totalCourses, published: publishedCourses },
     batches: { active: activeBatches },
+    sessions: { active: activeSessions },
     enrollments: { total: totalEnrollments, completed: completedEnrollments },
     placement: { placed: placement.placed, rate: placement.rate, openDrives },
     leads: { new: newLeads },

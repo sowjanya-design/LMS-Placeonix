@@ -41,6 +41,9 @@ const userSchema = new mongoose.Schema(
       linkedIn: String,
       github: String,
       portfolio: String,
+      experience: String,
+      expectedSalary: String,
+      preferredLocation: String,
     },
 
     // Mentor-specific
@@ -55,7 +58,7 @@ const userSchema = new mongoose.Schema(
     },
 
     // Auth
-    emailVerified: { type: Boolean, default: false },
+    emailVerified: { type: Boolean, default: true }, // Disabled verification requirement
     emailVerifyToken: String,
     passwordResetToken: String,
     passwordResetExpiry: Date,

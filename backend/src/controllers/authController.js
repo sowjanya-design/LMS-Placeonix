@@ -139,9 +139,10 @@ exports.login = asyncHandler(async (req, res, next) => {
     return next(new AppError(`Account is ${user.status}`, 403));
   }
 
-  if (!user.emailVerified) {
-    return next(new AppError('Please verify your email before logging in', 403));
-  }
+  // Verification disabled:
+  // if (!user.emailVerified) {
+  //   return next(new AppError('Please verify your email before logging in', 403));
+  // }
 
   await user.resetLoginAttempts();
   auditLog(req, { module: 'auth', action: 'login', userId: user._id, userEmail: user.email });

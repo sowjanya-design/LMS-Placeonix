@@ -15,7 +15,7 @@ exports.listDrives = asyncHandler(async (req, res) => {
   // Students only see open drives they're eligible for
   if (req.user.role === 'student') {
     filter.status = 'open';
-    const enrollments = await Enrollment.find({ student: req.user._id }).select('course batch');
+    const enrollments = await Enrollment.find({ student: req.user._id, status: { $ne: 'dropped' } }).select('course batch');
     const courseIds = enrollments.map((e) => e.course);
     filter.$or = [
       { eligibleCourses: { $in: courseIds } },

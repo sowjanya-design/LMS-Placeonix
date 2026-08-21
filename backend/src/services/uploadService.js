@@ -106,6 +106,11 @@ const courseAssetUpload = multer({
   limits: { fileSize: 50 * 1024 * 1024 }, // 50 MB for videos
 });
 
+const videoUpload = multer({
+  storage: storage('videos'),
+  fileFilter: fileFilter(['mp4', 'mov', 'avi', 'mkv', 'webm']),
+  limits: { fileSize: 500 * 1024 * 1024 }, // 500 MB
+});
 // ── Helpers ──
 
 const buildFileUrl = (req, file, subdir) => {
@@ -139,7 +144,7 @@ module.exports = {
   submissionUpload,
   courseAssetUpload,
   buildFileUrl,
-  deleteFile,
+  videoUpload,
   uploadDir,
   s3Configured,
 };

@@ -21,12 +21,12 @@ export default function SupportPage() {
         >
           <div className="mb-2 text-2xl">📞</div>
           <div className="font-bold text-ink">Call</div>
-          <div className="text-xs text-muted">+91 98765 43210</div>
+          <div className="text-xs text-muted">+91 99494 94020</div>
         </a>
         <div className="rounded-[14px] border border-line bg-white p-5">
           <div className="mb-2 text-2xl">🏢</div>
           <div className="font-bold text-ink">Visit</div>
-          <div className="text-xs text-muted">Ameerpet, Hyderabad</div>
+          <div className="text-xs text-muted">Hyderabad, India</div>
         </div>
       </div>
 
