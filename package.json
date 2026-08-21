@@ -2,6 +2,10 @@
   "name": "placeonix-hub",
   "version": "1.0.0",
   "private": true,
+  "workspaces": [
+    "backend",
+    "frontend"
+  ],
   "description": "Placeonix Hub — convenience scripts that delegate to the backend + frontend",
   "scripts": {
     "dev": "npm --prefix backend run dev",
