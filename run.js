@@ -10,8 +10,9 @@ if (service === 'frontend') {
   cmd = 'npm';
   args = ['--prefix', 'frontend', 'start'];
 } else {
+  console.log('[Router] Running one-time database seed...');
   cmd = 'npm';
-  args = ['--prefix', 'backend', 'start'];
+  args = ['--prefix', 'backend', 'run', 'seed'];
 }
 
 const child = spawn(cmd, args, { stdio: 'inherit', shell: true });
