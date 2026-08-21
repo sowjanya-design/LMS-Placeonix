@@ -191,11 +191,12 @@ function UploadRecordingModal({ session, onClose, onSaved }: { session: SessionF
           The session <strong>{session.title}</strong> has been marked as completed. Please upload the recording for the students.
         </p>
         <VideoUpload 
-          courseId={session.course?._id || "course_id"} 
+          courseId={session.batch?._id || "course_id"} 
           lessonId={session._id} 
-          onUploadComplete={async (data: { videoUID: string }) => {
+          onUploadComplete={async (data: unknown) => {
+            const typedData = data as { videoUID: string };
             try {
-              await api.patch(`/sessions/${session._id}`, { recordingUrl: `cloudflare_stream_${data.videoUID}` });
+              await api.patch(`/sessions/${session._id}`, { recordingUrl: `cloudflare_stream_${typedData.videoUID}` });
               onSaved();
               onClose();
             } catch (err) {

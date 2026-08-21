@@ -10,7 +10,7 @@ const crypto = require('crypto');
 const cookieOptions = () => ({
   httpOnly: true,
   secure: process.env.NODE_ENV === 'production',
-  sameSite: 'lax',
+  sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
   maxAge: (Number(process.env.JWT_COOKIE_EXPIRE) || 7) * 24 * 60 * 60 * 1000,
 });
 
@@ -184,8 +184,8 @@ exports.logout = asyncHandler(async (req, res) => {
     await req.user.save({ validateBeforeSave: false });
     auditLog(req, { module: 'auth', action: 'logout', userId: req.user._id, userEmail: req.user.email, message: allDevices ? 'All devices' : 'Current device' });
   }
-  res.clearCookie('accessToken');
-  res.clearCookie('refreshToken');
+  res.clearCookie('accessToken', cookieOptions());
+  res.clearCookie('refreshToken', { ...cookieOptions(), path: '/api/v1/auth/refresh' });
   return ApiResponse.success(res, 200, 'Logged out successfully');
 });
 

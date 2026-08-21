@@ -11,7 +11,7 @@ export interface NavItem {
 // so the migration preserves exactly what each role could already see. Each id maps to
 // /dashboard/{id} ('dashboard' itself maps to /dashboard) — see app/dashboard/[section]/page.tsx
 // for sections not yet built as real pages.
-export const NAV: Record<Role, NavItem[]> = {
+export const NAV = {
   admin: [
     { id: "dashboard", label: "Dashboard", icon: "home" },
     { id: "calendar", label: "Calendar", icon: "calendar" },
@@ -70,7 +70,7 @@ export const NAV: Record<Role, NavItem[]> = {
     { id: "profile", label: "Profile", icon: "user" },
     { id: "support", label: "Support", icon: "help" },
   ],
-};
+} as Record<Role, NavItem[]>;
 
 NAV.super_admin = [...NAV.admin];
 NAV.hr = [

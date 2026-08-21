@@ -55,7 +55,7 @@ function AdminDashboard({ firstName }: { firstName?: string }) {
 
   const metrics = analyticsOverview
     ? ([
-        ["Published Courses", analyticsOverview.courses.pulse || analyticsOverview.courses.published, "#ede9fe"],
+        ["Published Courses", analyticsOverview.courses.published, "#ede9fe"],
         ["Active Sessions", analyticsOverview.sessions?.active || 0, "#fce7f3"],
         ["Total Enrollments", analyticsOverview.enrollments.total, "#dbeafe"],
         ["Completed", analyticsOverview.enrollments.completed, "#d1fae5"],
