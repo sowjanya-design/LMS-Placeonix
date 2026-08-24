@@ -37,10 +37,10 @@ export default function AttendanceMarkPage() {
     api
       .get<{ students: StudentRow[] }>("/users/my-students")
       .then((res) => {
-        const filtered = res.students.filter((s: any) => s.student).filter((s) => (s as unknown as { batch?: { _id: string } }).batch?._id === batchId);
-        setStudents(filtered.length ? filtered : res.students.filter((s: any) => s.student));
+        const filtered = res.students.filter((s: StudentRow) => s.student).filter((s) => (s as unknown as { batch?: { _id: string } }).batch?._id === batchId);
+        setStudents(filtered.length ? filtered : res.students.filter((s: StudentRow) => s.student));
         const initial: Record<string, AttendanceStatus> = {};
-        (filtered.length ? filtered : res.students.filter((s: any) => s.student)).forEach((s) => (initial[s.student._id] = "present"));
+        (filtered.length ? filtered : res.students.filter((s: StudentRow) => s.student)).forEach((s) => (initial[s.student._id] = "present"));
         setMarks(initial);
       })
       .catch((err) => setError(err instanceof ApiError ? err.message : "Failed to load students"));

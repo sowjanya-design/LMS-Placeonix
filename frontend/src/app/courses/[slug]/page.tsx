@@ -4,7 +4,7 @@ import FAQ from '@/components/seo/FAQ';
 
 // Mock data fetcher - replace with actual DB call
 async function getCourseData(slug: string) {
-  const courses: Record<string, any> = {
+  const courses: Record<string, unknown> = {
     'sap-btp-training-hyderabad': {
       title: 'Best SAP BTP Training Institute in Hyderabad with Placement',
       description: 'Learn SAP BTP, ABAP on Cloud, and RAP from industry experts. Job-oriented SAP BTP course in Hyderabad with 100% placement assistance and real-time projects.',
