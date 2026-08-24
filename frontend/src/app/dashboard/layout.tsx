@@ -6,6 +6,7 @@ import { AuthGuard } from "@/components/auth-guard";
 import { Sidebar } from "@/components/sidebar";
 import { NotificationBell } from "@/components/notification-bell";
 import { HeaderSearch } from "@/components/header-search";
+import { MobileNav } from "@/components/mobile-nav";
 import { NAV } from "@/lib/nav";
 import { ROLE_COLOR } from "@/lib/roles";
 
@@ -30,7 +31,10 @@ function DashboardChrome({ children }: { children: React.ReactNode }) {
           className="relative z-40 flex flex-shrink-0 items-center justify-between bg-white/70 px-8 py-4 backdrop-blur-xl"
           style={{ boxShadow: "0 4px 24px rgba(17,24,39,0.05)" }}
         >
-          <div className="text-[1.25rem] font-extrabold tracking-[-0.2px] text-ink">{title}</div>
+          <div className="flex items-center gap-3">
+            <MobileNav />
+            <div className="text-[1.25rem] font-extrabold tracking-[-0.2px] text-ink">{title}</div>
+          </div>
           <div className="flex items-center gap-3.5">
             {(user?.role === "admin" || user?.role === "mentor") && <HeaderSearch />}
             <NotificationBell />

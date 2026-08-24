@@ -3,11 +3,15 @@
 import { useEffect, useMemo, useState } from "react";
 import { api, ApiError } from "@/lib/api";
 import type { Course } from "@/lib/types";
+import { useAuth } from "@/lib/auth-context";
+import { CourseFormModal } from "@/components/courses/CourseFormModal";
 
 export default function CoursesPage() {
   const [courses, setCourses] = useState<Course[] | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [category, setCategory] = useState<string>("All");
+  const [showAdd, setShowAdd] = useState(false);
+  const { user } = useAuth();
 
   useEffect(() => {
     api
@@ -25,10 +29,21 @@ export default function CoursesPage() {
 
   return (
     <div className="flex flex-col gap-6">
-      <div>
-        <h1 className="text-xl font-bold text-ink">
-          Course Catalog {courses ? <span className="text-sm font-normal text-muted">{courses.length} programs</span> : null}
-        </h1>
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-xl font-bold text-ink">
+            Course Catalog {courses ? <span className="text-sm font-normal text-muted">{courses.length} programs</span> : null}
+          </h1>
+        </div>
+        {user?.role === "admin" && (
+          <button
+            onClick={() => setShowAdd(true)}
+            className="rounded-[10px] px-4 py-2.5 text-sm font-bold text-white shadow-[0_4px_14px_rgba(108,63,245,0.28)]"
+            style={{ background: "linear-gradient(135deg, var(--purple), var(--purple-dk))" }}
+          >
+            + Add Course
+          </button>
+        )}
       </div>
 
       {error && <p className="text-sm text-red">{error}</p>}
@@ -67,6 +82,13 @@ export default function CoursesPage() {
             )}
           </div>
         </>
+      )}
+
+      {showAdd && (
+        <CourseFormModal
+          onClose={() => setShowAdd(false)}
+          onAdded={(c) => setCourses((prev) => (prev ? [c, ...prev] : [c]))}
+        />
       )}
     </div>
   );

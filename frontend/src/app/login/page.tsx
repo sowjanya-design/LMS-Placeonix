@@ -85,6 +85,16 @@ export default function LoginPage() {
             }}
           >
             <div className="m-auto w-full">
+              <div className="mb-6 flex justify-center md:hidden">
+                <Image
+                  src="/brand/placeonix-logo-v4.png"
+                  alt="Placeonix"
+                  width={633}
+                  height={588}
+                  className="h-auto w-[110px]"
+                  priority
+                />
+              </div>
               <h2 className="mb-1 text-center text-[1.55rem] font-extrabold text-ink">Welcome Back!</h2>
               <p className="mb-5 text-center text-sm text-muted">Login to access your dashboard</p>
 

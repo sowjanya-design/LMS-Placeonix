@@ -80,17 +80,17 @@ if (process.env.NODE_ENV !== 'production') {
   app.use(morgan('dev'));
 }
 
-// Static — uploaded files
+
 const uploadDir = process.env.FILE_UPLOAD_PATH || path.join(__dirname, '../uploads');
 const { protect } = require('./middleware/auth');
 
 app.use('/uploads/avatars', express.static(path.join(uploadDir, 'avatars'))); // avatars can be public
 app.use('/uploads', protect, express.static(uploadDir));
 
-// ─── Friendly Landing Page at / ───
+
 app.get('/', (req, res) => {
-  // Demo credentials are only for local/dev convenience — never advertise
-  // real seeded account passwords on a publicly reachable production URL.
+  
+  
   const quickLoginBlock = process.env.NODE_ENV === 'production' ? '' : `
   <div class="info">
     <strong style="color:#fff">Quick Login (dev only)</strong>
@@ -194,11 +194,11 @@ app.get('/health', (req, res) => {
   });
 });
 
-// API
+
 const apiVersion = process.env.API_VERSION || 'v1';
 app.use(`/api/${apiVersion}`, routes);
 
-// 404 + error handler
+
 app.use(notFound);
 app.use(errorHandler);
 
