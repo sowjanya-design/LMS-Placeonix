@@ -305,15 +305,15 @@ function StudentDashboard({ firstName, role }: { firstName?: string; role?: stri
               <>
                 <div className="flex items-center justify-between mb-4">
                   <span className="rounded-md bg-purple-lt px-2.5 py-1 text-xs font-bold text-purple uppercase">
-                    {((currentCourse.course as Record<string, unknown>)?.category as string)?.replace('_', ' ') || 'Current Path'}
+                    {((currentCourse.course as unknown as Record<string, unknown>)?.category as string)?.replace('_', ' ') || 'Current Path'}
                   </span>
                   <span className="text-sm font-bold text-ink">{currentCourse.progress?.overall || 0}% Mastered</span>
                 </div>
                 <h2 className="text-2xl font-extrabold text-ink mb-2">
-                  {((currentCourse.course as Record<string, unknown>)?.title as string) || 'Unknown Course'}
+                  {((currentCourse.course as unknown as Record<string, unknown>)?.title as string) || 'Unknown Course'}
                 </h2>
                 <p className="text-sm text-muted mb-6 max-w-[80%] line-clamp-2">
-                  {((currentCourse.course as Record<string, unknown>)?.shortDescription as string) || "Keep pushing forward to unlock your next career milestone!"}
+                  {((currentCourse.course as unknown as Record<string, unknown>)?.shortDescription as string) || "Keep pushing forward to unlock your next career milestone!"}
                 </p>
                 
                 {/* Progress Bar */}

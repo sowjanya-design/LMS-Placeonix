@@ -3,8 +3,17 @@ import { constructMetadata } from '@/lib/seo';
 import FAQ from '@/components/seo/FAQ';
 
 // Mock data fetcher - replace with actual DB call
-async function getCourseData(slug: string) {
-  const courses: Record<string, unknown> = {
+interface CourseData {
+  title: string;
+  description: string;
+  keywords: string[];
+  fee: string;
+  duration: string;
+  faqs: { question: string; answer: string }[];
+}
+
+async function getCourseData(slug: string): Promise<CourseData | undefined> {
+  const courses: Record<string, CourseData> = {
     'sap-btp-training-hyderabad': {
       title: 'Best SAP BTP Training Institute in Hyderabad with Placement',
       description: 'Learn SAP BTP, ABAP on Cloud, and RAP from industry experts. Job-oriented SAP BTP course in Hyderabad with 100% placement assistance and real-time projects.',
