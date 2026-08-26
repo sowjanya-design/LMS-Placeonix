@@ -63,6 +63,7 @@ const userSchema = new mongoose.Schema(
     passwordResetToken: String,
     passwordResetExpiry: Date,
     refreshTokens: { type: [String], select: false, default: [] },
+    tokenBlacklistedAt: { type: Date, default: null }, // set on logout to invalidate all prior access tokens
     lastLogin: Date,
     loginAttempts: { type: Number, default: 0 },
     lockUntil: Date,

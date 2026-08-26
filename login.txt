@@ -1,0 +1,7 @@
+
+  → Sign in with one click:
+    https://railway.com/activate?user_code=TZXX-ZQNX
+
+  → Or go to https://railway.com/activate and enter this code:
+    TZXX-ZQNX
+

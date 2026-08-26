@@ -47,9 +47,10 @@ export default function MyCoursesPage() {
           ) : (
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
               {enrollments.filter(e => e.course && e.batch).map((e) => (
-                <div
+                <a
                   key={e._id}
-                  className="flex flex-col gap-4 rounded-[14px] border border-line bg-white p-5 transition-transform hover:-translate-y-1"
+                  href={`/dashboard/my-courses/${e._id}`}
+                  className="flex flex-col gap-4 rounded-[14px] border border-line bg-white p-5 transition-all hover:-translate-y-1 hover:shadow-md cursor-pointer no-underline"
                 >
                   <div className="flex items-start justify-between gap-2">
                     <div>
@@ -71,13 +72,16 @@ export default function MyCoursesPage() {
                     </div>
                   </div>
 
-                  <div className="flex flex-col gap-1 text-xs text-muted">
-                    <span>
-                      {e.batch?.name || 'Unknown Batch'} · <span className="capitalize">{e.batch?.mode || 'online'}</span>
-                      {e.batch?.mentor && ` · ${e.batch.mentor.firstName} ${e.batch.mentor.lastName}`}
-                    </span>
+                  <div className="flex items-center justify-between">
+                    <div className="flex flex-col gap-1 text-xs text-muted">
+                      <span>
+                        {e.batch?.name || 'Unknown Batch'} · <span className="capitalize">{e.batch?.mode || 'online'}</span>
+                        {e.batch?.mentor && ` · ${e.batch.mentor.firstName} ${e.batch.mentor.lastName}`}
+                      </span>
+                    </div>
+                    <span className="text-xs font-bold text-purple">View →</span>
                   </div>
-                </div>
+                </a>
               ))}
             </div>
           )}

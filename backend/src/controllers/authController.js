@@ -181,6 +181,8 @@ exports.logout = asyncHandler(async (req, res) => {
     } else if (currentRefresh && req.user.refreshTokens) {
       req.user.refreshTokens = req.user.refreshTokens.filter(t => t !== currentRefresh);
     }
+    // Invalidate all access tokens issued before now (B-06 fix)
+    req.user.tokenBlacklistedAt = new Date();
     await req.user.save({ validateBeforeSave: false });
     auditLog(req, { module: 'auth', action: 'logout', userId: req.user._id, userEmail: req.user.email, message: allDevices ? 'All devices' : 'Current device' });
   }

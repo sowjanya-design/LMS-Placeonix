@@ -230,7 +230,7 @@ export default function CertificatesPage() {
           {certs.map((c) => {
             const revoked = c.isRevoked === true || c.status === "revoked";
             return (
-              <div key={c._id} className="flex flex-col gap-2 rounded-[14px] border border-line bg-white p-5">
+              <div key={c._id} className="flex flex-col gap-2 rounded-[14px] border border-line bg-white p-5 hover:shadow-md transition-shadow">
                 <div className="flex items-start justify-between">
                   <div className="flex h-10 w-10 items-center justify-center rounded-[10px] bg-amber-lt text-lg">🏆</div>
                   <span
@@ -249,15 +249,55 @@ export default function CertificatesPage() {
                 )}
                 <div className="text-xs text-muted">{c.certificateNumber}</div>
                 <div className="text-xs text-muted">Issued {fmt(c.issuedDate)}</div>
-                {isAdmin && !revoked && (
-                  <DangerButton
-                    onClick={() => handleRevoke(c)}
-                    disabled={revokingId === c._id}
-                    className="mt-1 self-start"
+                <div className="mt-2 flex gap-2">
+                  <button
+                    onClick={() => {
+                      const win = window.open("", "_blank");
+                      if (!win) return;
+                      win.document.write(`
+                        <!DOCTYPE html><html><head><title>Certificate — ${c.certificateNumber}</title>
+                        <style>
+                          body { font-family: Georgia, serif; background: #fff; display: flex; align-items: center; justify-content: center; min-height: 100vh; margin: 0; }
+                          .cert { border: 8px double #6c3ff5; padding: 60px 80px; text-align: center; max-width: 800px; width: 90%; box-shadow: 0 8px 40px rgba(0,0,0,0.12); }
+                          h1 { font-size: 2.5rem; color: #6c3ff5; margin-bottom: 0.5rem; }
+                          h2 { font-size: 1.8rem; color: #111827; margin: 1.5rem 0; }
+                          p { color: #555; font-size: 1rem; line-height: 1.8; }
+                          .meta { font-size: 0.85rem; color: #888; margin-top: 2rem; }
+                          .btn { margin-top: 2rem; padding: 10px 30px; background: #6c3ff5; color: #fff; border: none; border-radius: 8px; font-size: 1rem; cursor: pointer; }
+                        </style></head><body>
+                        <div class="cert">
+                          <p style="font-size:0.9rem;color:#6c3ff5;letter-spacing:3px;text-transform:uppercase">Placeonix Academy</p>
+                          <h1>Certificate of ${c.type ? c.type.charAt(0).toUpperCase() + c.type.slice(1) : "Completion"}</h1>
+                          <p>This is to certify that</p>
+                          <h2>${c.student?.firstName || ""} ${c.student?.lastName || ""}</h2>
+                          <p>has successfully completed the course</p>
+                          <h2 style="font-size:1.4rem;color:#6c3ff5">${c.course?.title || "Course"}</h2>
+                          ${c.grade ? `<p>Grade: <strong>${c.grade}</strong></p>` : ""}
+                          ${c.score ? `<p>Score: <strong>${c.score}%</strong></p>` : ""}
+                          <div class="meta">
+                            <p>Certificate No: ${c.certificateNumber}</p>
+                            <p>Issued on: ${fmt(c.issuedDate)}</p>
+                            ${revoked ? '<p style="color:red">⚠ This certificate has been revoked</p>' : ""}
+                          </div>
+                          <button class="btn" onclick="window.print()">🖨 Print Certificate</button>
+                        </div></body></html>
+                      `);
+                      win.document.close();
+                    }}
+                    className="flex-1 rounded-lg bg-purple-lt px-3 py-2 text-xs font-bold text-purple hover:bg-purple hover:text-white transition-colors"
                   >
-                    {revokingId === c._id ? "Revoking…" : "Revoke"}
-                  </DangerButton>
-                )}
+                    👁 View Certificate
+                  </button>
+                  {isAdmin && !revoked && (
+                    <DangerButton
+                      onClick={() => handleRevoke(c)}
+                      disabled={revokingId === c._id}
+                      className="mt-0 self-auto"
+                    >
+                      {revokingId === c._id ? "Revoking…" : "Revoke"}
+                    </DangerButton>
+                  )}
+                </div>
               </div>
             );
           })}

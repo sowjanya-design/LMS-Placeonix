@@ -179,6 +179,7 @@ export interface Certificate {
   status: "active" | "revoked";
   issuedDate: string;
   grade?: string;
+  score?: number;
 }
 
 export interface Resource {
