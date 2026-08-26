@@ -5,6 +5,8 @@ const asyncHandler = require('../utils/asyncHandler');
 const { generateTokenPair, verifyToken } = require('../utils/jwt');
 const logger = require('../utils/logger');
 const { auditLog } = require('../utils/audit');
+const { sendWelcomeEmail } = require('../services/emailService');
+const { provisionStudentAccount } = require('../services/zohoService');
 const crypto = require('crypto');
 
 const cookieOptions = () => ({
@@ -82,6 +84,14 @@ exports.register = asyncHandler(async (req, res, next) => {
     }
   } else {
     logger.info(`[dev] Email verify token for ${user.email}: ${verifyTokenRaw}`);
+  }
+
+  // Send welcome email asynchronously
+  sendWelcomeEmail(user).catch((err) => logger.error('Failed to send welcome email:', err));
+
+  // Provision Zoho CRM/Mail account asynchronously (FEAT-003)
+  if (user.role === 'student') {
+    provisionStudentAccount(user).catch((err) => logger.error('Zoho provisioning failed:', err));
   }
 
   return ApiResponse.success(res, 201, 'Registration successful. Please check your email to verify your account.', {

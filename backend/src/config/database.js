@@ -16,6 +16,7 @@ const connectDB = async () => {
     const conn = await mongoose.connect(uri, {
       autoIndex: process.env.NODE_ENV !== 'production',
       serverSelectionTimeoutMS: 8000, // fail fast with a clear message
+      maxPoolSize: 50, // B-07: Handle high concurrency
     });
 
     logger.info(`✓ MongoDB connected: ${conn.connection.host}`);

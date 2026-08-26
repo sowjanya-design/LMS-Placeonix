@@ -74,6 +74,7 @@ export interface Submission {
   score?: number;
   grade?: string;
   mentorFeedback?: string;
+  files?: { url: string; filename: string; size: number }[];
 }
 
 export type AttendanceStatus = "present" | "absent" | "late" | "excused";
@@ -107,6 +108,45 @@ export interface Assignment {
   type: string;
   difficulty: "easy" | "medium" | "hard";
   submissions: Submission[];
+}
+
+export interface QuizOption {
+  _id?: string;
+  text: string;
+  isCorrect?: boolean;
+}
+
+export interface QuizQuestion {
+  _id?: string;
+  text: string;
+  type: "single" | "multi";
+  options: QuizOption[];
+  points: number;
+}
+
+export interface Quiz {
+  _id: string;
+  title: string;
+  description?: string;
+  course: { _id: string; title: string };
+  batch: { _id: string; name: string; code: string };
+  questions: QuizQuestion[];
+  timeLimitMinutes: number;
+  maxScore?: number;
+  passingScorePercent: number;
+  status: "draft" | "published" | "closed";
+  isOpen?: boolean;
+}
+
+export interface QuizAttempt {
+  _id: string;
+  quiz: string | Quiz;
+  student: string;
+  status: "in_progress" | "submitted" | "abandoned";
+  score?: number;
+  passed?: boolean;
+  startedAt: string;
+  submittedAt?: string;
 }
 
 export interface Session {

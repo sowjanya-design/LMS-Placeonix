@@ -2,6 +2,7 @@ const Lead = require('../models/Lead');
 const AppError = require('../utils/AppError');
 const ApiResponse = require('../utils/ApiResponse');
 const asyncHandler = require('../utils/asyncHandler');
+const { sendLeadConfirmationEmail } = require('../services/emailService');
 
 // @desc   Submit inquiry (PUBLIC — from website contact form)
 // @route  POST /api/v1/leads
@@ -17,8 +18,13 @@ exports.createLead = asyncHandler(async (req, res) => {
     phone,
     message,
     courseInterested,
+    courseInterested,
     courseInterestedName,
   });
+  
+  // Fire and forget email notification
+  sendLeadConfirmationEmail(lead).catch((err) => console.error('Failed to send lead email:', err));
+
   return ApiResponse.created(
     res,
     'Thank you! We will reach out within 24 hours.',

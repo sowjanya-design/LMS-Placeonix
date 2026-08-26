@@ -62,6 +62,7 @@ function SubmitForm({
 }) {
   const [content, setContent] = useState("");
   const [githubLink, setGithubLink] = useState("");
+  const [files, setFiles] = useState<File[]>([]);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
@@ -70,7 +71,19 @@ function SubmitForm({
     setSubmitting(true);
     setError(null);
     try {
-      await api.post(`/assignments/${assignment._id}/submit`, { content, githubLink });
+      let uploadedFiles: any[] = [];
+      if (files.length > 0) {
+        const formData = new FormData();
+        files.forEach((f) => formData.append("files", f));
+        const upRes = await api.post<{ files: any[] }>("/uploads/submission", formData);
+        uploadedFiles = upRes.files || [];
+      }
+
+      await api.post(`/assignments/${assignment._id}/submit`, { 
+        content, 
+        githubLink,
+        files: uploadedFiles,
+      });
       const fresh = await api.get<{ assignment: Assignment }>(`/assignments/${assignment._id}`);
       setSuccess(true);
       setTimeout(() => {
@@ -107,6 +120,20 @@ function SubmitForm({
         onChange={(e) => setGithubLink(e.target.value)}
         className="rounded-lg border-[1.5px] border-line bg-[#fbfbfd] px-3 py-2 text-sm text-ink outline-none focus:border-purple focus:bg-white"
       />
+      <div className="flex flex-col gap-1.5">
+        <label className="text-xs font-semibold text-ink">Attachments (Max 5 files)</label>
+        <input
+          type="file"
+          multiple
+          onChange={(e) => {
+            if (e.target.files) setFiles(Array.from(e.target.files).slice(0, 5));
+          }}
+          className="rounded-lg border-[1.5px] border-line bg-[#fbfbfd] px-3 py-1.5 text-sm file:mr-4 file:rounded-md file:border-0 file:bg-purple-lt file:px-3 file:py-1 file:text-xs file:font-semibold file:text-purple hover:file:bg-purple/20"
+        />
+        {files.length > 0 && (
+          <p className="text-xs text-muted">{files.length} file(s) selected.</p>
+        )}
+      </div>
       {error && <p className="text-sm text-red">{error}</p>}
       <div className="flex gap-2">
         <button
@@ -179,6 +206,22 @@ function StudentAssignments() {
                     <span className="font-semibold text-ink">Feedback: </span>
                     {mine.mentorFeedback}
                   </p>
+                )}
+
+                {mine?.files && mine.files.length > 0 && (
+                  <div className="mt-3 flex flex-wrap gap-2">
+                    {mine.files.map((f: any, idx: number) => (
+                      <a
+                        key={idx}
+                        href={f.url}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="flex items-center gap-1.5 rounded-md border border-line bg-bg px-2.5 py-1 text-xs font-medium text-ink2 hover:bg-line/50 hover:text-ink"
+                      >
+                        📎 {f.filename}
+                      </a>
+                    ))}
+                  </div>
                 )}
 
                 {openId === a._id ? (
@@ -506,6 +549,21 @@ function MentorGrading() {
                       <a href={s.githubLink} target="_blank" rel="noreferrer" className="text-sm text-purple hover:underline">
                         {s.githubLink}
                       </a>
+                    )}
+                    {s.files && s.files.length > 0 && (
+                      <div className="mt-2 flex flex-wrap gap-2">
+                        {s.files.map((f: any, idx: number) => (
+                          <a
+                            key={idx}
+                            href={f.url}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="flex items-center gap-1.5 rounded-md border border-line bg-bg px-2.5 py-1 text-xs font-medium text-ink2 hover:bg-line/50 hover:text-ink"
+                          >
+                            📎 {f.filename}
+                          </a>
+                        ))}
+                      </div>
                     )}
                     <GradeForm assignmentId={a._id} submission={s} onGraded={(u) => handleGraded(a._id, u)} />
                   </div>
