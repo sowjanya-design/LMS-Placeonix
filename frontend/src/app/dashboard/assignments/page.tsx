@@ -54,14 +54,17 @@ function StatusBadge({ assignment }: { assignment: Assignment }) {
 function SubmitForm({
   assignment,
   onSubmitted,
+  onCancel,
 }: {
   assignment: Assignment;
   onSubmitted: (a: Assignment) => void;
+  onCancel: () => void;
 }) {
   const [content, setContent] = useState("");
   const [githubLink, setGithubLink] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [success, setSuccess] = useState(false);
 
   async function handleSubmit() {
     setSubmitting(true);
@@ -69,12 +72,23 @@ function SubmitForm({
     try {
       await api.post(`/assignments/${assignment._id}/submit`, { content, githubLink });
       const fresh = await api.get<{ assignment: Assignment }>(`/assignments/${assignment._id}`);
-      onSubmitted(fresh.assignment);
+      setSuccess(true);
+      setTimeout(() => {
+        onSubmitted(fresh.assignment);
+      }, 1500);
     } catch (err) {
       setError(err instanceof ApiError ? err.message : "Failed to submit");
     } finally {
       setSubmitting(false);
     }
+  }
+
+  if (success) {
+    return (
+      <div className="mt-3 flex items-center gap-2 rounded-lg border border-green bg-green-lt px-4 py-3 text-sm font-semibold text-green">
+        ✅ Assignment submitted successfully!
+      </div>
+    );
   }
 
   return (
@@ -94,14 +108,23 @@ function SubmitForm({
         className="rounded-lg border-[1.5px] border-line bg-[#fbfbfd] px-3 py-2 text-sm text-ink outline-none focus:border-purple focus:bg-white"
       />
       {error && <p className="text-sm text-red">{error}</p>}
-      <button
-        onClick={handleSubmit}
-        disabled={submitting}
-        className="self-start rounded-lg px-4 py-1.5 text-sm font-semibold text-white shadow-[0_4px_14px_rgba(108,63,245,0.28)] disabled:opacity-50"
-        style={{ background: "linear-gradient(135deg, var(--purple), var(--purple-dk))" }}
-      >
-        {submitting ? "Submitting…" : "Submit assignment"}
-      </button>
+      <div className="flex gap-2">
+        <button
+          onClick={handleSubmit}
+          disabled={submitting}
+          className="rounded-lg px-4 py-1.5 text-sm font-semibold text-white shadow-[0_4px_14px_rgba(108,63,245,0.28)] disabled:opacity-50"
+          style={{ background: "linear-gradient(135deg, var(--purple), var(--purple-dk))" }}
+        >
+          {submitting ? "Submitting…" : "Submit assignment"}
+        </button>
+        <button
+          onClick={onCancel}
+          disabled={submitting}
+          className="rounded-lg border border-line px-4 py-1.5 text-sm font-semibold text-muted hover:bg-bg"
+        >
+          Cancel
+        </button>
+      </div>
     </div>
   );
 }
@@ -159,7 +182,7 @@ function StudentAssignments() {
                 )}
 
                 {openId === a._id ? (
-                  <SubmitForm assignment={a} onSubmitted={handleSubmitted} />
+                  <SubmitForm assignment={a} onSubmitted={handleSubmitted} onCancel={() => setOpenId(null)} />
                 ) : (
                   canSubmit && (
                     <button

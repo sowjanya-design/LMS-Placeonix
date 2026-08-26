@@ -34,13 +34,16 @@ export default function AttendanceMarkPage() {
 
   useEffect(() => {
     if (!batchId) return;
+    setStudents(null);
     api
-      .get<{ students: StudentRow[] }>("/users/my-students")
+      .get<{ enrollments: { student: { _id: string; firstName: string; lastName: string } }[] }>(`/batches/${batchId}/enrollments`)
       .then((res) => {
-        const filtered = res.students.filter((s: StudentRow) => s.student).filter((s) => (s as unknown as { batch?: { _id: string } }).batch?._id === batchId);
-        setStudents(filtered.length ? filtered : res.students.filter((s: StudentRow) => s.student));
+        const rows: StudentRow[] = (res.enrollments || [])
+          .filter((e) => e.student)
+          .map((e) => ({ _id: e.student._id, student: e.student }));
+        setStudents(rows);
         const initial: Record<string, AttendanceStatus> = {};
-        (filtered.length ? filtered : res.students.filter((s: StudentRow) => s.student)).forEach((s) => (initial[s.student._id] = "present"));
+        rows.forEach((s) => (initial[s.student._id] = "present"));
         setMarks(initial);
       })
       .catch((err) => setError(err instanceof ApiError ? err.message : "Failed to load students"));

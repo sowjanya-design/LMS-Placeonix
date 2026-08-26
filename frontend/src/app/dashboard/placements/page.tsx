@@ -39,6 +39,7 @@ function DriveModal({
   const [deadline, setDeadline] = useState(toDateInput(drive?.applicationDeadline));
   const [pkgMin, setPkgMin] = useState(drive ? String(drive.package.min) : "");
   const [pkgMax, setPkgMax] = useState(drive ? String(drive.package.max) : "");
+  const [applicationUrl, setApplicationUrl] = useState((drive as (PlacementDrive & { applicationUrl?: string }) | undefined)?.applicationUrl ?? "");
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
 
@@ -52,6 +53,7 @@ function DriveModal({
         role: role.trim(),
         applicationDeadline: new Date(deadline).toISOString(),
         package: { min: Number(pkgMin) || 0, max: Number(pkgMax) || 0 },
+        ...(applicationUrl.trim() ? { applicationUrl: applicationUrl.trim() } : {}),
       };
       const res = editing
         ? await api.patch<{ drive: PlacementDrive }>(`/placements/${drive!._id}`, payload)
@@ -85,6 +87,9 @@ function DriveModal({
             <Input type="number" step="0.1" min="0" value={pkgMax} onChange={(e) => setPkgMax(e.target.value)} required />
           </Field>
         </div>
+        <Field label="Job Application URL" hint="Optional — students will see an external Apply link">
+          <Input type="url" value={applicationUrl} onChange={(e) => setApplicationUrl(e.target.value)} placeholder="https://company.com/careers/apply" />
+        </Field>
         <ErrorText>{error}</ErrorText>
         <ModalActions onCancel={onClose} submitting={submitting} submitLabel={editing ? "Save" : "Create"} />
       </form>
@@ -187,14 +192,28 @@ export default function PlacementsPage() {
               <div className="text-xs text-muted">Apply by {fmt(d.applicationDeadline)}</div>
               <div className="mt-auto flex gap-2 border-t border-line pt-3">
                 {user?.role === "student" && d.status === "open" && (
-                  <button
-                    onClick={() => handleApply(d)}
-                    disabled={busyId === d._id || applied.has(d._id)}
-                    className="flex-1 rounded-lg px-3 py-2 text-xs font-bold text-white disabled:opacity-60"
-                    style={{ background: applied.has(d._id) ? "var(--muted)" : "linear-gradient(135deg, var(--purple), var(--purple-dk))" }}
-                  >
-                    {applied.has(d._id) ? "Applied" : busyId === d._id ? "Applying…" : "Apply"}
-                  </button>
+                  <>
+                    {(d as PlacementDrive & { applicationUrl?: string }).applicationUrl ? (
+                      <a
+                        href={(d as PlacementDrive & { applicationUrl?: string }).applicationUrl}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="flex-1 rounded-lg px-3 py-2 text-center text-xs font-bold text-white"
+                        style={{ background: "linear-gradient(135deg, var(--purple), var(--purple-dk))" }}
+                      >
+                        🔗 Apply Externally
+                      </a>
+                    ) : (
+                      <button
+                        onClick={() => handleApply(d)}
+                        disabled={busyId === d._id || applied.has(d._id)}
+                        className="flex-1 rounded-lg px-3 py-2 text-xs font-bold text-white disabled:opacity-60"
+                        style={{ background: applied.has(d._id) ? "var(--muted)" : "linear-gradient(135deg, var(--purple), var(--purple-dk))" }}
+                      >
+                        {applied.has(d._id) ? "Applied" : busyId === d._id ? "Applying…" : "Apply"}
+                      </button>
+                    )}
+                  </>
                 )}
                 {user?.role === "admin" && (
                   <button
