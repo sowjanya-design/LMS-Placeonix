@@ -53,6 +53,8 @@ export const api = {
   get: <T = unknown>(path: string, options?: RequestInit) => apiFetch<T>(path, options),
   post: <T = unknown>(path: string, body?: unknown, options?: RequestInit) =>
     apiFetch<T>(path, { method: "POST", body: body instanceof FormData ? body : body ? JSON.stringify(body) : undefined, ...options }),
+  put: <T = unknown>(path: string, body?: unknown, options?: RequestInit) =>
+    apiFetch<T>(path, { method: "PUT", body: body instanceof FormData ? body : body ? JSON.stringify(body) : undefined, ...options }),
   patch: <T = unknown>(path: string, body?: unknown, options?: RequestInit) =>
     apiFetch<T>(path, { method: "PATCH", body: body instanceof FormData ? body : body ? JSON.stringify(body) : undefined, ...options }),
   delete: <T = unknown>(path: string) => apiFetch<T>(path, { method: "DELETE" }),
