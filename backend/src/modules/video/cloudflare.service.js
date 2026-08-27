@@ -23,8 +23,9 @@ class CloudflareService {
     if (!this.accountId || !this.apiToken) {
       console.warn('Missing Cloudflare credentials. Using mock direct upload URL.');
       const uid = `mock-cf-video-${Date.now()}`;
+      const backendUrl = process.env.BACKEND_URL || process.env.NEXT_PUBLIC_API_BASE?.replace('/api/v1', '') || 'https://backend-pearl-seven-77.vercel.app';
       return {
-        uploadUrl: `http://localhost:5000/api/v1/videos/mock-cloudflare-upload`,
+        uploadUrl: `${backendUrl}/api/v1/videos/mock-cloudflare-upload`,
         uid,
       };
     }

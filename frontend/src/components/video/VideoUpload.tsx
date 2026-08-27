@@ -17,7 +17,7 @@ export default function VideoUpload({ courseId, lessonId, onUploadComplete }: Vi
   const [progress, setProgress] = useState(0);
   const [message, setMessage] = useState('');
 
-  const API_BASE = process.env.NEXT_PUBLIC_API_BASE || 'http://localhost:5000/api/v1';
+  const API_BASE = process.env.NEXT_PUBLIC_API_BASE || 'https://backend-pearl-seven-77.vercel.app/api/v1';
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files.length > 0) {
