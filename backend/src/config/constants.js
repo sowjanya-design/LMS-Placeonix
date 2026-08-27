@@ -69,8 +69,10 @@ module.exports = {
   ATTENDANCE: {
     PRESENT: 'present',
     ABSENT: 'absent',
-    LATE: 'late',
-    EXCUSED: 'excused',
+    HALF_DAY: 'half_day',
+    ON_DUTY: 'on_duty',
+    LEAVE: 'leave',
+    HOLIDAY: 'holiday',
   },
 
   MAX_BATCH_SIZE: 30,
