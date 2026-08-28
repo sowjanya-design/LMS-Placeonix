@@ -17,7 +17,7 @@ function Player() {
       <div className="aspect-video w-full max-w-4xl mx-auto rounded-lg overflow-hidden border border-line bg-black relative flex items-center justify-center">
         {uid.startsWith('local_video_') ? (
           <video
-            src={`http://localhost:5000/uploads/videos/${uid.replace('local_video_', '')}`}
+            src={`${process.env.NEXT_PUBLIC_API_BASE || 'https://backend-pearl-seven-77.vercel.app/api/v1'}/../uploads/videos/${uid.replace('local_video_', '')}`}
             controls
             controlsList="nodownload"
             onContextMenu={(e) => e.preventDefault()}
