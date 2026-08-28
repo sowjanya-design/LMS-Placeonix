@@ -19,13 +19,12 @@ class CloudflareService {
    * This allows the frontend to upload a video directly without passing it through our backend
    */
   async createDirectUploadUrl(maxDurationSeconds = 3600) {
-    // Graceful fallback for local development without Cloudflare keys
+    // Graceful fallback for environments without Cloudflare keys
     if (!this.accountId || !this.apiToken) {
       console.warn('Missing Cloudflare credentials. Using mock direct upload URL.');
       const uid = `mock-cf-video-${Date.now()}`;
-      const backendUrl = process.env.BACKEND_URL || process.env.NEXT_PUBLIC_API_BASE?.replace('/api/v1', '') || 'https://backend-pearl-seven-77.vercel.app';
       return {
-        uploadUrl: `${backendUrl}/api/v1/videos/mock-cloudflare-upload`,
+        uploadUrl: `mock://no-cloudflare/${uid}`,
         uid,
       };
     }

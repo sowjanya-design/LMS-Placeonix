@@ -43,33 +43,38 @@ export default function VideoUpload({ courseId, lessonId, onUploadComplete }: Vi
       );
 
       const { uploadUrl, uid } = uploadRes;
+      let finalUid = uid;
       
-      setMessage('Uploading video directly to Cloudflare...');
-      setProgress(30);
+      // 2. Upload file — but detect mock mode (no Cloudflare configured)
+      if (uploadUrl.startsWith('mock://')) {
+        // Mock mode: Cloudflare not configured, skip actual file transfer
+        setMessage('Processing video (mock mode)...');
+        setProgress(80);
+      } else {
+        // Real Cloudflare upload
+        setMessage('Uploading video to Cloudflare...');
+        setProgress(30);
 
-      // 2. Upload file directly to Cloudflare (or our mock endpoint)
-      const formData = new FormData();
-      formData.append('file', file);
+        const formData = new FormData();
+        formData.append('file', file);
 
-      const { data: uploadResult } = await axios.post(uploadUrl, formData, {
-        headers: {
-          'Content-Type': 'multipart/form-data',
-        },
-        onUploadProgress: (progressEvent) => {
-          if (progressEvent.total) {
-            const percentCompleted = Math.round((progressEvent.loaded * 70) / progressEvent.total);
-            setProgress(30 + percentCompleted);
-          }
-        },
-      });
+        const { data: uploadResult } = await axios.post(uploadUrl, formData, {
+          headers: { 'Content-Type': 'multipart/form-data' },
+          onUploadProgress: (progressEvent) => {
+            if (progressEvent.total) {
+              const percentCompleted = Math.round((progressEvent.loaded * 70) / progressEvent.total);
+              setProgress(30 + percentCompleted);
+            }
+          },
+        });
 
-      // If the mock backend gave us a new local UID, use it. Otherwise use the original.
-      const finalUid = uploadResult?.result?.uid || uid;
+        finalUid = uploadResult?.result?.uid || uid;
+      }
       
       setMessage('Finalizing upload...');
       
       // 3. Notify backend that upload finished
-      const finalizeRes = await api.post<unknown>(
+      await api.post<unknown>(
         '/videos/finalize',
         { uid: finalUid, duration: 0, thumbnail: '' }
       );
