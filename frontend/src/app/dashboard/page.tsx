@@ -6,7 +6,7 @@ import { useRouter } from "next/navigation";
 import { useAuth } from "@/lib/auth-context";
 import { api } from "@/lib/api";
 import { EmptyState } from "@/components/ui/empty-state";
-import type { AnalyticsOverview, User, Enrollment, AttendanceRecord, Session, MockInterview, Certificate } from "@/lib/types";
+import type { AnalyticsOverview, User, Enrollment, AttendanceRecord, Session, MockInterview, Certificate, Assignment } from "@/lib/types";
 import { EnrollmentTrendChart, type MonthlyEnrollmentPoint } from "@/components/charts/EnrollmentTrendChart";
 
 function StatCard({ icon, bg, value, label }: { icon: string; bg: string; value: string | number; label: string }) {
@@ -187,6 +187,7 @@ function StudentDashboard({ firstName, role }: { firstName?: string; role?: stri
   const [mockInterviews, setMockInterviews] = useState<MockInterview[]>([]);
   const [certificates, setCertificates] = useState<Certificate[]>([]);
   const [streak, setStreak] = useState(0);
+  const [feesDue, setFeesDue] = useState<number | null>(null);
 
   useEffect(() => {
     api.get<Enrollment[]>("/users/me/enrollments").then(setEnrollments).catch(() => setEnrollments([]));
@@ -247,6 +248,10 @@ function StudentDashboard({ firstName, role }: { firstName?: string; role?: stri
     api.get<Certificate[]>("/certificates/me")
        .then(res => setCertificates((res || []).slice(0, 4)))
        .catch(() => setCertificates([]));
+
+    api.get<{ summary: { totalDue: number } }>("/payments/me/summary")
+       .then(res => setFeesDue(res.summary.totalDue))
+       .catch(() => setFeesDue(null));
   }, []);
 
   const currentCourse = enrollments?.filter(e => e.course && e.batch)?.[0];
@@ -287,6 +292,24 @@ function StudentDashboard({ firstName, role }: { firstName?: string; role?: stri
           </div>
         </div>
       </div>
+
+      {feesDue !== null && feesDue > 0 && (
+        <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-amber bg-amber-lt px-6 py-4">
+          <div className="flex items-center gap-3">
+            <span className="text-2xl">💳</span>
+            <div>
+              <div className="text-sm font-bold text-ink">₹{feesDue.toLocaleString("en-IN")} due</div>
+              <div className="text-xs text-ink2">Clear your outstanding fees to stay in good standing.</div>
+            </div>
+          </div>
+          <button
+            onClick={() => router.push("/dashboard/payments")}
+            className="shrink-0 rounded-full bg-[#111827] px-5 py-2 text-xs font-bold text-white transition-all hover:-translate-y-0.5 active:scale-95"
+          >
+            Pay now
+          </button>
+        </div>
+      )}
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
         {/* Main Column (Learning Path & Heatmap) */}
@@ -416,13 +439,27 @@ function StudentDashboard({ firstName, role }: { firstName?: string; role?: stri
   );
 }
 function MentorDashboard({ firstName }: { firstName?: string }) {
+  const router = useRouter();
   const [stats, setStats] = useState<{ myStudents?: number } | null>(null);
   const [sessions, setSessions] = useState<Session[]>([]);
+  const [pendingGrading, setPendingGrading] = useState<number | null>(null);
 
   useEffect(() => {
     api.get<{ myStudents?: number }>("/users/me/stats").then(setStats).catch(() => {});
     const now = new Date().toISOString();
     api.get<Session[]>(`/sessions?from=${now}&limit=5`).then(res => setSessions(res || [])).catch(() => {});
+
+    // /assignments is already scoped server-side to this mentor's own batches —
+    // count submissions still awaiting review (not yet 'reviewed'/'returned').
+    api.get<Assignment[]>("/assignments?limit=100")
+      .then((assignments) => {
+        const pending = (assignments || []).reduce(
+          (sum, a) => sum + (a.submissions || []).filter((s) => s.status === "submitted" || s.status === "late").length,
+          0
+        );
+        setPendingGrading(pending);
+      })
+      .catch(() => setPendingGrading(null));
   }, []);
 
   return (
@@ -436,7 +473,7 @@ function MentorDashboard({ firstName }: { firstName?: string }) {
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
         <div className="flex flex-col gap-6 lg:col-span-2">
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-2 gap-4 lg:grid-cols-3">
             <div className="rounded-2xl border border-line bg-white p-6 shadow-sm flex items-center gap-4">
                <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-blue-50 text-2xl">👥</div>
                <div>
@@ -451,6 +488,18 @@ function MentorDashboard({ firstName }: { firstName?: string }) {
                  <div className="text-sm font-semibold text-muted uppercase">Upcoming Sessions</div>
                </div>
             </div>
+            <button
+              onClick={() => router.push("/dashboard/assignments")}
+              className={`col-span-2 flex items-center gap-4 rounded-2xl border p-6 text-left shadow-sm transition-transform hover:-translate-y-0.5 lg:col-span-1 ${
+                pendingGrading ? "border-amber bg-amber-lt" : "border-line bg-white"
+              }`}
+            >
+               <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-white text-2xl">📝</div>
+               <div>
+                 <div className="text-2xl font-bold text-ink">{pendingGrading ?? "-"}</div>
+                 <div className="text-sm font-semibold text-muted uppercase">Pending Grading</div>
+               </div>
+            </button>
           </div>
           
           <div className="rounded-2xl border border-line bg-white p-6 shadow-sm">
