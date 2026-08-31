@@ -110,7 +110,7 @@ function SolveChallenge({
             ))}
           </Select>
           <a
-            href="https://ide.placeonix.com"
+            href="https://ide.placeonix.com/login"
             target="_blank"
             rel="noopener noreferrer"
             className="text-xs font-bold text-purple hover:text-purple-dk"

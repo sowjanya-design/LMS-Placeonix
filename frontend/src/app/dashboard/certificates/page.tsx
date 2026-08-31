@@ -19,70 +19,205 @@ function fmt(iso: string) {
   return new Date(iso).toLocaleDateString(undefined, { day: "numeric", month: "short", year: "numeric" });
 }
 
+type RGB = readonly [number, number, number];
+const NAVY: RGB = [26, 26, 64];
+const PURPLE: RGB = [108, 63, 245];
+const PURPLE_DK: RGB = [90, 45, 220];
+const GOLD: RGB = [201, 155, 61];
+const GRAY: RGB = [110, 108, 122];
+const CREAM: RGB = [250, 248, 242];
+
+// jsPDF has no image-cropping primitive of its own — this pulls just the
+// hexagonal "P" mark out of the full lockup (logo + "placeonix" wordmark)
+// via an offscreen canvas, so the round verification stamp gets the actual
+// brand mark instead of a hand-drawn stand-in.
+function loadImage(src: string): Promise<HTMLImageElement> {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    img.onload = () => resolve(img);
+    img.onerror = reject;
+    img.src = src;
+  });
+}
+
+async function cropLogoMark(img: HTMLImageElement): Promise<string> {
+  const cropWidth = Math.round(img.height * 0.92);
+  const canvas = document.createElement("canvas");
+  canvas.width = cropWidth;
+  canvas.height = img.height;
+  const ctx = canvas.getContext("2d");
+  if (!ctx) return img.src;
+  ctx.drawImage(img, 0, 0, cropWidth, img.height, 0, 0, cropWidth, img.height);
+  return canvas.toDataURL("image/png");
+}
+
 // Generated client-side with jsPDF (already a dependency for the Reports
 // export) rather than a document.write()'d HTML string — the latter was
 // tried on another branch and interpolated the student's name and course
 // title unescaped into raw HTML in a new window, a stored-XSS vector the
-// moment an admin opened another student's certificate. jsPDF's text/rect
-// primitives never parse their input as markup, so there's no equivalent
-// risk here regardless of what a name or title contains.
+// moment an admin opened another student's certificate. jsPDF's text/rect/
+// image primitives never parse their input as markup, so there's no
+// equivalent risk here regardless of what a name or title contains.
 async function downloadCertificatePdf(cert: AdminCertificate) {
   const { default: jsPDF } = await import("jspdf");
   const doc = new jsPDF({ orientation: "landscape", unit: "mm", format: "a4" });
   const w = doc.internal.pageSize.getWidth();
   const h = doc.internal.pageSize.getHeight();
-  const purple = [108, 63, 245] as const;
-  const ink = [17, 24, 39] as const;
+  const cx = w / 2;
 
-  // Border
-  doc.setDrawColor(...purple);
-  doc.setLineWidth(1.2);
-  doc.rect(10, 10, w - 20, h - 20);
-  doc.setLineWidth(0.3);
-  doc.rect(13, 13, w - 26, h - 26);
+  const diamond = (x: number, y: number, r: number, color: RGB) => {
+    doc.setFillColor(...color);
+    doc.triangle(x - r, y, x, y - r, x + r, y, "F");
+    doc.triangle(x - r, y, x, y + r, x + r, y, "F");
+  };
+  const corner = (x: number, y: number, dx: 1 | -1, dy: 1 | -1) => {
+    doc.setFillColor(...NAVY);
+    doc.triangle(x, y, x + dx * 20, y, x, y + dy * 20, "F");
+    doc.setDrawColor(...GOLD);
+    doc.setLineWidth(0.5);
+    doc.line(x + dx * 20, y, x, y + dy * 20);
+    diamond(x + dx * 30, y + dy * 12, 2.2, GOLD);
+    diamond(x + dx * 12, y + dy * 30, 2.2, GOLD);
+  };
 
-  doc.setTextColor(...purple);
-  doc.setFontSize(12);
-  doc.text("PLACEONIX", w / 2, 32, { align: "center" });
+  // Background + double frame
+  doc.setFillColor(...CREAM);
+  doc.rect(0, 0, w, h, "F");
+  doc.setDrawColor(...GOLD);
+  doc.setLineWidth(0.7);
+  doc.rect(8, 8, w - 16, h - 16);
+  doc.setDrawColor(...NAVY);
+  doc.setLineWidth(0.25);
+  doc.rect(11.5, 11.5, w - 23, h - 23);
 
-  doc.setTextColor(...ink);
-  doc.setFontSize(28);
-  const title = cert.type ? `Certificate of ${cert.type.charAt(0).toUpperCase()}${cert.type.slice(1)}` : "Certificate of Completion";
-  doc.text(title, w / 2, 55, { align: "center" });
+  corner(8, 8, 1, 1);
+  corner(w - 8, 8, -1, 1);
+  corner(8, h - 8, 1, -1);
+  corner(w - 8, h - 8, -1, -1);
+  diamond(cx, 8, 2.6, GOLD);
 
-  doc.setFontSize(12);
-  doc.setTextColor(90, 90, 90);
-  doc.text("This is to certify that", w / 2, 72, { align: "center" });
-
-  doc.setFontSize(24);
-  doc.setTextColor(...ink);
-  const studentName = cert.student ? `${cert.student.firstName} ${cert.student.lastName}` : "Student";
-  doc.text(studentName, w / 2, 86, { align: "center" });
-
-  doc.setFontSize(12);
-  doc.setTextColor(90, 90, 90);
-  doc.text("has successfully completed", w / 2, 98, { align: "center" });
-
-  doc.setFontSize(18);
-  doc.setTextColor(...purple);
-  const courseTitle = populatedCourse(cert.course)?.title || "the course";
-  doc.text(courseTitle, w / 2, 110, { align: "center" });
-
-  if (cert.grade || cert.score != null) {
-    doc.setFontSize(11);
-    doc.setTextColor(...ink);
-    const parts = [cert.grade ? `Grade: ${cert.grade}` : "", cert.score != null ? `Score: ${cert.score}%` : ""].filter(Boolean);
-    doc.text(parts.join("   ·   "), w / 2, 122, { align: "center" });
+  // Logo lockup + the standalone mark for the stamp below
+  let markDataUrl: string | null = null;
+  try {
+    const img = await loadImage("/brand/placeonix-logo-v4.png");
+    const logoW = 62;
+    const logoH = (logoW * img.height) / img.width;
+    doc.addImage(img, "PNG", cx - logoW / 2, 17, logoW, logoH);
+    markDataUrl = await cropLogoMark(img);
+  } catch {
+    // Offline/blocked image load — fall back to a text wordmark so the rest
+    // of the certificate still renders instead of throwing.
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(20);
+    doc.setTextColor(...PURPLE);
+    doc.text("placeonix", cx, 30, { align: "center" });
   }
 
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(9.5);
+  doc.setTextColor(...PURPLE);
+  doc.text("T R A I N I N G   •   P L A C E M E N T   •   F U T U R E", cx, 42, { align: "center" });
+
+  const title = cert.type ? `Certificate of ${cert.type.charAt(0).toUpperCase()}${cert.type.slice(1)}` : "Certificate of Completion";
+  doc.setFont("times", "bold");
+  doc.setFontSize(32);
+  doc.setTextColor(...NAVY);
+  doc.text(title, cx, 62, { align: "center" });
+
+  doc.setFont("times", "italic");
+  doc.setFontSize(12);
+  doc.setTextColor(...GRAY);
+  doc.text("This is proudly presented to", cx, 76, { align: "center" });
+
+  const studentName = cert.student ? `${cert.student.firstName} ${cert.student.lastName}` : "Student";
+  doc.setFont("times", "bolditalic");
+  doc.setFontSize(38);
+  doc.setTextColor(...PURPLE_DK);
+  doc.text(studentName, cx, 96, { align: "center" });
+
+  doc.line(cx - 55, 104, cx - 8, 104);
+  diamond(cx, 104, 2, GOLD);
+  doc.line(cx + 8, 104, cx + 55, 104);
+
+  doc.setFont("times", "normal");
+  doc.setFontSize(12);
+  doc.setTextColor(...GRAY);
+  doc.text("for successfully completing the program", cx, 115, { align: "center" });
+
+  const courseTitle = populatedCourse(cert.course)?.title || "the course";
+  doc.setFont("times", "bold");
+  doc.setFontSize(24);
+  doc.setTextColor(...PURPLE);
+  doc.text(courseTitle.toUpperCase(), cx, 129, { align: "center" });
+
+  if (cert.grade || cert.score != null) {
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(10.5);
+    doc.setTextColor(...NAVY);
+    const parts = [cert.grade ? `Grade: ${cert.grade}` : "", cert.score != null ? `Score: ${cert.score}%` : ""].filter(Boolean);
+    doc.text(parts.join("   ·   "), cx, 137, { align: "center" });
+  }
+
+  doc.line(cx - 55, 145, cx - 8, 145);
+  diamond(cx, 145, 2, GOLD);
+  doc.line(cx + 8, 145, cx + 55, 145);
+
+  // Bottom row: cert number · issued date · verification stamp · signature
+  const rowY = 168;
+  doc.setFont("helvetica", "normal");
+  doc.setFontSize(8.5);
+  doc.setTextColor(...GRAY);
+  doc.text("Certificate No.", 42, rowY - 4, { align: "center" });
+  doc.text("Issued on", 90, rowY - 4, { align: "center" });
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(10.5);
+  doc.setTextColor(...NAVY);
+  doc.text(cert.certificateNumber, 42, rowY + 2, { align: "center" });
+  doc.text(fmt(cert.issuedDate), 90, rowY + 2, { align: "center" });
+
+  // Verification stamp
+  doc.setDrawColor(...PURPLE);
+  doc.setLineWidth(0.9);
+  doc.circle(cx, rowY - 3, 15.5);
+  doc.setLineWidth(0.3);
+  doc.circle(cx, rowY - 3, 13);
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(6.3);
+  doc.setTextColor(...PURPLE);
+  doc.text("PLACEONIX", cx, rowY - 11, { align: "center" });
+  doc.text("VERIFIED", cx, rowY + 7.5, { align: "center" });
+  if (markDataUrl) {
+    const markSize = 11;
+    doc.addImage(markDataUrl, "PNG", cx - markSize / 2, rowY - 3 - markSize / 2, markSize, markSize);
+  }
+
+  const signX = w - 42;
+  doc.setFont("times", "italic");
+  doc.setFontSize(15);
+  doc.setTextColor(...NAVY);
+  doc.text("M. Avinash", signX, rowY - 6, { align: "center" });
+  doc.setDrawColor(...NAVY);
+  doc.setLineWidth(0.3);
+  doc.line(signX - 20, rowY - 1, signX + 20, rowY - 1);
+  doc.setFont("helvetica", "normal");
+  doc.setFontSize(8);
+  doc.setTextColor(...GRAY);
+  doc.text("Authorised Signature", signX, rowY + 4, { align: "center" });
+  doc.setFont("helvetica", "bold");
   doc.setFontSize(9);
-  doc.setTextColor(120, 120, 120);
-  doc.text(`Certificate No: ${cert.certificateNumber}`, w / 2, h - 22, { align: "center" });
-  doc.text(`Issued on ${fmt(cert.issuedDate)}`, w / 2, h - 17, { align: "center" });
+  doc.setTextColor(...NAVY);
+  doc.text("M. Avinash", signX, rowY + 9, { align: "center" });
+
+  doc.setFont("helvetica", "normal");
+  doc.setFontSize(9);
+  doc.setTextColor(...PURPLE);
+  doc.text(`Verify this certificate at: www.placeonix.com/verify/${cert.certificateNumber}`, cx, h - 14, { align: "center" });
+
   if (cert.isRevoked || cert.status === "revoked") {
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(46);
     doc.setTextColor(220, 38, 38);
-    doc.setFontSize(11);
-    doc.text("THIS CERTIFICATE HAS BEEN REVOKED", w / 2, h - 30, { align: "center" });
+    doc.text("REVOKED", cx, h / 2 + 8, { align: "center", angle: 22 });
   }
 
   doc.save(`${cert.certificateNumber}.pdf`);
