@@ -123,6 +123,19 @@ const PATHS: Record<string, React.ReactNode> = {
       <line x1="21" y1="21" x2="16.65" y2="16.65" />
     </>
   ),
+  "check-square": (
+    <>
+      <polyline points="9 11 12 14 22 4" />
+      <path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11" />
+    </>
+  ),
+  code: (
+    <>
+      <polyline points="16 18 22 12 16 6" />
+      <polyline points="8 6 2 12 8 18" />
+    </>
+  ),
+  shield: <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />,
 };
 
 export type IconName = keyof typeof PATHS;

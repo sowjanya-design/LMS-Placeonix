@@ -85,6 +85,128 @@ export interface Submission {
   mentorFeedback?: string;
 }
 
+// ── Quizzes ──────────────────────────────────────────────────────────────
+export type QuestionType = "single" | "multi";
+export type QuizStatus = "draft" | "published" | "closed";
+
+export interface QuizOption {
+  _id: string;
+  text: string;
+  isCorrect?: boolean; // stripped server-side for a student taking (not reviewing) a quiz
+}
+
+export interface QuizQuestion {
+  _id: string;
+  text: string;
+  type: QuestionType;
+  options: QuizOption[];
+  points: number;
+  order?: number;
+}
+
+export interface Quiz {
+  _id: string;
+  title: string;
+  description?: string;
+  course: { _id: string; title: string };
+  batch: { _id: string; name: string; code: string };
+  questions: QuizQuestion[];
+  timeLimitMinutes: number;
+  maxAttempts: number;
+  passingScorePercent: number;
+  availableFrom?: string;
+  availableUntil?: string;
+  status: QuizStatus;
+  maxScore: number;
+  isOpen: boolean;
+  createdBy?: { _id: string; firstName: string; lastName: string };
+}
+
+export interface QuizAnswer {
+  question: string;
+  selectedOptions: string[];
+  isCorrect?: boolean;
+  pointsAwarded?: number;
+}
+
+export interface QuizResult {
+  _id: string;
+  quiz: string;
+  student: { _id: string; firstName: string; lastName: string; email?: string } | string;
+  batch: string;
+  attemptNumber: number;
+  answers: QuizAnswer[];
+  score: number;
+  maxScore: number;
+  percentage: number;
+  passed: boolean;
+  status: "in_progress" | "submitted";
+  startedAt: string;
+  submittedAt?: string;
+}
+
+// ── Coding Challenges ────────────────────────────────────────────────────
+export interface CodeLanguage {
+  code: string;
+  label: string;
+}
+
+export interface TestCase {
+  _id: string;
+  input: string;
+  expectedOutput?: string; // stripped for hidden cases in a student's view
+  isHidden: boolean;
+  points: number;
+}
+
+export interface CodingChallenge {
+  _id: string;
+  title: string;
+  description: string;
+  course: { _id: string; title: string };
+  batch: { _id: string; name: string; code: string };
+  allowedLanguages: string[];
+  starterCode?: Record<string, string>;
+  testCases: TestCase[];
+  maxAttempts: number;
+  status: QuizStatus;
+  maxScore: number;
+  createdBy?: { _id: string; firstName: string; lastName: string };
+}
+
+export interface CodeRunResult {
+  stdout: string;
+  stderr: string;
+  exitCode: number;
+  timedOut: boolean;
+}
+
+export interface TestCaseResult {
+  testCase: string;
+  isHidden: boolean;
+  passed: boolean;
+  pointsAwarded: number;
+  stdout?: string;
+  stderr?: string;
+}
+
+export interface CodingSubmission {
+  _id: string;
+  challenge: string;
+  student: { _id: string; firstName: string; lastName: string; email?: string } | string;
+  batch: string;
+  language: string;
+  code: string;
+  attemptNumber: number;
+  results: TestCaseResult[];
+  score: number;
+  maxScore: number;
+  percentage: number;
+  passed: boolean;
+  status: "grading" | "graded" | "error";
+  submittedAt: string;
+}
+
 export type AttendanceStatus = "present" | "absent" | "late" | "excused";
 
 export interface AttendanceRecord {
