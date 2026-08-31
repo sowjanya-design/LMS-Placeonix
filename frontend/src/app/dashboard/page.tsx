@@ -7,6 +7,7 @@ import { useAuth } from "@/lib/auth-context";
 import { api } from "@/lib/api";
 import { EmptyState } from "@/components/ui/empty-state";
 import type { AnalyticsOverview, User, Enrollment, AttendanceRecord, Session, MockInterview, Certificate } from "@/lib/types";
+import { EnrollmentTrendChart, type MonthlyEnrollmentPoint } from "@/components/charts/EnrollmentTrendChart";
 
 function StatCard({ icon, bg, value, label }: { icon: string; bg: string; value: string | number; label: string }) {
   return (
@@ -40,31 +41,23 @@ function StatCardSkeleton() {
 function AdminDashboard({ firstName }: { firstName?: string }) {
   const [analyticsOverview, setAnalyticsOverview] = useState<AnalyticsOverview | null>(null);
   const [recentStudents, setRecentStudents] = useState<User[] | null>(null);
+  const [monthlyEnrollments, setMonthlyEnrollments] = useState<MonthlyEnrollmentPoint[] | null>(null);
   const [error, setError] = useState(false);
 
   useEffect(() => {
-    // Fetch dashboard metrics and recent students in parallel
+    // Fetch dashboard metrics, recent students, and the enrollment trend in parallel
     Promise.all([
       api.get<AnalyticsOverview>("/analytics/overview"),
       api.get<User[]>("/users?role=student&limit=3&sort=-createdAt"),
+      api.get<{ year: number; data: MonthlyEnrollmentPoint[] }>("/analytics/enrollments/monthly"),
     ])
-      .then(([overview, students]) => {
+      .then(([overview, students, enrollments]) => {
         setAnalyticsOverview(overview);
         setRecentStudents(students);
+        setMonthlyEnrollments(enrollments.data);
       })
       .catch(() => setError(true));
   }, []);
-
-  const metrics = analyticsOverview
-    ? ([
-        ["Published Courses", analyticsOverview.courses.published, "#ede9fe"],
-        ["Active Sessions", analyticsOverview.sessions?.active || 0, "#fce7f3"],
-        ["Total Enrollments", analyticsOverview.enrollments.total, "#dbeafe"],
-        ["Completed", analyticsOverview.enrollments.completed, "#d1fae5"],
-        ["Open Drives", analyticsOverview.placement.openDrives, "#fef3c7"],
-        ["New Leads", analyticsOverview.leads.new, "#ffedd5"],
-      ] as const)
-    : [];
 
   return (
     <div className="flex flex-col gap-6">
@@ -106,19 +99,17 @@ function AdminDashboard({ firstName }: { firstName?: string }) {
       {analyticsOverview && (
         <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
           <div className="rounded-[14px] border border-line bg-white p-5">
-            <div className="mb-3 text-base font-bold text-ink">Key Metrics</div>
-            <div className="flex flex-col gap-2">
-              {metrics.map(([label, value, bg]) => (
-                <div
-                  key={label}
-                  className="flex items-center justify-between rounded-lg px-3.5 py-2.5"
-                  style={{ background: bg }}
-                >
-                  <span className="text-[0.82rem] font-medium text-ink2">{label}</span>
-                  <span className="text-base font-extrabold text-ink">{value}</span>
-                </div>
-              ))}
+            <div className="mb-3 flex items-center justify-between">
+              <div className="text-base font-bold text-ink">Enrollment Trend</div>
+              <Link href="/dashboard/reports" className="text-xs font-bold text-purple hover:text-purple-dk">
+                Full report →
+              </Link>
             </div>
+            {monthlyEnrollments ? (
+              <EnrollmentTrendChart data={monthlyEnrollments} />
+            ) : (
+              <div className="h-[220px] animate-pulse rounded-lg bg-gray-100" />
+            )}
           </div>
 
           <div className="rounded-[14px] border border-line bg-white p-5">
