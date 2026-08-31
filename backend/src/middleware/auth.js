@@ -39,6 +39,16 @@ const protect = asyncHandler(async (req, res, next) => {
     return next(new AppError(`Account is ${user.status}`, 403));
   }
 
+  // Reject access tokens issued before the user's last logout — see
+  // authController.logout, which stamps tokenBlacklistedAt precisely because
+  // a stateless JWT otherwise stays valid past logout until it expires.
+  if (user.tokenBlacklistedAt) {
+    const tokenIssuedAt = decoded.iat * 1000; // iat is in seconds
+    if (tokenIssuedAt < user.tokenBlacklistedAt.getTime()) {
+      return next(new AppError('Session expired — please log in again', 401));
+    }
+  }
+
   req.user = user;
   next();
 });

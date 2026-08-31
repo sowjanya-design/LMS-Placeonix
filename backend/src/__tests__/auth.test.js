@@ -136,4 +136,36 @@ describe('Auth API', () => {
       expect(res.statusCode).toBe(401);
     });
   });
+
+  describe('POST /api/v1/auth/logout', () => {
+    it('invalidates the access token issued before logout, not just the refresh token', async () => {
+      await User.create({
+        firstName: 'Bye', lastName: 'User', email: 'bye@test.com', password: 'Password123',
+      });
+
+      const agent = request.agent(app);
+      const loginRes = await agent
+        .post('/api/v1/auth/login')
+        .send({ email: 'bye@test.com', password: 'Password123' });
+
+      // Capture the raw access token to replay it independently of the agent's
+      // cookie jar (which logout's res.clearCookie would also wipe) -- this
+      // simulates an old tab / stolen token still holding the pre-logout JWT.
+      const setCookie = loginRes.headers['set-cookie'];
+      const accessTokenCookie = setCookie.find((c) => c.startsWith('accessToken='));
+      const rawToken = accessTokenCookie.split(';')[0].split('=')[1];
+
+      // The token still works before logout.
+      const beforeLogout = await request(app).get('/api/v1/auth/me').set('Authorization', `Bearer ${rawToken}`);
+      expect(beforeLogout.statusCode).toBe(200);
+
+      await agent.post('/api/v1/auth/logout').send({});
+
+      // A stateless JWT re-verified by signature+expiry alone would still pass
+      // here without the tokenBlacklistedAt check -- this is exactly the B-06
+      // gap: logout must reject it, not just remove the refresh token.
+      const afterLogout = await request(app).get('/api/v1/auth/me').set('Authorization', `Bearer ${rawToken}`);
+      expect(afterLogout.statusCode).toBe(401);
+    });
+  });
 });

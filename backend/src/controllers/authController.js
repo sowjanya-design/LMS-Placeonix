@@ -189,6 +189,12 @@ exports.logout = asyncHandler(async (req, res) => {
     } else if (currentRefresh && req.user.refreshTokens) {
       req.user.refreshTokens = req.user.refreshTokens.filter(t => t !== currentRefresh);
     }
+    // Access tokens are stateless JWTs, verified by signature+expiry alone —
+    // removing the refresh token above doesn't touch an already-issued
+    // access token, which stays valid (up to JWT_EXPIRE, default 7d) even
+    // after "logout". Stamp a cutoff so `protect` can reject anything issued
+    // before it.
+    req.user.tokenBlacklistedAt = new Date();
     await req.user.save({ validateBeforeSave: false });
     auditLog(req, { module: 'auth', action: 'logout', userId: req.user._id, userEmail: req.user.email, message: allDevices ? 'All devices' : 'Current device' });
   }
