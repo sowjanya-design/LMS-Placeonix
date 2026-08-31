@@ -56,7 +56,10 @@ app.use('/api', limiter);
 
 const authLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 1000, // Increased to 1000 to prevent false positives
+  // Per-account lockout (5 wrong passwords -> 30min, see User.incrementLoginAttempts)
+  // is the real brute-force defense; this is the per-IP backstop and should
+  // stay low enough to matter. Override via env for load-testing if needed.
+  max: Number(process.env.AUTH_RATE_LIMIT_MAX) || 30,
   message: { success: false, message: 'Too many authentication attempts' },
   handler: (req, res, next, options) => {
     require('./utils/logger').warn(`Rate limit exceeded for auth: ${req.ip} - ${req.originalUrl}`);

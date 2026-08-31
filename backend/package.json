@@ -48,8 +48,7 @@
     "multer-s3": "^3.0.1",
     "node-cron": "^3.0.3",
     "nodemailer": "^6.9.7",
-    "winston": "^3.11.0",
-    "xss-clean": "^0.1.4"
+    "winston": "^3.11.0"
   },
   "devDependencies": {
     "eslint": "^9.39.5",
@@ -71,5 +70,8 @@
       "/node_modules/",
       "/__tests__/"
     ]
+  },
+  "allowScripts": {
+    "mongodb-memory-server@9.5.0": true
   }
 }
