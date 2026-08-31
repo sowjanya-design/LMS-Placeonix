@@ -71,10 +71,10 @@ exports.register = asyncHandler(async (req, res, next) => {
   let emailed = false;
   if (process.env.SMTP_HOST && process.env.SMTP_PORT) {
     try {
-      const sendEmail = require('../utils/email');
+      const { sendEmail } = require('../services/emailService');
       const verifyUrl = `${process.env.CLIENT_URL || 'http://localhost:3000'}/verify-email?token=${verifyTokenRaw}`;
       await sendEmail({
-        email: user.email,
+        to: user.email,
         subject: 'Verify your email for Placeonix',
         html: `<h2>Welcome!</h2><p>Please click below to verify your email address:</p><a href="${verifyUrl}">${verifyUrl}</a>`,
       });

@@ -8,6 +8,20 @@ const Session = require('../models/Session');
 const ApiResponse = require('../utils/ApiResponse');
 const asyncHandler = require('../utils/asyncHandler');
 const { getPlacementStats } = require('../utils/placementStats');
+const { PLACEMENT_STATUS } = require('../config/constants');
+
+// Funnel order — deliberately excludes 'rejected' (a side-exit, not a stage
+// further along than wherever a candidate was rejected from). A candidate's
+// current status is used as a proxy for "reached this stage or later" —
+// there's no separate append-only stage log to count from instead, and this
+// is the same simplification most placement funnels make.
+const FUNNEL_STAGES = [
+  { stage: PLACEMENT_STATUS.APPLIED, label: 'Applied' },
+  { stage: PLACEMENT_STATUS.SHORTLISTED, label: 'Shortlisted' },
+  { stage: PLACEMENT_STATUS.INTERVIEW, label: 'Interview' },
+  { stage: PLACEMENT_STATUS.OFFERED, label: 'Offered' },
+  { stage: PLACEMENT_STATUS.PLACED, label: 'Placed' },
+];
 
 // @desc   Admin dashboard overview
 // @route  GET /api/v1/analytics/overview
@@ -119,7 +133,7 @@ exports.placementStats = asyncHandler(async (req, res) => {
   // three "placement rate" widgets in the app ended up disagreeing with
   // each other. Package/company breakdowns still need per-application detail,
   // so those stay as an aggregation here.
-  const [headline, byCompanyAgg, packageAgg] = await Promise.all([
+  const [headline, byCompanyAgg, packageAgg, statusCounts] = await Promise.all([
     getPlacementStats(),
     PlacementDrive.aggregate([
       { $unwind: '$applications' },
@@ -138,9 +152,23 @@ exports.placementStats = asyncHandler(async (req, res) => {
       { $match: { ctc: { $gt: 0 } } },
       { $group: { _id: null, avg: { $avg: '$ctc' }, max: { $max: '$ctc' }, min: { $min: '$ctc' } } },
     ]),
+    PlacementDrive.aggregate([
+      { $unwind: '$applications' },
+      { $group: { _id: '$applications.status', count: { $sum: 1 } } },
+    ]),
   ]);
 
   const pkg = packageAgg[0] || { avg: 0, max: 0, min: 0 };
+
+  // Cumulative funnel: each stage's count includes every application currently
+  // at that stage or any stage further along (an "offered" candidate already
+  // cleared "shortlisted", so it counts there too) — otherwise the bars
+  // wouldn't actually narrow monotonically, which is the whole point of a funnel.
+  const countByStatus = new Map(statusCounts.map((s) => [s._id, s.count]));
+  const funnel = FUNNEL_STAGES.map(({ stage, label }, i) => {
+    const count = FUNNEL_STAGES.slice(i).reduce((sum, s) => sum + (countByStatus.get(s.stage) || 0), 0);
+    return { stage, label, count };
+  });
 
   return ApiResponse.success(res, 200, 'Placement stats', {
     totalApplications: headline.applied,
@@ -150,6 +178,7 @@ exports.placementStats = asyncHandler(async (req, res) => {
     highestPackage: pkg.max || 0,
     lowestPackage: pkg.min || 0,
     byCompany: byCompanyAgg.map((r) => ({ company: r._id, count: r.count })),
+    funnel,
   });
 });
 

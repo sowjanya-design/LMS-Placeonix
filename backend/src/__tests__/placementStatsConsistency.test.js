@@ -1,15 +1,11 @@
-const { MongoMemoryServer } = require('mongodb-memory-server');
-const mongoose = require('mongoose');
+const { connect, disconnect, clear } = require('./setup');
 
-let mongod;
-beforeAll(async () => {
-  mongod = await MongoMemoryServer.create();
-  await mongoose.connect(mongod.getUri());
-});
-afterAll(async () => {
-  await mongoose.disconnect();
-  await mongod.stop();
-});
+beforeAll(connect);
+afterAll(disconnect);
+// Both tests in this file assert on absolute counts (not just ratios), so
+// they need a clean slate — without this, the second test's aggregation
+// picks up the first test's PlacementDrive too (same DB, same connection).
+afterEach(clear);
 
 test('all three placement-rate endpoints agree', async () => {
   const User = require('../models/User');
@@ -55,4 +51,40 @@ test('all three placement-rate endpoints agree', async () => {
   expect(overviewRes.payload.data.placement.placed).toBe(1);
   expect(placementStatsRes.payload.data.placed).toBe(1);
   expect(placementAnalyticsRes.payload.data.placed).toBe(1);
+});
+
+test('placement funnel counts are cumulative and monotonically non-increasing', async () => {
+  const User = require('../models/User');
+  const PlacementDrive = require('../models/PlacementDrive');
+
+  const admin = await User.create({ firstName: 'A2', lastName: 'B2', email: 'a2@x.com', password: 'Password123', role: 'admin' });
+  // Sequential, not Promise.all — concurrent student creates can race on the
+  // auto-generated studentProfile.enrollmentId and collide (unrelated to what
+  // this test is checking).
+  const students = [];
+  for (let i = 0; i < 5; i++) {
+    students.push(await User.create({ firstName: 'S', lastName: String(i), email: `funnel${i}@x.com`, password: 'Password123', role: 'student' }));
+  }
+
+  // 1 applied-only, 1 shortlisted, 1 interview_scheduled, 1 offered, 1 placed.
+  const statuses = ['applied', 'shortlisted', 'interview_scheduled', 'offered', 'placed'];
+  await PlacementDrive.create({
+    company: 'FunnelCo', role: 'SDE', applicationDeadline: new Date(Date.now() + 86400000),
+    package: { min: 500000, max: 800000 }, createdBy: admin._id,
+    applications: students.map((s, i) => ({ student: s._id, status: statuses[i] })),
+  });
+
+  const analyticsCtrl = require('../controllers/analyticsController');
+  const mkRes = () => { const r = {}; r.json = (p) => { r.payload = p; return r; }; r.status = () => r; return r; };
+
+  const res = mkRes();
+  await analyticsCtrl.placementStats({}, res, (e) => { throw e; });
+  const { funnel } = res.payload.data;
+
+  expect(funnel.map((f) => f.stage)).toEqual(['applied', 'shortlisted', 'interview_scheduled', 'offered', 'placed']);
+  // Cumulative: applied=5 (everyone reached at least "applied"), shortlisted=4, ..., placed=1.
+  expect(funnel.map((f) => f.count)).toEqual([5, 4, 3, 2, 1]);
+  for (let i = 1; i < funnel.length; i++) {
+    expect(funnel[i].count).toBeLessThanOrEqual(funnel[i - 1].count);
+  }
 });
