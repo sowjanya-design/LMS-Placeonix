@@ -5,6 +5,7 @@ const User = require('../models/User');
 const AppError = require('../utils/AppError');
 const ApiResponse = require('../utils/ApiResponse');
 const asyncHandler = require('../utils/asyncHandler');
+const logger = require('../utils/logger');
 const { MAX_BATCH_SIZE } = require('../config/constants');
 
 // @desc   List batches
@@ -177,4 +178,37 @@ exports.unenrollStudent = asyncHandler(async (req, res, next) => {
   await Batch.findByIdAndUpdate(req.params.id, { $inc: { enrolledCount: -1 } });
 
   return ApiResponse.success(res, 200, 'Student unenrolled');
+});
+
+// @desc   Email every student currently enrolled in a batch
+// @route  POST /api/v1/batches/:id/bulk-email
+exports.bulkEmail = asyncHandler(async (req, res, next) => {
+  const { subject, body } = req.body;
+  const batch = await Batch.findById(req.params.id);
+  if (!batch) return next(new AppError('Batch not found', 404));
+
+  const enrollments = await Enrollment.find({ batch: batch._id }).populate('student', 'firstName email');
+  const recipients = enrollments.filter((e) => e.student?.email);
+  if (recipients.length === 0) {
+    return next(new AppError('This batch has no enrolled students with an email on file', 400));
+  }
+
+  const { sendEmail, baseTemplate } = require('../services/emailService');
+  let sent = 0;
+  const failed = [];
+  for (const e of recipients) {
+    try {
+      await sendEmail({
+        to: e.student.email,
+        subject,
+        html: baseTemplate(subject, `<p>Hi ${e.student.firstName || ''},</p>${body}`),
+      });
+      sent += 1;
+    } catch (err) {
+      logger.error(`Bulk email to ${e.student.email} failed: ${err.message}`);
+      failed.push(e.student.email);
+    }
+  }
+
+  return ApiResponse.success(res, 200, `Sent to ${sent} of ${recipients.length} students`, { sent, total: recipients.length, failed });
 });

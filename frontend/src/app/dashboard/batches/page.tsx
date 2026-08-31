@@ -233,6 +233,128 @@ function EditBatchModal({ batch, onClose, onSaved }: { batch: BatchRow; onClose:
   );
 }
 
+function BulkEnrollModal({ batch, onClose, onSaved }: { batch: BatchRow; onClose: () => void; onSaved: () => void }) {
+  const [students, setStudents] = useState<User[]>([]);
+  const [selected, setSelected] = useState<string[]>([]);
+  const [progress, setProgress] = useState<{ done: number; total: number } | null>(null);
+  const [results, setResults] = useState<Record<string, string>>({});
+
+  useEffect(() => {
+    api.get<User[]>("/users?role=student&limit=200").then(setStudents).catch(() => setStudents([]));
+  }, []);
+
+  function toggle(id: string) {
+    setSelected((prev) => (prev.includes(id) ? prev.filter((s) => s !== id) : [...prev, id]));
+  }
+
+  async function handleEnroll() {
+    setProgress({ done: 0, total: selected.length });
+    const nextResults: Record<string, string> = {};
+    for (let i = 0; i < selected.length; i++) {
+      const studentId = selected[i];
+      try {
+        await api.post(`/batches/${batch._id}/enroll`, { studentId });
+        nextResults[studentId] = "Enrolled";
+      } catch (err) {
+        nextResults[studentId] = err instanceof ApiError ? err.message : "Failed";
+      }
+      setProgress({ done: i + 1, total: selected.length });
+      setResults({ ...nextResults });
+    }
+    onSaved();
+  }
+
+  return (
+    <Modal title={`Bulk Enroll — ${batch.name}`} onClose={onClose} wide>
+      <div className="flex flex-col gap-3">
+        <p className="text-sm text-muted">Select students to enroll into this batch. Each is enrolled independently — a full batch or an already-enrolled student won&apos;t block the rest.</p>
+        <div className="max-h-72 overflow-y-auto rounded-lg border border-line">
+          {students.map((s) => (
+            <label key={s._id} className="flex items-center justify-between gap-3 border-b border-line px-3 py-2 text-sm last:border-0">
+              <span className="flex items-center gap-2">
+                <input type="checkbox" checked={selected.includes(s._id)} onChange={() => toggle(s._id)} className="accent-purple" disabled={!!progress} />
+                {s.firstName} {s.lastName} <span className="text-xs text-muted">({s.email})</span>
+              </span>
+              {results[s._id] && (
+                <span className={`text-xs font-semibold ${results[s._id] === "Enrolled" ? "text-green" : "text-red"}`}>{results[s._id]}</span>
+              )}
+            </label>
+          ))}
+          {students.length === 0 && <p className="p-3 text-sm text-muted">No students found.</p>}
+        </div>
+        {progress && (
+          <p className="text-sm text-ink2">
+            Enrolling… {progress.done} of {progress.total}
+          </p>
+        )}
+        <div className="flex justify-end gap-2">
+          <SecondaryButton type="button" onClick={onClose}>
+            {progress ? "Close" : "Cancel"}
+          </SecondaryButton>
+          {!progress && (
+            <button
+              onClick={handleEnroll}
+              disabled={selected.length === 0}
+              className="rounded-full px-5 py-2.5 text-sm font-bold text-white disabled:opacity-50"
+              style={{ background: "linear-gradient(135deg, var(--purple), var(--purple-dk))" }}
+            >
+              Enroll {selected.length || ""}
+            </button>
+          )}
+        </div>
+      </div>
+    </Modal>
+  );
+}
+
+function BulkEmailModal({ batch, onClose }: { batch: BatchRow; onClose: () => void }) {
+  const [subject, setSubject] = useState("");
+  const [body, setBody] = useState("");
+  const [sending, setSending] = useState(false);
+  const [result, setResult] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
+
+  async function handleSend(e: React.FormEvent) {
+    e.preventDefault();
+    setSending(true);
+    setError(null);
+    setResult(null);
+    try {
+      const res = await api.post<{ sent: number; total: number }>(`/batches/${batch._id}/bulk-email`, {
+        subject,
+        body: `<p>${body.replace(/\n/g, "</p><p>")}</p>`,
+      });
+      setResult(`Sent to ${res.sent} of ${res.total} students.`);
+    } catch (err) {
+      setError(err instanceof ApiError ? err.message : "Failed to send");
+    } finally {
+      setSending(false);
+    }
+  }
+
+  return (
+    <Modal title={`Email — ${batch.name}`} onClose={onClose}>
+      <form onSubmit={handleSend} className="flex flex-col gap-3">
+        <Field label="Subject" required>
+          <Input value={subject} onChange={(e) => setSubject(e.target.value)} required />
+        </Field>
+        <Field label="Message" required>
+          <textarea
+            value={body}
+            onChange={(e) => setBody(e.target.value)}
+            rows={6}
+            required
+            className="w-full rounded-2xl border border-transparent bg-[rgba(17,24,39,0.045)] px-4 py-2.5 text-sm text-ink outline-none focus:border-purple/40 focus:bg-white"
+          />
+        </Field>
+        {result && <p className="text-sm font-semibold text-green">{result}</p>}
+        <ErrorText>{error}</ErrorText>
+        <ModalActions onCancel={onClose} submitting={sending} submitLabel="Send to batch" />
+      </form>
+    </Modal>
+  );
+}
+
 export default function BatchesPage() {
   const { user } = useAuth();
   const isAdmin = user?.role === "admin";
@@ -241,6 +363,8 @@ export default function BatchesPage() {
   const [showCreate, setShowCreate] = useState(false);
   const [editing, setEditing] = useState<BatchRow | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [bulkEnrolling, setBulkEnrolling] = useState<BatchRow | null>(null);
+  const [emailing, setEmailing] = useState<BatchRow | null>(null);
 
   function load() {
     api
@@ -309,7 +433,13 @@ export default function BatchesPage() {
                 </span>
               </div>
               {isAdmin && (
-                <div className="flex justify-end gap-2 border-t border-line pt-3">
+                <div className="flex flex-wrap justify-end gap-2 border-t border-line pt-3">
+                  <SecondaryButton type="button" onClick={() => setBulkEnrolling(b)} className="!px-3 !py-1.5 !text-xs">
+                    Bulk Enroll
+                  </SecondaryButton>
+                  <SecondaryButton type="button" onClick={() => setEmailing(b)} className="!px-3 !py-1.5 !text-xs">
+                    Email Batch
+                  </SecondaryButton>
                   <SecondaryButton
                     type="button"
                     onClick={() => setEditing(b)}
@@ -330,6 +460,8 @@ export default function BatchesPage() {
 
       {showCreate && <CreateBatchModal onClose={() => setShowCreate(false)} onSaved={load} />}
       {editing && <EditBatchModal batch={editing} onClose={() => setEditing(null)} onSaved={load} />}
+      {bulkEnrolling && <BulkEnrollModal batch={bulkEnrolling} onClose={() => { setBulkEnrolling(null); load(); }} onSaved={load} />}
+      {emailing && <BulkEmailModal batch={emailing} onClose={() => setEmailing(null)} />}
     </div>
   );
 }

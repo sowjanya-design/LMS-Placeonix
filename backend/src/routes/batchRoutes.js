@@ -48,4 +48,12 @@ router.post(
 );
 router.delete('/:id/enroll/:studentId', authorize('admin'), batchCtrl.unenrollStudent);
 
+router.post(
+  '/:id/bulk-email',
+  authorize('admin'),
+  [body('subject').notEmpty(), body('body').notEmpty()],
+  validate,
+  batchCtrl.bulkEmail
+);
+
 module.exports = router;
