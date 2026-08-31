@@ -19,12 +19,12 @@ const sendTokens = async (user, res, statusCode = 200, message = 'Success') => {
 
   user.refreshTokens = user.refreshTokens || [];
   user.refreshTokens.push(refreshToken);
-  
+
   // limit to 5 devices
   if (user.refreshTokens.length > 5) {
     user.refreshTokens.shift();
   }
-  
+
   await user.save({ validateBeforeSave: false });
 
   res.cookie('accessToken', accessToken, cookieOptions());
@@ -34,10 +34,12 @@ const sendTokens = async (user, res, statusCode = 200, message = 'Success') => {
   delete userObj.password;
   delete userObj.refreshTokens;
 
+  // Tokens are delivered ONLY via the httpOnly cookies set above — never in
+  // the JSON body. Echoing them here would let any XSS or response-inspecting
+  // script lift the raw JWT straight out of `fetch().json()`, defeating the
+  // entire reason this app uses httpOnly cookies instead of localStorage.
   return ApiResponse.success(res, statusCode, message, {
     user: userObj,
-    accessToken,
-    refreshToken,
   });
 };
 
@@ -84,7 +86,13 @@ exports.register = asyncHandler(async (req, res, next) => {
     logger.info(`[dev] Email verify token for ${user.email}: ${verifyTokenRaw}`);
   }
 
+  const userObj = user.toObject();
+  delete userObj.password;
+  delete userObj.emailVerifyToken;
+  delete userObj.refreshTokens;
+
   return ApiResponse.success(res, 201, 'Registration successful. Please check your email to verify your account.', {
+    user: userObj,
     emailed,
     verifyToken: !emailed && process.env.NODE_ENV !== 'production' ? verifyTokenRaw : undefined,
   });

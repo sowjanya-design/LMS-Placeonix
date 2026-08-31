@@ -28,7 +28,9 @@ describe('Auth API', () => {
       expect(res.body.success).toBe(true);
       expect(res.body.data.user.email).toBe('test@example.com');
       expect(res.body.data.user.role).toBe('student');
-      expect(res.body.data.accessToken).toBeDefined();
+      // Registration doesn't auto-login (no session cookie) — the account
+      // still needs a separate /auth/login. It must never leak a token either.
+      expect(res.body.data.accessToken).toBeUndefined();
       expect(res.body.data.user.password).toBeUndefined();
     });
 
@@ -84,8 +86,12 @@ describe('Auth API', () => {
         .send({ email: 'login@test.com', password: 'Password123' });
 
       expect(res.statusCode).toBe(200);
-      expect(res.body.data.accessToken).toBeDefined();
-      expect(res.body.data.refreshToken).toBeDefined();
+      // Tokens must be delivered via httpOnly cookies only, never in the JSON body.
+      expect(res.body.data.accessToken).toBeUndefined();
+      expect(res.body.data.refreshToken).toBeUndefined();
+      const cookies = res.headers['set-cookie'];
+      expect(cookies.some((c) => c.startsWith('accessToken=') && c.includes('HttpOnly'))).toBe(true);
+      expect(cookies.some((c) => c.startsWith('refreshToken=') && c.includes('HttpOnly'))).toBe(true);
     });
 
     it('should reject wrong password', async () => {
@@ -111,15 +117,15 @@ describe('Auth API', () => {
         firstName: 'Me', lastName: 'User', email: 'me@test.com', password: 'Password123',
       });
 
-      const loginRes = await request(app)
+      // Use an agent so the httpOnly cookie set by login is carried into the
+      // next request automatically, the same way a real browser would —
+      // there is no token in the response body to grab anymore.
+      const agent = request.agent(app);
+      await agent
         .post('/api/v1/auth/login')
         .send({ email: 'me@test.com', password: 'Password123' });
 
-      const token = loginRes.body.data.accessToken;
-
-      const res = await request(app)
-        .get('/api/v1/auth/me')
-        .set('Authorization', `Bearer ${token}`);
+      const res = await agent.get('/api/v1/auth/me');
 
       expect(res.statusCode).toBe(200);
       expect(res.body.data.user.email).toBe('me@test.com');

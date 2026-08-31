@@ -7,6 +7,7 @@ const app = require('../app');
 const { connect, disconnect, clear } = require('./setup');
 const User = require('../models/User');
 const Course = require('../models/Course');
+const { generateAccessToken } = require('../utils/jwt');
 
 describe('Course API', () => {
   let adminToken;
@@ -26,10 +27,12 @@ describe('Course API', () => {
       status: 'active',
     });
 
-    const res = await request(app)
-      .post('/api/v1/auth/login')
-      .send({ email: 'admin@test.com', password: 'Password123' });
-    adminToken = res.body.data.accessToken;
+    // Sign a token directly rather than going through /auth/login — the
+    // login response no longer echoes the access token in its body (it's
+    // httpOnly-cookie only now), and this avoids burning the authLimiter
+    // budget across the whole suite. See testHelpers.js's createUserAndLogin
+    // for the same pattern used everywhere else.
+    adminToken = generateAccessToken({ id: admin._id, role: admin.role, email: admin.email });
   });
 
   describe('POST /api/v1/courses', () => {
@@ -60,16 +63,14 @@ describe('Course API', () => {
     });
 
     it('should require admin role', async () => {
-      await User.create({
+      const student = await User.create({
         firstName: 'S', lastName: 'T', email: 's@t.com', password: 'Password123', status: 'active',
       });
-      const loginRes = await request(app)
-        .post('/api/v1/auth/login')
-        .send({ email: 's@t.com', password: 'Password123' });
+      const studentToken = generateAccessToken({ id: student._id, role: student.role, email: student.email });
 
       const res = await request(app)
         .post('/api/v1/courses')
-        .set('Authorization', `Bearer ${loginRes.body.data.accessToken}`)
+        .set('Authorization', `Bearer ${studentToken}`)
         .send({
           title: 'X',
           category: 'Web Development',
