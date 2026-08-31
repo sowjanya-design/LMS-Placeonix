@@ -60,7 +60,22 @@ exports.updateMock = asyncHandler(async (req, res, next) => {
     return next(new AppError('Forbidden — you can only edit mock interviews you conduct', 403));
   }
   const wasCompleted = mock.status === 'completed';
-  Object.assign(mock, req.body);
+
+  // Whitelisted — never let the request body touch `student`, `interviewer`,
+  // or `createdBy` directly. A mentor is only authorized to edit interviews
+  // they conduct, and an unfiltered Object.assign would let them silently
+  // reassign the record to a different student (or a different interviewer)
+  // instead of just recording feedback on their own scheduled interview.
+  const {
+    title, role, company, type, scheduledAt, mode, meetingLink,
+    status, rounds, overallScore, strengths, improvements, notes,
+  } = req.body;
+  const updates = {
+    title, role, company, type, scheduledAt, mode, meetingLink,
+    status, rounds, overallScore, strengths, improvements, notes,
+  };
+  Object.keys(updates).forEach((k) => updates[k] === undefined && delete updates[k]);
+  Object.assign(mock, updates);
 
   // Auto-average overallScore from rounds if rounds provided and no explicit overall.
   if (req.body.rounds && req.body.rounds.length && req.body.overallScore == null) {

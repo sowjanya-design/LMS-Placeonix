@@ -104,4 +104,30 @@ describe('Mock Interviews API — data leak + ownership', () => {
     expect(res.statusCode).toBe(200);
     expect(res.body.data.mock.overallScore).toBe(85);
   });
+
+  it('does not let the owning interviewer reassign the interview to a different student', async () => {
+    const { user: owner, token: ownerToken } = await createUserAndLogin({ role: 'mentor' });
+    const { user: student } = await createUserAndLogin({ role: 'student' });
+    const { user: otherStudent } = await createUserAndLogin({ role: 'student' });
+    const { user: otherMentor } = await createUserAndLogin({ role: 'mentor' });
+
+    const mock = await MockInterview.create({
+      student: student._id,
+      interviewer: owner._id,
+      title: 'Owner\'s mock',
+      scheduledAt: new Date(),
+      status: 'scheduled',
+    });
+
+    const res = await request(app)
+      .patch(`/api/v1/mock-interviews/${mock._id}`)
+      .set(auth(ownerToken))
+      .send({ student: otherStudent._id, interviewer: otherMentor._id, status: 'completed' });
+    expect(res.statusCode).toBe(200);
+
+    const unchanged = await MockInterview.findById(mock._id);
+    expect(String(unchanged.student)).toBe(String(student._id));
+    expect(String(unchanged.interviewer)).toBe(String(owner._id));
+    expect(unchanged.status).toBe('completed'); // whitelisted fields still update
+  });
 });
