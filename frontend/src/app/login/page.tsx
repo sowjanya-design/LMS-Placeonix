@@ -5,9 +5,10 @@ import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useAuth, isApiError } from "@/lib/auth-context";
+import { GoogleSignInButton } from "@/components/google-signin-button";
 
 export default function LoginPage() {
-  const { login } = useAuth();
+  const { login, loginWithGoogle } = useAuth();
   const router = useRouter();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -31,6 +32,19 @@ export default function LoginPage() {
   function handleSubmit(e: FormEvent) {
     e.preventDefault();
     doLogin(email, password);
+  }
+
+  async function handleGoogleCredential(credential: string) {
+    setError(null);
+    setSubmitting(true);
+    try {
+      await loginWithGoogle(credential);
+      router.push("/dashboard");
+    } catch (err) {
+      setError(isApiError(err) ? err.message : "Google sign-in failed");
+    } finally {
+      setSubmitting(false);
+    }
   }
 
 
@@ -188,6 +202,7 @@ export default function LoginPage() {
                 </p>
               </form>
 
+              <GoogleSignInButton onCredential={handleGoogleCredential} />
             </div>
           </div>
         </div>

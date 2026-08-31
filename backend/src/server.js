@@ -4,6 +4,7 @@ const app = require('./app');
 const connectDB = require('./config/database');
 const logger = require('./utils/logger');
 const { initJobs } = require('./services/cronService');
+const { syncHolidayAnnouncements } = require('./services/holidaySyncService');
 
 // Handle uncaught exceptions
 process.on('uncaughtException', (err) => {
@@ -29,6 +30,10 @@ const startServer = async () => {
 
     // Start cron jobs
     initJobs();
+
+    // Populate this/next year's holiday announcements immediately, rather
+    // than waiting for the daily cron tick — matters most on a fresh DB.
+    syncHolidayAnnouncements().catch((err) => logger.error(`Holiday sync failed: ${err.message}`));
 
     // Unhandled promise rejections
     process.on('unhandledRejection', (err) => {

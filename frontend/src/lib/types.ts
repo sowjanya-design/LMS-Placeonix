@@ -355,6 +355,9 @@ export interface Announcement {
   priority: "low" | "normal" | "high";
   publishAt: string;
   createdBy?: { firstName: string; lastName: string };
+  // Set on holiday announcements created automatically by the backend's
+  // yearly holiday sync — see backend/src/services/holidaySyncService.js.
+  isSystemHoliday?: boolean;
 }
 
 export interface MockInterview {

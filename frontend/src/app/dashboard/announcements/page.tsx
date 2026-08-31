@@ -166,12 +166,20 @@ export default function AnnouncementsPage() {
                 </div>
                 <div className="flex items-center gap-2">
                   <span className={`rounded-full px-2.5 py-1 text-xs font-semibold ${TYPE_STYLE[a.type]}`}>{a.type}</span>
-                  {canPost && (
+                  {a.isSystemHoliday && (
+                    <span
+                      className="rounded-full bg-[#f3f2f8] px-2.5 py-1 text-xs font-semibold text-muted"
+                      title="Added automatically by the yearly India holiday calendar — no admin action needed"
+                    >
+                      Auto
+                    </span>
+                  )}
+                  {canPost && !a.isSystemHoliday && (
                     <button onClick={() => setEditing(a)} className="text-xs font-semibold text-purple hover:text-purple-dk" aria-label="Edit">
                       Edit
                     </button>
                   )}
-                  {user?.role === "admin" && (
+                  {user?.role === "admin" && !a.isSystemHoliday && (
                     <button onClick={() => handleDelete(a)} className="text-muted hover:text-red" aria-label="Delete">
                       ✕
                     </button>

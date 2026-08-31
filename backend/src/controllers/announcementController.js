@@ -13,12 +13,21 @@ exports.listAnnouncements = asyncHandler(async (req, res) => {
   const { type, page = 1, limit = 20 } = req.query;
   const now = new Date();
 
-  const filter = {
-    isPublished: true,
-    publishAt: { $lte: now },
-    $or: [{ expiresAt: null }, { expiresAt: { $gt: now } }],
-  };
-  if (type) filter.type = type;
+  // Built as an $and of conditions rather than nested top-level $or keys,
+  // since two independent $or clauses (visibility window, audience) need to
+  // both hold at once and a second `filter.$or = ...` assignment would
+  // silently clobber the first.
+  const conditions = [{ isPublished: true }];
+
+  // For a normal announcement, publishAt is "don't show this until X" — the
+  // usual future-embargo use case. Holiday announcements repurpose publishAt
+  // as the holiday's own calendar date instead (see holidaySyncService), so
+  // a Diwali entry three months out must stay visible now for the Calendar
+  // page to have any advance notice — exempt isSystemHoliday from the
+  // not-yet-published check rather than hiding every future holiday.
+  conditions.push({ $or: [{ isSystemHoliday: true }, { publishAt: { $lte: now } }] });
+  conditions.push({ $or: [{ expiresAt: null }, { expiresAt: { $gt: now } }] });
+  if (type) conditions.push({ type });
 
   // Filter by audience (unless admin)
   if (req.user.role !== 'admin') {
@@ -26,19 +35,17 @@ exports.listAnnouncements = asyncHandler(async (req, res) => {
     const batchIds = enrollments.map((e) => e.batch);
     const courseIds = enrollments.map((e) => e.course);
 
-    filter.$and = [
-      filter.$or ? { $or: filter.$or } : {},
-      {
-        $or: [
-          { 'audience.isPublic': true },
-          { 'audience.roles': req.user.role },
-          { 'audience.batches': { $in: batchIds } },
-          { 'audience.courses': { $in: courseIds } },
-        ],
-      },
-    ];
-    delete filter.$or;
+    conditions.push({
+      $or: [
+        { 'audience.isPublic': true },
+        { 'audience.roles': req.user.role },
+        { 'audience.batches': { $in: batchIds } },
+        { 'audience.courses': { $in: courseIds } },
+      ],
+    });
   }
+
+  const filter = { $and: conditions };
 
   const total = await Announcement.countDocuments(filter);
   const announcements = await Announcement.find(filter)

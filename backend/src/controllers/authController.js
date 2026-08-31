@@ -157,6 +157,62 @@ exports.login = asyncHandler(async (req, res, next) => {
   return await sendTokens(user, res, 200, 'Login successful');
 });
 
+// @desc   Sign in with a Google account (Google Identity Services ID token)
+// @route  POST /api/v1/auth/google
+//
+// Deliberately does NOT create a new account for an unrecognized Google
+// email — this app provisions accounts through the admin's existing
+// "add student/mentor" flow (see userController.createUser), same as it
+// always has for email/password. Google Sign-In only replaces the "type
+// your password" step for an account that already exists; it is never an
+// open self-signup path. First successful sign-in links the Google account
+// (by verified email) to the matching User and remembers the googleId so
+// later logins can skip the email lookup ambiguity.
+exports.googleLogin = asyncHandler(async (req, res, next) => {
+  const { credential } = req.body;
+  if (!credential) return next(new AppError('Missing Google credential', 400));
+
+  if (!process.env.GOOGLE_CLIENT_ID) {
+    return next(new AppError('Google sign-in is not configured on this server', 501));
+  }
+
+  const { OAuth2Client } = require('google-auth-library');
+  const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
+
+  let payload;
+  try {
+    const ticket = await client.verifyIdToken({ idToken: credential, audience: process.env.GOOGLE_CLIENT_ID });
+    payload = ticket.getPayload();
+  } catch (err) {
+    auditLog(req, { module: 'auth', action: 'google_login', status: 'failure', message: 'Invalid Google token' });
+    return next(new AppError('Invalid Google credential', 401));
+  }
+
+  if (!payload.email_verified) {
+    return next(new AppError('Your Google email is not verified', 401));
+  }
+
+  const user = await User.findOne({ email: payload.email.toLowerCase() });
+  if (!user) {
+    auditLog(req, { module: 'auth', action: 'google_login', userEmail: payload.email, status: 'failure', message: 'No account for this Google email' });
+    return next(new AppError('No Placeonix account found for this Google email. Ask your administrator to add you first.', 403));
+  }
+
+  if (user.status !== 'active') {
+    auditLog(req, { module: 'auth', action: 'google_login', userId: user._id, userEmail: user.email, status: 'failure', message: `Account ${user.status}` });
+    return next(new AppError(`Account is ${user.status}`, 403));
+  }
+
+  if (!user.googleId) {
+    user.googleId = payload.sub;
+    await user.save({ validateBeforeSave: false });
+  }
+
+  await user.resetLoginAttempts();
+  auditLog(req, { module: 'auth', action: 'google_login', userId: user._id, userEmail: user.email });
+  return await sendTokens(user, res, 200, 'Login successful');
+});
+
 // @desc   Refresh access token
 // @route  POST /api/v1/auth/refresh
 exports.refreshToken = asyncHandler(async (req, res, next) => {

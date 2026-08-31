@@ -7,6 +7,7 @@ const Assignment = require('../models/Assignment');
 const Session = require('../models/Session');
 const NotificationService = require('../services/notificationService');
 const { sendWhatsAppMessage, isConfigured: whatsAppConfigured } = require('../services/whatsappService');
+const { syncHolidayAnnouncements } = require('../services/holidaySyncService');
 
 /**
  * Centralised cron job registry.
@@ -182,6 +183,19 @@ const assignmentReminderJob = () => {
   });
 };
 
+// Job: keep holiday announcements populated across a year rollover, with no
+// admin action (daily, just after midnight — cheap no-op most days since
+// syncHolidayAnnouncements is idempotent).
+const holidaySyncJob = () => {
+  cron.schedule('10 0 * * *', async () => {
+    try {
+      await syncHolidayAnnouncements();
+    } catch (err) {
+      logger.error(`[CRON] Holiday sync failed: ${err.message}`);
+    }
+  });
+};
+
 const initJobs = () => {
   if (process.env.DISABLE_CRON === 'true') {
     logger.info('Cron jobs disabled via DISABLE_CRON');
@@ -193,6 +207,7 @@ const initJobs = () => {
   sessionStatusJob();
   cleanupNotificationsJob();
   assignmentReminderJob();
+  holidaySyncJob();
   logger.info('Cron jobs initialised');
 };
 

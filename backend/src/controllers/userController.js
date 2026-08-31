@@ -89,15 +89,27 @@ exports.createUser = asyncHandler(async (req, res, next) => {
   const userObj = user.toObject();
   delete userObj.password;
 
-  // Best-effort — an email failure must never fail the account creation
-  // it's attached to. sendWelcomeEmail was built but never actually called
-  // from anywhere; this is its one real trigger point.
+  // Best-effort — an email/WhatsApp failure must never fail the account
+  // creation it's attached to. sendWelcomeEmail was built but never actually
+  // called from anywhere; this is its one real trigger point.
   if (user.role === 'student') {
     try {
       const { sendWelcomeEmail } = require('../services/emailService');
       await sendWelcomeEmail(user);
     } catch (err) {
       require('../utils/logger').error(`Welcome email failed for ${user.email}: ${err.message}`);
+    }
+
+    const { sendWhatsAppMessage, isConfigured: whatsAppConfigured } = require('../services/whatsappService');
+    if (whatsAppConfigured() && user.phone) {
+      try {
+        await sendWhatsAppMessage({
+          to: user.phone,
+          body: `Welcome to Placeonix, ${user.firstName}! Your account is ready — log in at ${process.env.CLIENT_URL || 'https://placeonix.com'} with this phone's registered email.`,
+        });
+      } catch (err) {
+        require('../utils/logger').error(`Welcome WhatsApp failed for ${user.phone}: ${err.message}`);
+      }
     }
   }
 

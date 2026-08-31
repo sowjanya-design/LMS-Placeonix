@@ -31,6 +31,13 @@ router.post(
   auth.login
 );
 
+router.post(
+  '/google',
+  [body('credential').notEmpty().withMessage('Missing Google credential')],
+  validate,
+  auth.googleLogin
+);
+
 router.post('/refresh', auth.refreshToken);
 router.post('/logout', protect, auth.logout);
 router.get('/me', protect, auth.getMe);

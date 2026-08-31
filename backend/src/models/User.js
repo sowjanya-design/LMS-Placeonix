@@ -20,6 +20,11 @@ const userSchema = new mongoose.Schema(
       minlength: [8, 'Password must be at least 8 characters'],
       select: false,
     },
+    // Set the first time this account signs in with "Continue with Google"
+    // (see authController.googleLogin). Sign-in only ever links an EXISTING
+    // account matched by email — it never creates a new one — so `password`
+    // above stays required and every user keeps a fallback way to log in.
+    googleId: { type: String, sparse: true, unique: true, select: false },
     phone: { type: String, trim: true, match: [/^[+]?[\d\s-()]{8,20}$/, 'Invalid phone number'] },
     role: { type: String, enum: Object.values(ROLES), default: ROLES.STUDENT, index: true },
     status: { type: String, enum: Object.values(USER_STATUS), default: USER_STATUS.ACTIVE, index: true },

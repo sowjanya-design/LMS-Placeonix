@@ -109,6 +109,15 @@ function SolveChallenge({
               </option>
             ))}
           </Select>
+          <a
+            href="https://ide.placeonix.com"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-xs font-bold text-purple hover:text-purple-dk"
+            title="Opens the Placeonix IDE in a new tab. Your code here is graded independently — this is just an alternate place to write/test it."
+          >
+            Open in Placeonix IDE ↗
+          </a>
         </div>
         <Textarea
           value={code}
@@ -465,6 +474,7 @@ function ChallengeModal({
 
 function SubmissionsModal({ challenge, onClose }: { challenge: CodingChallenge; onClose: () => void }) {
   const [submissions, setSubmissions] = useState<CodingSubmission[] | null>(null);
+  const [expanded, setExpanded] = useState<string | null>(null);
 
   useEffect(() => {
     api
@@ -481,17 +491,28 @@ function SubmissionsModal({ challenge, onClose }: { challenge: CodingChallenge; 
         <div className="flex flex-col divide-y divide-line">
           {submissions.map((s) => {
             const student = typeof s.student === "object" ? s.student : null;
+            const isOpen = expanded === s._id;
             return (
-              <div key={s._id} className="flex items-center justify-between py-2.5">
-                <div>
-                  <p className="text-sm font-semibold text-ink">{student ? `${student.firstName} ${student.lastName}` : "Student"}</p>
-                  <p className="text-xs text-muted">
-                    Attempt {s.attemptNumber} · {s.language}
-                  </p>
-                </div>
-                <span className={`rounded-full px-2.5 py-1 text-xs font-bold ${s.passed ? "bg-green-lt text-green" : "bg-red-lt text-red"}`}>
-                  {s.score}/{s.maxScore} ({s.percentage}%)
-                </span>
+              <div key={s._id} className="py-2.5">
+                <button
+                  onClick={() => setExpanded(isOpen ? null : s._id)}
+                  className="flex w-full items-center justify-between text-left"
+                >
+                  <div>
+                    <p className="text-sm font-semibold text-ink">{student ? `${student.firstName} ${student.lastName}` : "Student"}</p>
+                    <p className="text-xs text-muted">
+                      Attempt {s.attemptNumber} · {s.language} · {isOpen ? "hide code ▲" : "view code ▼"}
+                    </p>
+                  </div>
+                  <span className={`rounded-full px-2.5 py-1 text-xs font-bold ${s.passed ? "bg-green-lt text-green" : "bg-red-lt text-red"}`}>
+                    {s.score}/{s.maxScore} ({s.percentage}%)
+                  </span>
+                </button>
+                {isOpen && (
+                  <div className="mt-2 rounded-lg bg-[#0d1117] p-3">
+                    <pre className="max-h-72 overflow-auto whitespace-pre-wrap font-mono text-xs text-[#e6edf3]">{s.code}</pre>
+                  </div>
+                )}
               </div>
             );
           })}

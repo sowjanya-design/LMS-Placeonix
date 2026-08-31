@@ -24,6 +24,12 @@ const announcementSchema = new mongoose.Schema(
     expiresAt: Date,
     isPinned: { type: Boolean, default: false },
     isPublished: { type: Boolean, default: true },
+    // Set only on holiday announcements created automatically by
+    // holidaySyncService (see backend/src/data/indiaHolidays.js). Lets the
+    // frontend show a "system" badge and hide destructive actions, and lets
+    // the sync job cheaply check "is there already a holiday on this date"
+    // without matching on title text.
+    isSystemHoliday: { type: Boolean, default: false },
 
     readBy: [
       {
