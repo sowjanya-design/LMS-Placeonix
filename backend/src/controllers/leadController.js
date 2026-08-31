@@ -2,6 +2,7 @@ const Lead = require('../models/Lead');
 const AppError = require('../utils/AppError');
 const ApiResponse = require('../utils/ApiResponse');
 const asyncHandler = require('../utils/asyncHandler');
+const logger = require('../utils/logger');
 
 // @desc   Submit inquiry (PUBLIC — from website contact form)
 // @route  POST /api/v1/leads
@@ -19,6 +20,17 @@ exports.createLead = asyncHandler(async (req, res) => {
     courseInterested,
     courseInterestedName,
   });
+
+  // Best-effort — sendLeadConfirmationEmail was built but never actually
+  // called from anywhere; this is its one real trigger point. A failed
+  // confirmation email must never fail the public inquiry submission.
+  try {
+    const { sendLeadConfirmationEmail } = require('../services/emailService');
+    await sendLeadConfirmationEmail(lead);
+  } catch (err) {
+    logger.error(`Lead confirmation email failed for ${lead.email}: ${err.message}`);
+  }
+
   return ApiResponse.created(
     res,
     'Thank you! We will reach out within 24 hours.',

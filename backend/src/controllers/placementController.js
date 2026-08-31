@@ -1,8 +1,10 @@
 const PlacementDrive = require('../models/PlacementDrive');
 const Enrollment = require('../models/Enrollment');
+const User = require('../models/User');
 const AppError = require('../utils/AppError');
 const ApiResponse = require('../utils/ApiResponse');
 const asyncHandler = require('../utils/asyncHandler');
+const logger = require('../utils/logger');
 const { getPlacementStats } = require('../utils/placementStats');
 
 // @desc   List placement drives
@@ -47,6 +49,54 @@ exports.getDrive = asyncHandler(async (req, res, next) => {
 // @route  POST /api/v1/placements
 exports.createDrive = asyncHandler(async (req, res) => {
   const drive = await PlacementDrive.create({ ...req.body, createdBy: req.user._id });
+
+  // Best-effort — notifyPlacementDrive (in-app) and sendPlacementInviteEmail
+  // were both built but neither was ever actually called on drive creation;
+  // wiring them here is the whole point of announcing a new drive. Eligible
+  // = enrolled in one of the drive's eligibleCourses, or every active
+  // student when eligibleCourses is empty (same rule listDrives already
+  // uses to decide what a student can see).
+  try {
+    let studentIds;
+    if (drive.eligibleCourses?.length) {
+      const enrollments = await Enrollment.find({ course: { $in: drive.eligibleCourses } }).distinct('student');
+      studentIds = enrollments;
+    } else {
+      studentIds = await User.find({ role: 'student', status: 'active' }).distinct('_id');
+    }
+
+    if (studentIds.length) {
+      const NotificationService = require('../services/notificationService');
+      await NotificationService.notifyPlacementDrive(studentIds, drive);
+
+      const { sendPlacementInviteEmail } = require('../services/emailService');
+      const { sendWhatsAppMessage, isConfigured: whatsAppConfigured } = require('../services/whatsappService');
+      const students = await User.find({ _id: { $in: studentIds } }).select('firstName email phone');
+      for (const student of students) {
+        try {
+          await sendPlacementInviteEmail(student, drive);
+        } catch (err) {
+          logger.error(`Placement invite email failed for ${student.email}: ${err.message}`);
+        }
+        // Only attempted when WHATSAPP_ACCESS_TOKEN is actually set — otherwise
+        // this is a no-op (see whatsappService's own log-fallback), so nothing
+        // changes for anyone who hasn't configured it.
+        if (whatsAppConfigured() && student.phone) {
+          try {
+            await sendWhatsAppMessage({
+              to: student.phone,
+              body: `${drive.company} is hiring for ${drive.role}! Apply by ${new Date(drive.applicationDeadline).toDateString()} on Placeonix.`,
+            });
+          } catch (err) {
+            logger.error(`Placement invite WhatsApp failed for ${student.phone}: ${err.message}`);
+          }
+        }
+      }
+    }
+  } catch (err) {
+    logger.error(`Placement drive notification failed: ${err.message}`);
+  }
+
   return ApiResponse.created(res, 'Drive created', { drive });
 });
 

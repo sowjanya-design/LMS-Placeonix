@@ -162,6 +162,15 @@ exports.enrollStudent = asyncHandler(async (req, res, next) => {
 
   await Course.findByIdAndUpdate(batchDoc.course._id, { $inc: { enrollmentCount: 1 } });
 
+  // Best-effort — sendEnrollmentEmail was built but never actually called
+  // from anywhere; this is its one real trigger point.
+  try {
+    const { sendEnrollmentEmail } = require('../services/emailService');
+    await sendEnrollmentEmail(student, batchDoc.course, batch);
+  } catch (err) {
+    logger.error(`Enrollment email failed for ${student.email}: ${err.message}`);
+  }
+
   return ApiResponse.created(res, 'Student enrolled', { enrollment });
 });
 

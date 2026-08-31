@@ -6,6 +6,7 @@ const Enrollment = require('../models/Enrollment');
 const Assignment = require('../models/Assignment');
 const Session = require('../models/Session');
 const NotificationService = require('../services/notificationService');
+const { sendWhatsAppMessage, isConfigured: whatsAppConfigured } = require('../services/whatsappService');
 
 /**
  * Centralised cron job registry.
@@ -20,9 +21,10 @@ const feeReminderJob = () => {
       const enrollments = await Enrollment.find({
         'fee.due': { $gt: 0 },
         status: { $in: ['enrolled', 'in_progress'] },
-      }).populate('student', '_id firstName');
+      }).populate('student', '_id firstName phone');
 
       let sent = 0;
+      const whatsAppOn = whatsAppConfigured();
       for (const e of enrollments) {
         if (!e.student) continue;
         try {
@@ -30,6 +32,17 @@ const feeReminderJob = () => {
           sent += 1;
         } catch (err) {
           logger.error(`[CRON] Fee reminder failed for student ${e.student._id}: ${err.message}`);
+        }
+        // Only attempted once WHATSAPP_ACCESS_TOKEN is set — a no-op otherwise.
+        if (whatsAppOn && e.student.phone) {
+          try {
+            await sendWhatsAppMessage({
+              to: e.student.phone,
+              body: `Placeonix: You have Rs. ${e.fee.due} in outstanding fees. Please clear it to stay in good standing.`,
+            });
+          } catch (err) {
+            logger.error(`[CRON] Fee reminder WhatsApp failed for ${e.student.phone}: ${err.message}`);
+          }
         }
       }
       logger.info(`[CRON] Fee reminders sent: ${sent}`);
