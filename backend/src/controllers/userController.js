@@ -6,6 +6,30 @@ const asyncHandler = require('../utils/asyncHandler');
 const { auditLog } = require('../utils/audit');
 const { USER_STATUS } = require('../config/constants');
 
+// @desc   Student birthdays, for the Calendar's recurring "Birthday" markers.
+//         Deliberately returns only {name, month, day} — never the full
+//         dateOfBirth (which would also reveal exact age/year) or email —
+//         so this stays safe to expose to any logged-in role, not just
+//         admin/mentor, the same way the rest of the app treats a
+//         batchmate's name as visible but not their private details.
+// @route  GET /api/v1/users/birthdays
+exports.listBirthdays = asyncHandler(async (req, res) => {
+  const students = await User.find({
+    role: 'student',
+    status: 'active',
+    dateOfBirth: { $ne: null },
+  }).select('firstName lastName dateOfBirth');
+
+  const birthdays = students.map((s) => ({
+    userId: s._id,
+    name: `${s.firstName} ${s.lastName}`,
+    month: s.dateOfBirth.getUTCMonth() + 1,
+    day: s.dateOfBirth.getUTCDate(),
+  }));
+
+  return ApiResponse.success(res, 200, 'Birthdays fetched', birthdays);
+});
+
 // @desc   List users (admin)
 // @route  GET /api/v1/users?role=&status=&page=&limit=&search=
 exports.listUsers = asyncHandler(async (req, res) => {
@@ -120,7 +144,7 @@ exports.createUser = asyncHandler(async (req, res, next) => {
 // profile update route. status/createdBy/role/refreshToken/loginAttempts/
 // lockUntil/emailVerified etc. are system- or admin-only managed and must
 // never be reachable here, even for the profile owner.
-const COMMON_EDITABLE_FIELDS = ['firstName', 'lastName', 'phone', 'avatar', 'address', 'city', 'bio'];
+const COMMON_EDITABLE_FIELDS = ['firstName', 'lastName', 'phone', 'avatar', 'address', 'city', 'bio', 'dateOfBirth'];
 const STUDENT_PROFILE_FIELDS = ['degree', 'college', 'graduationYear', 'skills', 'resume', 'linkedIn', 'github', 'portfolio', 'experience', 'expectedSalary', 'preferredLocation'];
 const MENTOR_PROFILE_FIELDS = ['specialization', 'experience', 'qualifications', 'hourlyRate', 'availableSlots'];
 

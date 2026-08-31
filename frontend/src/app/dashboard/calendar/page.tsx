@@ -3,8 +3,9 @@
 import { useEffect, useMemo, useState } from "react";
 import { api } from "@/lib/api";
 import { Modal } from "@/components/ui/modal";
+import type { Birthday } from "@/lib/types";
 
-type EventType = "class" | "assignment" | "placement" | "holiday";
+type EventType = "class" | "assignment" | "placement" | "holiday" | "birthday";
 
 interface CalEvent {
   date: Date;
@@ -16,11 +17,16 @@ interface CalEvent {
 
 // Brand tokens, not raw hex — keeps the calendar visually consistent with
 // every other chart/badge in the app instead of its own one-off palette.
+// Birthday is the one exception: a one-off warm rose that isn't one of the
+// app's 5 core hues, chosen deliberately so it doesn't borrow --red's
+// error/danger connotation for what's a celebratory marker.
+const BIRTHDAY_COLOR = "#d1477a";
 const TYPE_COLOR: Record<EventType, string> = {
   class: "var(--blue)",
   assignment: "var(--amber)",
   placement: "var(--purple)",
   holiday: "var(--green)",
+  birthday: BIRTHDAY_COLOR,
 };
 
 const TYPE_LABEL: Record<EventType, string> = {
@@ -28,7 +34,15 @@ const TYPE_LABEL: Record<EventType, string> = {
   assignment: "Assignment due",
   placement: "Placement deadline",
   holiday: "Holiday",
+  birthday: "Birthday",
 };
+
+// Birthdays repeat every year with no fixed year of their own (the backend
+// only ever returns month/day — see userController.listBirthdays) — expand
+// each one into a concrete date per year across a window wide enough to
+// cover realistic Prev/Next browsing without needing to recompute on every
+// cursor change the way the day-grid's own (month, year) events don't.
+const BIRTHDAY_YEAR_WINDOW = 2;
 
 const DOW = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 
@@ -59,7 +73,8 @@ export default function CalendarPage() {
       api.get<AssignmentApi[]>("/assignments?limit=300").catch(() => []),
       api.get<PlacementApi[]>("/placements?limit=300").catch(() => []),
       api.get<AnnouncementApi[]>("/announcements?type=holiday&limit=100").catch(() => []),
-    ]).then(([sessions, assignments, placements, holidays]) => {
+      api.get<Birthday[]>("/users/birthdays").catch(() => []),
+    ]).then(([sessions, assignments, placements, holidays, birthdays]) => {
       const ev: CalEvent[] = [];
       (sessions || []).forEach((s) => {
         if (s.startTime) {
@@ -79,6 +94,12 @@ export default function CalendarPage() {
       (holidays || []).forEach((h) => {
         if (h.publishAt) {
           ev.push({ date: new Date(h.publishAt), type: "holiday", title: h.title.replace(/^Holiday:\s*/, ""), sub: "Institute closed", time: "" });
+        }
+      });
+      const thisYear = new Date().getFullYear();
+      (birthdays || []).forEach((b) => {
+        for (let y = thisYear - BIRTHDAY_YEAR_WINDOW; y <= thisYear + BIRTHDAY_YEAR_WINDOW; y++) {
+          ev.push({ date: new Date(y, b.month - 1, b.day), type: "birthday", title: `🎂 ${b.name}'s Birthday`, sub: "", time: "" });
         }
       });
       setEvents(ev);
@@ -139,7 +160,7 @@ export default function CalendarPage() {
     <div className="flex flex-col gap-6">
       <div>
         <h1 className="text-xl font-bold text-ink">Calendar</h1>
-        <p className="text-sm text-muted">Classes, assignment due dates, placement deadlines, and public holidays.</p>
+        <p className="text-sm text-muted">Classes, assignment due dates, placement deadlines, public holidays, and student birthdays.</p>
       </div>
 
       <div className="flex flex-wrap items-center justify-between gap-2.5">
@@ -160,7 +181,7 @@ export default function CalendarPage() {
       </div>
 
       <div className="flex flex-wrap gap-5 text-[0.74rem] text-ink2">
-        {(["class", "assignment", "placement", "holiday"] as const).map((t) => (
+        {(["class", "assignment", "placement", "holiday", "birthday"] as const).map((t) => (
           <span key={t} className="flex items-center">
             <span className="mr-1.5 inline-block h-2.5 w-2.5 rounded-[3px]" style={{ background: TYPE_COLOR[t] }} />
             {TYPE_LABEL[t]}
@@ -199,7 +220,10 @@ export default function CalendarPage() {
                 background: isToday ? "var(--purple-lt)" : hasHoliday ? "var(--green-lt)" : cell.isWeekend ? "var(--bg)" : "#fcfcfd",
               }}
             >
-              <div className={`text-[0.78rem] font-bold ${isToday ? "text-purple-dk" : "text-ink2"}`}>{cell.day}</div>
+              <div className={`flex items-center gap-1 text-[0.78rem] font-bold ${isToday ? "text-purple-dk" : "text-ink2"}`}>
+                {cell.day}
+                {hasHoliday && <span title="Holiday">⭐</span>}
+              </div>
               {visible.map((e, idx) => (
                 <div
                   key={idx}

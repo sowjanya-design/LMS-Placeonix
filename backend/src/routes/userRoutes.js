@@ -13,6 +13,9 @@ router.get('/me/stats', userCtrl.myStats);
 router.get('/me/enrollments', userCtrl.myEnrollments);
 router.patch('/me/enrollments/:id/progress', authorize('student'), userCtrl.updateMyProgress);
 router.get('/leaderboard', userCtrl.leaderboard);
+// Must stay ahead of the generic '/:id' route below, or "birthdays" gets
+// parsed as an id and 404s against User.findById.
+router.get('/birthdays', userCtrl.listBirthdays);
 router.get('/my-students', authorize('mentor', 'admin'), userCtrl.myStudents);
 
 // Admin only

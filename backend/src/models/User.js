@@ -34,6 +34,7 @@ const userSchema = new mongoose.Schema(
     address: { type: String, trim: true },
     city: { type: String, trim: true },
     bio: { type: String, maxlength: 500 },
+    dateOfBirth: { type: Date },
 
     // Student-specific
     studentProfile: {

@@ -13,6 +13,7 @@ export default function ProfilePage() {
   const [firstName, setFirstName] = useState(user?.firstName ?? "");
   const [lastName, setLastName] = useState(user?.lastName ?? "");
   const [phone, setPhone] = useState(user?.phone ?? "");
+  const [dateOfBirth, setDateOfBirth] = useState(user?.dateOfBirth ? user.dateOfBirth.slice(0, 10) : "");
   const [bio, setBio] = useState(user?.bio ?? "");
   // Student career fields — resume is the one that actually gates placement applications.
   const [resume, setResume] = useState(sp?.resume ?? "");
@@ -37,7 +38,7 @@ export default function ProfilePage() {
     setSaving(true);
     setMessage(null);
     try {
-      const payload: Record<string, unknown> = { firstName, lastName, phone, bio };
+      const payload: Record<string, unknown> = { firstName, lastName, phone, bio, dateOfBirth: dateOfBirth || null };
       if (isStudent) {
         payload.studentProfile = {
           resume: resume.trim(),
@@ -94,9 +95,12 @@ export default function ProfilePage() {
             <Input value={lastName} onChange={(e) => setLastName(e.target.value)} />
           </Field>
         </div>
-        <div className="mt-4">
+        <div className="mt-4 grid grid-cols-2 gap-4">
           <Field label="Phone">
             <Input value={phone} onChange={(e) => setPhone(e.target.value)} />
+          </Field>
+          <Field label="Date of birth" hint="Shows up on the Calendar for everyone on your birthday.">
+            <Input type="date" value={dateOfBirth} onChange={(e) => setDateOfBirth(e.target.value)} />
           </Field>
         </div>
         <div className="mt-4">

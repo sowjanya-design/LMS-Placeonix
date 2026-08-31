@@ -19,6 +19,14 @@ export interface User {
   createdAt: string;
   studentProfile?: { enrollmentId?: string; resume?: string; skills?: string[]; college?: string; degree?: string; graduationYear?: number; linkedIn?: string; github?: string; portfolio?: string; experience?: string; expectedSalary?: string; preferredLocation?: string; }; bio?: string;
   mentorProfile?: { studentCount?: number };
+  dateOfBirth?: string;
+}
+
+export interface Birthday {
+  userId: string;
+  name: string;
+  month: number; // 1-12
+  day: number;
 }
 
 

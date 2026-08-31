@@ -134,6 +134,7 @@ interface EditStudentForm {
   lastName: string;
   phone: string;
   status: string;
+  dateOfBirth: string;
 }
 function EditStudentModal({
   batches,
@@ -151,6 +152,7 @@ function EditStudentModal({
     lastName: student.lastName ?? "",
     phone: student.phone ?? "",
     status: student.status ?? "active",
+    dateOfBirth: student.dateOfBirth ? student.dateOfBirth.slice(0, 10) : "",
   });
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
@@ -185,7 +187,9 @@ function EditStudentModal({
     setSubmitting(true);
     setError(null);
     try {
-      const res = await api.patch<{ user: User }>(`/users/${student._id}`, form);
+      // An empty string would fail Mongoose's Date cast server-side — null
+      // clears the field the same way leaving it blank is meant to.
+      const res = await api.patch<{ user: User }>(`/users/${student._id}`, { ...form, dateOfBirth: form.dateOfBirth || null });
       onUpdated(res.user);
       onClose();
     } catch (err) {
@@ -220,13 +224,22 @@ function EditStudentModal({
             />
           </Field>
         </div>
-        <Field label="Phone" hint="Optional">
-          <Input
-            placeholder="Phone"
-            value={form.phone}
-            onChange={(e) => setForm({ ...form, phone: e.target.value })}
-          />
-        </Field>
+        <div className="grid grid-cols-2 gap-3">
+          <Field label="Phone" hint="Optional">
+            <Input
+              placeholder="Phone"
+              value={form.phone}
+              onChange={(e) => setForm({ ...form, phone: e.target.value })}
+            />
+          </Field>
+          <Field label="Date of birth" hint="Shows on the Calendar">
+            <Input
+              type="date"
+              value={form.dateOfBirth}
+              onChange={(e) => setForm({ ...form, dateOfBirth: e.target.value })}
+            />
+          </Field>
+        </div>
         <Field label="Status" required>
           <Select value={form.status} onChange={(e) => setForm({ ...form, status: e.target.value })}>
             <option value="active">Active</option>
