@@ -1,6 +1,5 @@
 const videoService = require('./video.service');
 const asyncHandler = require('../../utils/asyncHandler');
-const AppError = require('../../utils/AppError');
 
 class VideoController {
   // Get a direct upload URL (e.g., from Cloudflare Stream) so the client uploads directly

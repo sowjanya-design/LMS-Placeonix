@@ -144,6 +144,7 @@ module.exports = {
   submissionUpload,
   courseAssetUpload,
   buildFileUrl,
+  deleteFile,
   videoUpload,
   uploadDir,
   s3Configured,
