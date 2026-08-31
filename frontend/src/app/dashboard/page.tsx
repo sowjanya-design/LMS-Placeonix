@@ -38,10 +38,43 @@ function StatCardSkeleton() {
   );
 }
 
+interface AttentionItem {
+  icon: string;
+  label: string;
+  href: string;
+}
+
+// A short, prioritized "what needs you today" list, built entirely from data
+// each dashboard already fetches for its stat cards — no new endpoints. Sits
+// under the welcome banner rather than replacing it (the greeting still
+// matters; this is what turns it into something actionable).
+function AttentionList({ items }: { items: AttentionItem[] }) {
+  const router = useRouter();
+  if (items.length === 0) return null;
+  return (
+    <div className="rounded-2xl border border-line bg-white p-5">
+      <div className="mb-3 text-sm font-bold text-ink">Needs your attention</div>
+      <div className="flex flex-col gap-2">
+        {items.map((item, i) => (
+          <button
+            key={i}
+            onClick={() => router.push(item.href)}
+            className="flex items-center gap-3 rounded-xl border border-line px-3.5 py-2.5 text-left text-sm font-semibold text-ink2 transition-colors hover:border-purple/40 hover:bg-purple-lt hover:text-purple"
+          >
+            <span className="text-lg">{item.icon}</span>
+            {item.label}
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 function AdminDashboard({ firstName }: { firstName?: string }) {
   const [analyticsOverview, setAnalyticsOverview] = useState<AnalyticsOverview | null>(null);
   const [recentStudents, setRecentStudents] = useState<User[] | null>(null);
   const [monthlyEnrollments, setMonthlyEnrollments] = useState<MonthlyEnrollmentPoint[] | null>(null);
+  const [pendingJoinRequests, setPendingJoinRequests] = useState(0);
   const [error, setError] = useState(false);
 
   useEffect(() => {
@@ -57,7 +90,18 @@ function AdminDashboard({ firstName }: { firstName?: string }) {
         setMonthlyEnrollments(enrollments.data);
       })
       .catch(() => setError(true));
+
+    api
+      .get<Array<{ status: string }>>("/join-requests?status=pending&limit=100")
+      .then((list) => setPendingJoinRequests(list.length))
+      .catch(() => {});
   }, []);
+
+  const attentionItems: AttentionItem[] = [
+    ...(analyticsOverview?.leads.new ? [{ icon: "📥", label: `${analyticsOverview.leads.new} new lead${analyticsOverview.leads.new === 1 ? "" : "s"} to follow up`, href: "/dashboard/leads" }] : []),
+    ...(pendingJoinRequests ? [{ icon: "🙋", label: `${pendingJoinRequests} pending join request${pendingJoinRequests === 1 ? "" : "s"}`, href: "/dashboard/requests" }] : []),
+    ...(analyticsOverview?.placement.openDrives ? [{ icon: "💼", label: `${analyticsOverview.placement.openDrives} open placement drive${analyticsOverview.placement.openDrives === 1 ? "" : "s"}`, href: "/dashboard/placements" }] : []),
+  ];
 
   return (
     <div className="flex flex-col gap-6">
@@ -75,6 +119,8 @@ function AdminDashboard({ firstName }: { firstName?: string }) {
         </div>
         <div className="relative z-10 shrink-0 text-6xl opacity-90">🏢</div>
       </div>
+
+      <AttentionList items={attentionItems} />
 
       {error && <p className="text-sm text-red">Could not load dashboard data.</p>}
 
@@ -188,6 +234,7 @@ function StudentDashboard({ firstName, role }: { firstName?: string; role?: stri
   const [certificates, setCertificates] = useState<Certificate[]>([]);
   const [streak, setStreak] = useState(0);
   const [feesDue, setFeesDue] = useState<number | null>(null);
+  const [assignmentsDueSoon, setAssignmentsDueSoon] = useState(0);
 
   useEffect(() => {
     api.get<Enrollment[]>("/users/me/enrollments").then(setEnrollments).catch(() => setEnrollments([]));
@@ -252,9 +299,27 @@ function StudentDashboard({ firstName, role }: { firstName?: string; role?: stri
     api.get<{ summary: { totalDue: number } }>("/payments/me/summary")
        .then(res => setFeesDue(res.summary.totalDue))
        .catch(() => setFeesDue(null));
+
+    api.get<Assignment[]>("/assignments?limit=100")
+       .then((assignments) => {
+         const soon = Date.now() + 3 * 24 * 60 * 60 * 1000;
+         const dueSoon = (assignments || []).filter((a) => {
+           const mine = a.submissions[0];
+           const notDone = !mine || mine.status === "submitted" || mine.status === "late";
+           return notDone && new Date(a.dueDate).getTime() <= soon && new Date(a.dueDate).getTime() >= Date.now();
+         });
+         setAssignmentsDueSoon(dueSoon.length);
+       })
+       .catch(() => setAssignmentsDueSoon(0));
   }, []);
 
   const currentCourse = enrollments?.filter(e => e.course && e.batch)?.[0];
+
+  // Fees-due already has its own prominent banner right below (see the fee
+  // check further down) — not repeated here to avoid saying the same thing twice.
+  const attentionItems: AttentionItem[] = [
+    ...(assignmentsDueSoon ? [{ icon: "📝", label: `${assignmentsDueSoon} assignment${assignmentsDueSoon === 1 ? "" : "s"} due in the next 3 days`, href: "/dashboard/assignments" }] : []),
+  ];
 
   const combinedUpcoming = [
     ...upcomingSessions.map(s => ({
@@ -310,6 +375,8 @@ function StudentDashboard({ firstName, role }: { firstName?: string; role?: stri
           </button>
         </div>
       )}
+
+      <AttentionList items={attentionItems} />
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
         {/* Main Column (Learning Path & Heatmap) */}
@@ -443,6 +510,7 @@ function MentorDashboard({ firstName }: { firstName?: string }) {
   const [stats, setStats] = useState<{ myStudents?: number } | null>(null);
   const [sessions, setSessions] = useState<Session[]>([]);
   const [pendingGrading, setPendingGrading] = useState<number | null>(null);
+  const [pendingRequests, setPendingRequests] = useState(0);
 
   useEffect(() => {
     api.get<{ myStudents?: number }>("/users/me/stats").then(setStats).catch(() => {});
@@ -460,7 +528,16 @@ function MentorDashboard({ firstName }: { firstName?: string }) {
         setPendingGrading(pending);
       })
       .catch(() => setPendingGrading(null));
+
+    // Already scoped server-side to requests for this mentor's own batches.
+    api.get<Array<{ status: string }>>("/join-requests?status=pending&limit=100").then((list) => setPendingRequests(list.length)).catch(() => {});
   }, []);
+
+  const attentionItems: AttentionItem[] = [
+    ...(pendingGrading ? [{ icon: "📝", label: `${pendingGrading} submission${pendingGrading === 1 ? "" : "s"} awaiting grading`, href: "/dashboard/assignments" }] : []),
+    ...(pendingRequests ? [{ icon: "🙋", label: `${pendingRequests} online join request${pendingRequests === 1 ? "" : "s"} to review`, href: "/dashboard/requests" }] : []),
+    ...(sessions.length ? [{ icon: "📅", label: `${sessions.length} upcoming session${sessions.length === 1 ? "" : "s"}`, href: "/dashboard/sessions" }] : []),
+  ];
 
   return (
     <div className="flex flex-col gap-6 pb-10">
@@ -470,6 +547,8 @@ function MentorDashboard({ firstName }: { firstName?: string }) {
           <p className="mt-1 text-sm text-muted">Here is an overview of your teaching responsibilities today.</p>
         </div>
       </div>
+
+      <AttentionList items={attentionItems} />
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
         <div className="flex flex-col gap-6 lg:col-span-2">
