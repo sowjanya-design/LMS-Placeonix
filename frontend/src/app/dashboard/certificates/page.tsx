@@ -4,6 +4,7 @@ import { useCallback, useEffect, useState } from "react";
 import { useAuth } from "@/lib/auth-context";
 import { api, ApiError } from "@/lib/api";
 import type { Certificate, Enrollment, User } from "@/lib/types";
+import { populatedCourse } from "@/lib/types";
 import { Modal } from "@/components/ui/modal";
 import { EmptyState } from "@/components/ui/empty-state";
 import { Field, Input, Select, DangerButton, ErrorText, ModalActions } from "@/components/ui/form";
@@ -123,7 +124,7 @@ function IssueCertificateModal({ onClose, onIssued }: { onClose: () => void; onI
             </option>
             {enrollments?.map((en) => (
               <option key={en._id} value={en._id}>
-                {en.course?.title}
+                {populatedCourse(en.course)?.title}
                 {en.batch?.name ? ` · ${en.batch.name}` : ""}
               </option>
             ))}
@@ -241,7 +242,7 @@ export default function CertificatesPage() {
                     {revoked ? "revoked" : "active"}
                   </span>
                 </div>
-                <div className="font-bold text-ink">{c.course?.title}</div>
+                <div className="font-bold text-ink">{populatedCourse(c.course)?.title}</div>
                 {user?.role !== "student" && (
                   <div className="text-xs text-muted">
                     {c.student?.firstName} {c.student?.lastName}

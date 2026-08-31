@@ -7,7 +7,7 @@ import { api } from '@/lib/api';
 interface VideoUploadProps {
   courseId: string;
   lessonId: string;
-  onUploadComplete?: (videoData: unknown) => void;
+  onUploadComplete?: (videoData: { videoUID: string }) => void;
 }
 
 export default function VideoUpload({ courseId, lessonId, onUploadComplete }: VideoUploadProps) {
@@ -16,8 +16,6 @@ export default function VideoUpload({ courseId, lessonId, onUploadComplete }: Vi
   const [uploading, setUploading] = useState(false);
   const [progress, setProgress] = useState(0);
   const [message, setMessage] = useState('');
-
-  const API_BASE = process.env.NEXT_PUBLIC_API_BASE || 'http://localhost:5000/api/v1';
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files.length > 0) {
@@ -69,7 +67,7 @@ export default function VideoUpload({ courseId, lessonId, onUploadComplete }: Vi
       setMessage('Finalizing upload...');
       
       // 3. Notify backend that upload finished
-      const finalizeRes = await api.post<unknown>(
+      await api.post<unknown>(
         '/videos/finalize',
         { uid: finalUid, duration: 0, thumbnail: '' }
       );

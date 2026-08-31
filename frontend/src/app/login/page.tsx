@@ -3,7 +3,7 @@
 import { useState, type FormEvent } from "react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
-import { useAuth, ApiError, isApiError } from "@/lib/auth-context";
+import { useAuth, isApiError } from "@/lib/auth-context";
 
 export default function LoginPage() {
   const { login } = useAuth();

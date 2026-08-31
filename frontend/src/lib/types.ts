@@ -1,5 +1,12 @@
 export type Role = "super_admin" | "admin" | "mentor" | "student" | "hr" | "recruiter";
 
+// Enrollment.course / Certificate.course come back populated on most endpoints, but a
+// few return the raw ObjectId string instead. Narrow with these rather than `as`-casting
+// past the union at each call site.
+export function populatedCourse<T extends { title: string }>(course: T | string | undefined | null): T | null {
+  return course && typeof course === "object" ? course : null;
+}
+
 export interface User {
   _id: string;
   firstName: string;
@@ -54,7 +61,9 @@ export type EnrollmentStatus = "enrolled" | "in_progress" | "completed" | "dropp
 
 export interface Enrollment {
   _id: string;
-  course: Course;
+  // Populated by most endpoints, but a few return it unpopulated (raw ObjectId string) —
+  // callers that render course details should narrow with typeof before use.
+  course: Course | string;
   batch: Batch;
   status: EnrollmentStatus;
   progress: { overall: number };
@@ -113,6 +122,7 @@ export interface Session {
   _id: string;
   title: string;
   batch?: { _id: string; name: string };
+  course?: { _id: string; title: string; color?: string };
   instructor?: { firstName: string; lastName: string };
   mode: "online" | "offline";
   venue?: string;
@@ -173,7 +183,8 @@ export interface Payment {
 export interface Certificate {
   _id: string;
   student: { _id: string; firstName: string; lastName: string };
-  course: { _id: string; title: string };
+  // Same populate-or-raw-id caveat as Enrollment.course above.
+  course: { _id: string; title: string } | string;
   certificateNumber: string;
   type: string;
   status: "active" | "revoked";

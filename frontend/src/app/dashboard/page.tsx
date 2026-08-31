@@ -1,6 +1,8 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useAuth } from "@/lib/auth-context";
 import { api } from "@/lib/api";
 import { EmptyState } from "@/components/ui/empty-state";
@@ -55,7 +57,7 @@ function AdminDashboard({ firstName }: { firstName?: string }) {
 
   const metrics = analyticsOverview
     ? ([
-        ["Published Courses", analyticsOverview.courses.pulse || analyticsOverview.courses.published, "#ede9fe"],
+        ["Published Courses", analyticsOverview.courses.published, "#ede9fe"],
         ["Active Sessions", analyticsOverview.sessions?.active || 0, "#fce7f3"],
         ["Total Enrollments", analyticsOverview.enrollments.total, "#dbeafe"],
         ["Completed", analyticsOverview.enrollments.completed, "#d1fae5"],
@@ -187,6 +189,7 @@ function ActivityHeatmap({ records }: { records: AttendanceRecord[] }) {
   );
 }
 function StudentDashboard({ firstName, role }: { firstName?: string; role?: string }) {
+  const router = useRouter();
   const [enrollments, setEnrollments] = useState<Enrollment[] | null>(null);
   const [attendanceRecords, setAttendanceRecords] = useState<AttendanceRecord[]>([]);
   const [upcomingSessions, setUpcomingSessions] = useState<Session[]>([]);
@@ -300,19 +303,21 @@ function StudentDashboard({ firstName, role }: { firstName?: string; role?: stri
           {/* Active Skill Tree / Course */}
           <div className="rounded-2xl border border-line bg-white p-6 shadow-sm relative overflow-hidden">
             <div className="absolute top-0 right-0 p-4 opacity-5 text-8xl">🎓</div>
-            {currentCourse ? (
+            {currentCourse ? (() => {
+              const course = typeof currentCourse.course === 'object' ? currentCourse.course : null;
+              return (
               <>
                 <div className="flex items-center justify-between mb-4">
                   <span className="rounded-md bg-purple-lt px-2.5 py-1 text-xs font-bold text-purple uppercase">
-                    {(currentCourse.course as any)?.category?.replace('_', ' ') || 'Current Path'}
+                    {course?.category?.replace('_', ' ') || 'Current Path'}
                   </span>
                   <span className="text-sm font-bold text-ink">{currentCourse.progress?.overall || 0}% Mastered</span>
                 </div>
                 <h2 className="text-2xl font-extrabold text-ink mb-2">
-                  {(currentCourse.course as any)?.title || 'Unknown Course'}
+                  {course?.title || 'Unknown Course'}
                 </h2>
                 <p className="text-sm text-muted mb-6 max-w-[80%] line-clamp-2">
-                  {(currentCourse.course as any)?.shortDescription || "Keep pushing forward to unlock your next career milestone!"}
+                  {course?.shortDescription || "Keep pushing forward to unlock your next career milestone!"}
                 </p>
                 
                 {/* Progress Bar */}
@@ -320,19 +325,20 @@ function StudentDashboard({ firstName, role }: { firstName?: string; role?: stri
                   <div className="h-full rounded-full bg-[#6c3ff5] transition-all duration-1000" style={{ width: `${currentCourse.progress?.overall || 0}%` }} />
                 </div>
               </>
-            ) : (
+              );
+            })() : (
               <>
                 <div className="flex items-center justify-between mb-4">
                   <span className="rounded-md bg-purple-lt px-2.5 py-1 text-xs font-bold text-purple uppercase">No Active Courses</span>
                 </div>
                 <h2 className="text-2xl font-extrabold text-ink mb-2">Start Learning Today</h2>
                 <p className="text-sm text-muted mb-6 max-w-[80%]">
-                  You aren't enrolled in any active courses yet. Browse the catalog to start your learning journey!
+                  You aren&apos;t enrolled in any active courses yet. Browse the catalog to start your learning journey!
                 </p>
               </>
             )}
             
-            <button onClick={() => window.location.href = "/dashboard/my-courses"} className="flex items-center gap-2 rounded-xl bg-[#111827] px-5 py-2.5 text-sm font-bold text-white transition-all hover:-translate-y-0.5 active:scale-95 shadow-lg">
+            <button onClick={() => router.push("/dashboard/my-courses")} className="flex items-center gap-2 rounded-xl bg-[#111827] px-5 py-2.5 text-sm font-bold text-white transition-all hover:-translate-y-0.5 active:scale-95 shadow-lg">
               {currentCourse ? "Resume Learning" : "View My Courses"}
               <svg viewBox="0 0 24 24" className="h-4 w-4 stroke-current" fill="none" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round">
                 <line x1="5" y1="12" x2="19" y2="12" />
@@ -396,7 +402,7 @@ function StudentDashboard({ firstName, role }: { firstName?: string; role?: stri
                 {certificates.map((cert) => (
                   <div key={cert._id} className="flex flex-col items-center justify-center rounded-xl border border-line p-3 text-center transition-colors hover:bg-bg cursor-pointer" onClick={() => window.open(`/dashboard/certificates`, '_blank')}>
                     <span className="text-3xl mb-1">📜</span>
-                    <span className="text-[0.7rem] font-bold text-ink line-clamp-2">{typeof cert.course === 'object' && cert.course !== null ? (cert.course as any).title : 'Course Completion'}</span>
+                    <span className="text-[0.7rem] font-bold text-ink line-clamp-2">{typeof cert.course === 'object' && cert.course !== null ? cert.course.title : 'Course Completion'}</span>
                   </div>
                 ))}
               </div>
@@ -486,9 +492,9 @@ function MentorDashboard({ firstName }: { firstName?: string }) {
            <div className="rounded-2xl border border-line bg-white p-6 shadow-sm">
              <h3 className="text-base font-bold text-ink mb-4">Quick Links</h3>
              <div className="flex flex-col gap-3">
-               <a href="/dashboard/my-students" className="rounded-xl border border-line p-3 text-sm font-semibold hover:bg-bg transition-colors">👨‍🎓 View My Students</a>
-               <a href="/dashboard/sessions" className="rounded-xl border border-line p-3 text-sm font-semibold hover:bg-bg transition-colors">📅 Manage Sessions</a>
-               <a href="/dashboard/assignments" className="rounded-xl border border-line p-3 text-sm font-semibold hover:bg-bg transition-colors">📝 Grade Assignments</a>
+               <Link href="/dashboard/my-students" className="rounded-xl border border-line p-3 text-sm font-semibold hover:bg-bg transition-colors">👨‍🎓 View My Students</Link>
+               <Link href="/dashboard/sessions" className="rounded-xl border border-line p-3 text-sm font-semibold hover:bg-bg transition-colors">📅 Manage Sessions</Link>
+               <Link href="/dashboard/assignments" className="rounded-xl border border-line p-3 text-sm font-semibold hover:bg-bg transition-colors">📝 Grade Assignments</Link>
              </div>
            </div>
         </div>

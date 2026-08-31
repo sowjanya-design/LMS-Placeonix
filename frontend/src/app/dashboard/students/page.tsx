@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { api, ApiError } from "@/lib/api";
 import type { User, Batch, Enrollment } from "@/lib/types";
+import { populatedCourse } from "@/lib/types";
 import { Modal } from "@/components/ui/modal";
 import { Field, Input, Select, ErrorText, ModalActions } from "@/components/ui/form";
 import { EmptyState } from "@/components/ui/empty-state";
@@ -247,7 +248,7 @@ function EditStudentModal({
               {enrollments.map((e) => (
                 <li key={e._id} className="flex items-center justify-between rounded-lg bg-gray-50 px-3 py-2 text-xs">
                   <div>
-                    <div className="font-semibold text-ink">{e.course?.title || "Unknown Course"}</div>
+                    <div className="font-semibold text-ink">{populatedCourse(e.course)?.title || "Unknown Course"}</div>
                     <div className="text-muted">{e.batch?.name || "Unknown Batch"}</div>
                   </div>
                   <span className="rounded bg-white px-2 py-1 text-xs font-semibold text-green">

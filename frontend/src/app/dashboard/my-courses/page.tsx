@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { api, ApiError } from "@/lib/api";
 import type { Enrollment, EnrollmentStatus } from "@/lib/types";
+import { populatedCourse } from "@/lib/types";
 
 const STATUS_LABEL: Record<EnrollmentStatus, string> = {
   enrolled: "Enrolled",
@@ -53,8 +54,8 @@ export default function MyCoursesPage() {
                 >
                   <div className="flex items-start justify-between gap-2">
                     <div>
-                      <p className="text-xs font-medium tracking-wide text-muted uppercase">{e.course?.category?.replace('_', ' ') || 'Unknown'}</p>
-                      <h2 className="font-bold text-ink">{e.course?.title || 'Unknown Course'}</h2>
+                      <p className="text-xs font-medium tracking-wide text-muted uppercase">{populatedCourse(e.course)?.category?.replace('_', ' ') || 'Unknown'}</p>
+                      <h2 className="font-bold text-ink">{populatedCourse(e.course)?.title || 'Unknown Course'}</h2>
                     </div>
                     <span className={`shrink-0 rounded-full px-2.5 py-1 text-xs font-semibold ${STATUS_STYLE[e.status] || ''}`}>
                       {STATUS_LABEL[e.status] || e.status}
