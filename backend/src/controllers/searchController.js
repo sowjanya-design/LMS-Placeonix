@@ -18,7 +18,15 @@ exports.globalSearch = asyncHandler(async (req, res) => {
     role: { $in: ['student', 'mentor'] },
     $or: [{ firstName: rx }, { lastName: rx }, { email: rx }, { 'studentProfile.enrollmentId': rx }],
   };
-  // Mentors only search their own students; admins search everyone.
+  // Mentors only search their own students (+ themselves); admins search everyone.
+  if (req.user.role === 'mentor') {
+    const Batch = require('../models/Batch');
+    const Enrollment = require('../models/Enrollment');
+    const myBatches = await Batch.find({ mentor: req.user._id }).select('_id');
+    const enrolls = await Enrollment.find({ batch: { $in: myBatches.map((b) => b._id) } }).select('student');
+    const myStudentIds = enrolls.map((e) => e.student);
+    userFilter.$and = [{ $or: [{ _id: { $in: myStudentIds } }, { _id: req.user._id }] }];
+  }
   const [users, courses, batches, drives] = await Promise.all([
     User.find(userFilter).limit(6).select('firstName lastName email role studentProfile.enrollmentId'),
     Course.find({ title: rx }).limit(5).select('title category'),
