@@ -19,6 +19,75 @@ function fmt(iso: string) {
   return new Date(iso).toLocaleDateString(undefined, { day: "numeric", month: "short", year: "numeric" });
 }
 
+// Generated client-side with jsPDF (already a dependency for the Reports
+// export) rather than a document.write()'d HTML string — the latter was
+// tried on another branch and interpolated the student's name and course
+// title unescaped into raw HTML in a new window, a stored-XSS vector the
+// moment an admin opened another student's certificate. jsPDF's text/rect
+// primitives never parse their input as markup, so there's no equivalent
+// risk here regardless of what a name or title contains.
+async function downloadCertificatePdf(cert: AdminCertificate) {
+  const { default: jsPDF } = await import("jspdf");
+  const doc = new jsPDF({ orientation: "landscape", unit: "mm", format: "a4" });
+  const w = doc.internal.pageSize.getWidth();
+  const h = doc.internal.pageSize.getHeight();
+  const purple = [108, 63, 245] as const;
+  const ink = [17, 24, 39] as const;
+
+  // Border
+  doc.setDrawColor(...purple);
+  doc.setLineWidth(1.2);
+  doc.rect(10, 10, w - 20, h - 20);
+  doc.setLineWidth(0.3);
+  doc.rect(13, 13, w - 26, h - 26);
+
+  doc.setTextColor(...purple);
+  doc.setFontSize(12);
+  doc.text("PLACEONIX", w / 2, 32, { align: "center" });
+
+  doc.setTextColor(...ink);
+  doc.setFontSize(28);
+  const title = cert.type ? `Certificate of ${cert.type.charAt(0).toUpperCase()}${cert.type.slice(1)}` : "Certificate of Completion";
+  doc.text(title, w / 2, 55, { align: "center" });
+
+  doc.setFontSize(12);
+  doc.setTextColor(90, 90, 90);
+  doc.text("This is to certify that", w / 2, 72, { align: "center" });
+
+  doc.setFontSize(24);
+  doc.setTextColor(...ink);
+  const studentName = cert.student ? `${cert.student.firstName} ${cert.student.lastName}` : "Student";
+  doc.text(studentName, w / 2, 86, { align: "center" });
+
+  doc.setFontSize(12);
+  doc.setTextColor(90, 90, 90);
+  doc.text("has successfully completed", w / 2, 98, { align: "center" });
+
+  doc.setFontSize(18);
+  doc.setTextColor(...purple);
+  const courseTitle = populatedCourse(cert.course)?.title || "the course";
+  doc.text(courseTitle, w / 2, 110, { align: "center" });
+
+  if (cert.grade || cert.score != null) {
+    doc.setFontSize(11);
+    doc.setTextColor(...ink);
+    const parts = [cert.grade ? `Grade: ${cert.grade}` : "", cert.score != null ? `Score: ${cert.score}%` : ""].filter(Boolean);
+    doc.text(parts.join("   ·   "), w / 2, 122, { align: "center" });
+  }
+
+  doc.setFontSize(9);
+  doc.setTextColor(120, 120, 120);
+  doc.text(`Certificate No: ${cert.certificateNumber}`, w / 2, h - 22, { align: "center" });
+  doc.text(`Issued on ${fmt(cert.issuedDate)}`, w / 2, h - 17, { align: "center" });
+  if (cert.isRevoked || cert.status === "revoked") {
+    doc.setTextColor(220, 38, 38);
+    doc.setFontSize(11);
+    doc.text("THIS CERTIFICATE HAS BEEN REVOKED", w / 2, h - 30, { align: "center" });
+  }
+
+  doc.save(`${cert.certificateNumber}.pdf`);
+}
+
 interface IssueForm {
   studentId: string;
   enrollmentId: string;
@@ -250,15 +319,22 @@ export default function CertificatesPage() {
                 )}
                 <div className="text-xs text-muted">{c.certificateNumber}</div>
                 <div className="text-xs text-muted">Issued {fmt(c.issuedDate)}</div>
-                {isAdmin && !revoked && (
-                  <DangerButton
-                    onClick={() => handleRevoke(c)}
-                    disabled={revokingId === c._id}
-                    className="mt-1 self-start"
+                <div className="mt-1 flex flex-wrap gap-2">
+                  <button
+                    onClick={() => downloadCertificatePdf(c)}
+                    className="rounded-lg border-[1.5px] border-line px-3 py-1.5 text-xs font-semibold text-ink2 hover:border-purple hover:bg-purple-lt hover:text-purple"
                   >
-                    {revokingId === c._id ? "Revoking…" : "Revoke"}
-                  </DangerButton>
-                )}
+                    ⬇ Download
+                  </button>
+                  {isAdmin && !revoked && (
+                    <DangerButton
+                      onClick={() => handleRevoke(c)}
+                      disabled={revokingId === c._id}
+                    >
+                      {revokingId === c._id ? "Revoking…" : "Revoke"}
+                    </DangerButton>
+                  )}
+                </div>
               </div>
             );
           })}

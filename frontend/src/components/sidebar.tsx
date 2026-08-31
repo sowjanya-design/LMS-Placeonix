@@ -32,7 +32,7 @@ export function Sidebar() {
       className="hidden h-screen w-[264px] shrink-0 flex-col bg-[linear-gradient(180deg,#ffffff_0%,#f7f4fd_100%)] md:flex"
       style={{ boxShadow: "8px 0 40px rgba(17,24,39,0.06)" }}
     >
-      <div className="flex items-center justify-start px-6 py-8">
+      <Link href="/dashboard" className="flex items-center justify-start px-6 py-8">
         <Image
           src="/brand/placeonix-logo-v4.png"
           alt="Placeonix"
@@ -41,10 +41,11 @@ export function Sidebar() {
           className="h-auto w-32"
           priority
         />
-      </div>
+      </Link>
 
-      <div
-        className="mx-4 mt-2 flex items-center gap-2.5 rounded-[22px] bg-white p-3"
+      <Link
+        href="/dashboard"
+        className="mx-4 mt-2 flex items-center gap-2.5 rounded-[22px] bg-white p-3 transition-transform hover:-translate-y-0.5"
         style={{ boxShadow: "var(--clay-shadow-soft)" }}
       >
         <div
@@ -59,7 +60,7 @@ export function Sidebar() {
           </div>
           <div className="truncate text-[0.68rem] text-muted">{user._id.slice(-8).toUpperCase()}</div>
         </div>
-      </div>
+      </Link>
 
       <div className="flex-1 overflow-y-auto px-3 py-4 no-scrollbar">
         {items.map((item) => {

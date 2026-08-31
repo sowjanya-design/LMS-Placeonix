@@ -30,7 +30,14 @@ exports.listCertificates = asyncHandler(async (req, res) => {
 // @desc   My certificates
 // @route  GET /api/v1/certificates/me
 exports.myCertificates = asyncHandler(async (req, res) => {
+  // Populate student too, even though the caller already knows who they are —
+  // the frontend's Certificate type (and the /certificates admin list above)
+  // both assume `student` is always a populated {firstName, lastName} object,
+  // never a bare ObjectId; leaving it unpopulated here silently broke any
+  // view that reads cert.student.firstName (e.g. the downloadable
+  // certificate PDF, which rendered "undefined undefined").
   const certificates = await Certificate.find({ student: req.user._id })
+    .populate('student', 'firstName lastName')
     .populate('course', 'title category')
     .populate('batch', 'name')
     .sort('-issuedDate');

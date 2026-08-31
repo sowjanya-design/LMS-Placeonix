@@ -102,5 +102,10 @@ describe('Certificates API — issuance', () => {
     expect(res.statusCode).toBe(200);
     expect(Array.isArray(res.body.data)).toBe(true);
     expect(res.body.data.length).toBe(1);
+    // Regression: myCertificates didn't populate `student`, so it stayed a
+    // bare ObjectId — any view reading cert.student.firstName (the
+    // downloadable certificate PDF) silently rendered "undefined undefined".
+    expect(res.body.data[0].student.firstName).toBe(student.firstName);
+    expect(res.body.data[0].student.lastName).toBe(student.lastName);
   }, 10000);
 });

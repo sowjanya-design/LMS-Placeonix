@@ -2,6 +2,7 @@
 
 import { useState, type FormEvent } from "react";
 import Image from "next/image";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useAuth, isApiError } from "@/lib/auth-context";
 
@@ -155,9 +156,9 @@ export default function LoginPage() {
                     <input type="checkbox" className="accent-purple" />
                     Remember me
                   </label>
-                  <a href="#" className="font-bold text-purple no-underline">
+                  <Link href="/forgot-password" className="font-bold text-purple no-underline">
                     Forgot Password?
-                  </a>
+                  </Link>
                 </div>
 
                 <button
