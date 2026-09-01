@@ -109,3 +109,73 @@ describe('Certificates API — issuance', () => {
     expect(res.body.data[0].student.lastName).toBe(student.lastName);
   }, 10000);
 });
+
+describe('Certificates API — public verification', () => {
+  beforeAll(connect);
+  afterAll(disconnect);
+  afterEach(clear);
+
+  // The frontend's /verify/[number] page (public, no login) is built
+  // entirely on this endpoint's shape — pin it down here.
+  it('verifies a real certificate number with no auth required', async () => {
+    const { user: mentor } = await createUserAndLogin({ role: 'mentor' });
+    const { user: student } = await createUserAndLogin({ role: 'student' });
+    const { user: admin, token: adminToken } = await createUserAndLogin({ role: 'admin' });
+    const { batch, course } = await createCourseAndBatch(mentor._id, admin._id);
+    const enrollment = await Enrollment.create({
+      student: student._id,
+      course: course._id,
+      batch: batch._id,
+      fee: { total: 1000 },
+      grade: 'A',
+      finalScore: 91,
+    });
+    const issueRes = await request(app)
+      .post('/api/v1/certificates/issue')
+      .set(auth(adminToken))
+      .send({ enrollmentId: enrollment._id, type: 'completion' });
+    const number = issueRes.body.data.certificate.certificateNumber;
+
+    // No Authorization header at all — this is the point of the route.
+    const res = await request(app).get(`/api/v1/certificates/verify/${number}`);
+
+    expect(res.statusCode).toBe(200);
+    expect(res.body.data.valid).toBe(true);
+    expect(res.body.data.certificate.number).toBe(number);
+    expect(res.body.data.certificate.studentName).toBe(`${student.firstName} ${student.lastName}`);
+    expect(res.body.data.certificate.courseName).toBe(course.title);
+    expect(res.body.data.certificate.grade).toBe('A');
+  }, 10000);
+
+  it('returns valid:false for an unknown certificate number, not a 404', async () => {
+    const res = await request(app).get('/api/v1/certificates/verify/PLX-CERT-9999-99999');
+    expect(res.statusCode).toBe(200);
+    expect(res.body.data.valid).toBe(false);
+    expect(res.body.data.certificate).toBeUndefined();
+  });
+
+  it('returns valid:false for a revoked certificate — same shape as unknown, doesn\'t leak which', async () => {
+    const { user: mentor } = await createUserAndLogin({ role: 'mentor' });
+    const { user: student } = await createUserAndLogin({ role: 'student' });
+    const { user: admin, token: adminToken } = await createUserAndLogin({ role: 'admin' });
+    const { batch, course } = await createCourseAndBatch(mentor._id, admin._id);
+    const enrollment = await Enrollment.create({
+      student: student._id,
+      course: course._id,
+      batch: batch._id,
+      fee: { total: 1000 },
+    });
+    const issueRes = await request(app)
+      .post('/api/v1/certificates/issue')
+      .set(auth(adminToken))
+      .send({ enrollmentId: enrollment._id });
+    const number = issueRes.body.data.certificate.certificateNumber;
+    const certId = issueRes.body.data.certificate._id;
+
+    await request(app).post(`/api/v1/certificates/${certId}/revoke`).set(auth(adminToken)).send({ reason: 'test' });
+
+    const res = await request(app).get(`/api/v1/certificates/verify/${number}`);
+    expect(res.statusCode).toBe(200);
+    expect(res.body.data.valid).toBe(false);
+  }, 10000);
+});
