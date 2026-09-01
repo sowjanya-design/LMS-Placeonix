@@ -45,11 +45,13 @@ export interface Course {
   _id: string;
   title: string;
   category: string;
+  level?: string;
   color?: string;
   shortDescription?: string;
   description?: string;
   duration: string;
   fee?: { amount: number; currency?: string };
+  isPublished?: boolean;
 }
 
 export interface Batch {
