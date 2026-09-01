@@ -92,6 +92,17 @@ npm run dev                  # Next.js → :3000
 > Newest entries at the top. Format: `### YYYY-MM-DD — short title` then 1-3 bullets:
 > what changed, why, anything the next session should know.
 
+### 2026-09-02 — Certificate verify page, course create/edit, CI
+- Added `/verify/[number]` (public, no login) — every certificate PDF already
+  printed a verify URL that led nowhere; it now hits the
+  `GET /certificates/verify/:number` endpoint that had been sitting unused.
+- Courses now has a real Add/Edit form (matching what Companies already had) —
+  backend supported it the whole time, the UI just never got built. Doesn't
+  touch the modules/topics curriculum builder, kept that out of scope.
+- Added `.github/workflows/ci.yml` — runs the backend test suite and a
+  frontend typecheck/lint/build on every push and PR. Nothing ran the tests
+  automatically before this.
+
 ### 2026-09-02 — Repo cleanup: dropped dead weight
 - Deleted `maggot/` (raw source images for mascot art — finished versions already
   live in `frontend/public/mascots/`, nothing referenced the originals), the unused
