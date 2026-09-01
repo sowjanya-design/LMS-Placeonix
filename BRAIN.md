@@ -26,11 +26,9 @@ Next.js, backed by Node/Express + MongoDB Atlas.
   non-SRV `MONGO_URI` workaround noted in the 2026-08-06 Atlas entry if `mongodb+srv://`
   fails with `ECONNREFUSED` in this environment.
 
-**Frontend** (`frontend/`, Next.js — `frontend/legacy_html/` holds the old vanilla SPA
-as a feature-complete reference for anything not yet migrated):
-
-**Prompts & Plans** (`prompts_and_plans/`):
-- Holds all legacy project reports, SEO lists, and Excel trackers. This is where `NEXT_STEPS_PLAN.md` and old documentation lives.
+**Frontend** (`frontend/`, Next.js — the old vanilla SPA that used to live at
+`frontend/legacy_html/` was removed 2026-09-02 now that the migration is complete;
+see that changelog entry if you need the old reference):
 
 - Brand theme matches the live site exactly (purple/ink palette, Plus Jakarta Sans,
   real logo/illustration, no dark mode — see the two 2026-08-06/07 brand-fix entries
@@ -46,9 +44,9 @@ as a feature-complete reference for anything not yet migrated):
   Assignments view is still a placeholder. Search bar and notification bell are
   **visual only**, not wired to real data.
 
-**What's next**: full field-by-field, endpoint-by-endpoint detail lives in
-[`NEXT_STEPS_PLAN.md`](./NEXT_STEPS_PLAN.md) — keep that file current as items ship
-instead of duplicating its detail here. Short version: create/edit forms for
+**What's next** (this section is stale relative to the actual current state further
+down in the Changelog — a lot has shipped since it was written; treat it as history,
+not a live task list). Short version at the time: create/edit forms for
 Batch/Course/Certificate/Company/Announcement/MockInterview, an admin Assignments
 oversight page (needs a product decision on which variant first), wiring the search
 bar and notification bell to real data, a `resume` field on Profile (currently
@@ -83,17 +81,28 @@ npm run dev                  # Next.js → :3000
   loads with sample data. The new Next.js frontend has no equivalent fallback — it
   just shows real errors, which is the intended behavior going forward.
 
-## Where things are tracked (all moved to `prompts_and_plans/`)
-- Bugs: `Placeonix-Hub-Bug-Tracker.xlsx`, `Placeonix_Bug_Register.xlsx`.
-- Audit reports: `Placeonix-Hub-Dashboard-Audit-Report.pdf`, `docs/audit/00-inventory.md`.
-- SEO: `Placeonix_SEO_Keywords.pdf`.
-- Reports: `16jul report (1).docx`.
+## Where things are tracked
+- The old `prompts_and_plans/` folder (bug trackers, audit report PDF, SEO keyword
+  list, planning docs) was removed 2026-09-02 — it wasn't application code and had
+  gotten stale. `docs/audit/00-inventory.md` is the one piece of that kept in the repo.
 
 ---
 
 ## Changelog
 > Newest entries at the top. Format: `### YYYY-MM-DD — short title` then 1-3 bullets:
 > what changed, why, anything the next session should know.
+
+### 2026-09-02 — Repo cleanup: dropped dead weight
+- Deleted `maggot/` (raw source images for mascot art — finished versions already
+  live in `frontend/public/mascots/`, nothing referenced the originals), the unused
+  `placeonix-logo-v3.png`, `frontend/legacy_html/` (the old vanilla portal, kept as
+  a migration reference — migration's done now), and `prompts_and_plans/` (bug
+  trackers, audit report, SEO PDF, planning docs — not app code, had gone stale).
+  Cut the repo from ~27MB to a fraction of that.
+- Renamed `frontend/package.json`'s name field from a leftover `frontend_temp` to
+  `placeonix-hub-frontend`.
+- Going forward, commit messages are short and plain instead of a written-up
+  changelog-style paragraph — this file is where the detail belongs, not git log.
 
 ### 2026-08-08 — Login page: removed pointing girl mascot
 - User requested removal of the pointing girl mascot (`mascot-dashboard-point.png`)

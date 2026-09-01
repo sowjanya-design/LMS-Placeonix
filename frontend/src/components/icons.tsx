@@ -1,5 +1,5 @@
-// Paths lifted from the old portal's iconSvg() (frontend/legacy_html/placeonix-hub-portal.html)
-// so the migrated nav looks identical, just as React components instead of an innerHTML map.
+// Paths lifted from the old portal's iconSvg() helper so the migrated nav
+// looks identical, just as React components instead of an innerHTML map.
 const PATHS: Record<string, React.ReactNode> = {
   home: (
     <>

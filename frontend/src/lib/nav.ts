@@ -94,8 +94,8 @@ const recruiterNav: NavItem[] = [
   { id: "settings", label: "Settings", icon: "settings" },
 ];
 
-// Mirrors the old portal's ROLES[role].nav config (frontend/legacy_html/placeonix-hub-portal.html)
-// so the migration preserves exactly what each role could already see. Each id maps to
+// Mirrors the old portal's ROLES[role].nav config so the migration preserves
+// exactly what each role could already see. Each id maps to
 // /dashboard/{id} ('dashboard' itself maps to /dashboard) — see app/dashboard/[section]/page.tsx
 // for sections not yet built as real pages. super_admin reuses the admin nav (a super-role, not
 // a distinct persona); hr/recruiter are their own scoped subsets.

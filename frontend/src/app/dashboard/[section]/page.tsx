@@ -6,8 +6,7 @@ import { NAV } from "@/lib/nav";
 
 // Catch-all for every nav item that doesn't have a real page yet — keeps every
 // sidebar link resolving to something honest instead of a 404 while the rest
-// of the old portal (frontend/legacy_html/placeonix-hub-portal.html) gets
-// migrated section by section.
+// of the app gets migrated section by section.
 export default function SectionPlaceholder() {
   const { user } = useAuth();
   const params = useParams<{ section: string }>();
