@@ -272,33 +272,6 @@ export interface Assignment {
   submissions: Submission[];
 }
 
-export interface QuizOption {
-  _id?: string;
-  text: string;
-  isCorrect?: boolean;
-}
-
-export interface QuizQuestion {
-  _id?: string;
-  text: string;
-  type: "single" | "multi";
-  options: QuizOption[];
-  points: number;
-}
-
-export interface Quiz {
-  _id: string;
-  title: string;
-  description?: string;
-  course: { _id: string; title: string };
-  batch: { _id: string; name: string; code: string };
-  questions: QuizQuestion[];
-  timeLimitMinutes: number;
-  maxScore?: number;
-  passingScorePercent: number;
-  status: "draft" | "published" | "closed";
-  isOpen?: boolean;
-}
 
 export interface QuizAttempt {
   _id: string;

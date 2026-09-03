@@ -41,9 +41,9 @@ export default function AttendanceMarkPage() {
     if (!batchId) return;
     setStudents(null);
     api
-      .get<{ enrollments: { student: { _id: string; firstName: string; lastName: string } }[] }>(`/batches/${batchId}/enrollments`)
+      .get<{ enrollments: StudentRow[] }>(`/batches/${batchId}/enrollments`)
       .then((res) => {
-        const withStudent = res.students.filter((s) => s.student);
+        const withStudent = res.enrollments.filter((s) => s.student);
         const filtered = withStudent.filter((s) => s.batch?._id === batchId);
         const rows = filtered.length ? filtered : withStudent;
         setStudents(rows);
