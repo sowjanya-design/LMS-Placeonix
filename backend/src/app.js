@@ -210,6 +210,41 @@ app.get("/health", (req, res) => {
   });
 });
 
+// TEMPORARY DEBUG ENDPOINT — remove after diagnosing 500
+app.post("/debug-login", async (req, res) => {
+  try {
+    const User = require("./models/User");
+    const bcrypt = require("bcryptjs");
+    const { email, password } = req.body;
+    
+    const user = await User.findOne({ email }).select("+password +emailVerified +loginAttempts +lockUntil");
+    if (!user) {
+      return res.json({ debug: "no user found", email });
+    }
+    
+    const isMatch = await bcrypt.compare(password, user.password);
+    return res.json({
+      debug: "user found",
+      email: user.email,
+      role: user.role,
+      status: user.status,
+      passwordMatch: isMatch,
+      hasPassword: !!user.password,
+      passwordLength: user.password ? user.password.length : 0,
+      isLocked: user.isLocked,
+      loginAttempts: user.loginAttempts,
+    });
+  } catch (err) {
+    return res.status(500).json({
+      debug: "error",
+      name: err.name,
+      message: err.message,
+      stack: err.stack,
+    });
+  }
+});
+
+
 // API
 const apiVersion = process.env.API_VERSION || "v1";
 app.use(`/api/${apiVersion}`, routes);
