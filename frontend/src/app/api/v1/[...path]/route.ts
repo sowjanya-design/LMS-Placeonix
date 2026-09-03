@@ -1,19 +1,34 @@
 import { NextRequest, NextResponse } from "next/server";
 
-export const maxDuration = 60; // Allow long-running requests if needed
+export const maxDuration = 60;
 export const dynamic = "force-dynamic";
 
 async function proxy(request: NextRequest, { params }: { params: { path: string[] } }) {
+  const origin = request.headers.get("Origin") || "*";
+
+  // Handle CORS preflight directly without bothering the backend
+  if (request.method === "OPTIONS") {
+    const preflightHeaders = new Headers();
+    preflightHeaders.set("Access-Control-Allow-Origin", origin);
+    preflightHeaders.set("Access-Control-Allow-Methods", "GET, POST, PUT, PATCH, DELETE, OPTIONS");
+    preflightHeaders.set("Access-Control-Allow-Headers", "Content-Type, Authorization");
+    preflightHeaders.set("Access-Control-Allow-Credentials", "true");
+    preflightHeaders.set("Access-Control-Max-Age", "86400"); // 24 hours
+    
+    return new NextResponse(null, {
+      status: 204, // Success status code required by CORS spec
+      headers: preflightHeaders,
+    });
+  }
+
   const pathSegments = (await Promise.resolve(params)).path;
   const path = pathSegments.join("/");
-  
-  // Forward query params
   const searchParams = request.nextUrl.search;
   
   // Target URL
   const targetUrl = `https://backend-pearl-seven-77.vercel.app/api/v1/${path}${searchParams}`;
   
-  // Copy headers, but strip host and modify Origin to trick the backend
+  // Copy headers
   const headers = new Headers();
   request.headers.forEach((value, key) => {
     if (key.toLowerCase() !== "host") {
@@ -41,15 +56,14 @@ async function proxy(request: NextRequest, { params }: { params: { path: string[
     // Copy response headers
     const responseHeaders = new Headers();
     backendResponse.headers.forEach((value, key) => {
-      // Don't forward the backend's CORS headers because we will set our own
       const lowerKey = key.toLowerCase();
       if (!lowerKey.startsWith("access-control-")) {
         responseHeaders.set(key, value);
       }
     });
 
-    // Set our own permissive CORS headers so the browser doesn't block the response
-    responseHeaders.set("Access-Control-Allow-Origin", request.headers.get("Origin") || "*");
+    // Inject our permissive CORS headers
+    responseHeaders.set("Access-Control-Allow-Origin", origin);
     responseHeaders.set("Access-Control-Allow-Methods", "GET, POST, PUT, PATCH, DELETE, OPTIONS");
     responseHeaders.set("Access-Control-Allow-Headers", "Content-Type, Authorization");
     responseHeaders.set("Access-Control-Allow-Credentials", "true");
