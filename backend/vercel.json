@@ -7,7 +7,7 @@
     "JWT_REFRESH_SECRET": "your-super-secret-refresh-jwt-key-change-this-too-32-chars",
     "JWT_COOKIE_EXPIRE": "7",
     "DISABLE_CRON": "true",
-    "NODE_ENV": "production",
+    "NODE_ENV": "development",
     "CLIENT_URL": "https://placeonix-frontend-v2.vercel.app,https://frontend-three-jade-53.vercel.app,https://frontend-qw52b5sa0-sowjanya-designs-projects.vercel.app,https://lms-placeonix-me1m28vps-sowjanya-designs-projects.vercel.app,https://lms-placeonix.vercel.app,https://lms-placeonix-sowjanya-designs-projects.vercel.app"
   },
   "builds": [
