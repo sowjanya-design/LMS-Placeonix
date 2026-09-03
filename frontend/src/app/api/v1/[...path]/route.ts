@@ -57,9 +57,15 @@ async function proxy(request: NextRequest, { params }: { params: Promise<{ path:
     const responseHeaders = new Headers();
     backendResponse.headers.forEach((value, key) => {
       const lowerKey = key.toLowerCase();
-      if (!lowerKey.startsWith("access-control-") && lowerKey !== "content-encoding" && lowerKey !== "content-length") {
+      if (!lowerKey.startsWith("access-control-") && lowerKey !== "content-encoding" && lowerKey !== "content-length" && lowerKey !== "set-cookie") {
         responseHeaders.set(key, value);
       }
+    });
+
+    // Properly forward Set-Cookie headers without joining them by commas
+    const setCookies = backendResponse.headers.getSetCookie();
+    setCookies.forEach((cookie) => {
+      responseHeaders.append("Set-Cookie", cookie);
     });
 
     // Inject our permissive CORS headers
