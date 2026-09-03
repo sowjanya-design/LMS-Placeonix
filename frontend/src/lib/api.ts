@@ -3,8 +3,7 @@
 // touches a token directly, it just always sends credentials so the browser
 // attaches the cookie. Never store the token in localStorage/state here; that
 // was the exact XSS exposure Phase 0 removed from the old portal.
-const API_BASE =
-  process.env.NEXT_PUBLIC_API_BASE || "/api/v1";
+const API_BASE = "/api/v1";
 
 export class ApiError extends Error {
   status: number;
