@@ -57,7 +57,7 @@ async function proxy(request: NextRequest, { params }: { params: Promise<{ path:
     const responseHeaders = new Headers();
     backendResponse.headers.forEach((value, key) => {
       const lowerKey = key.toLowerCase();
-      if (!lowerKey.startsWith("access-control-")) {
+      if (!lowerKey.startsWith("access-control-") && lowerKey !== "content-encoding" && lowerKey !== "content-length") {
         responseHeaders.set(key, value);
       }
     });
