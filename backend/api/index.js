@@ -1,13 +1,13 @@
 // Vercel serverless entrypoint for the Placeonix API.
 // Unlike src/server.js (which calls app.listen for local dev), this exports a
 // request handler and lazily opens a cached MongoDB connection per cold start.
-const mongoose = require('mongoose');
-const app = require('../src/app');
+const mongoose = require("mongoose");
+const app = require("../src/app");
 
 let connPromise = null;
 async function ensureDB() {
   if (mongoose.connection.readyState === 1) return; // already connected
-  if (!process.env.MONGO_URI) throw new Error('MONGO_URI is not set');
+  if (!process.env.MONGO_URI) throw new Error("MONGO_URI is not set");
   if (!connPromise) {
     connPromise = mongoose
       .connect(process.env.MONGO_URI, {
@@ -19,7 +19,9 @@ async function ensureDB() {
         // Idempotent — ensures can() middleware's Role lookups never fail
         // closed on a fresh serverless DB that was never `npm run seed`ed.
         try {
-          const { seedRolesAndPermissions } = require('../src/seeders/seedRoles');
+          const {
+            seedRolesAndPermissions,
+          } = require("../src/seeders/seedRoles");
           await seedRolesAndPermissions();
         } catch (err) {
           console.warn(`Role/permission auto-seed skipped: ${err.message}`);
@@ -39,8 +41,13 @@ module.exports = async (req, res) => {
     await ensureDB();
   } catch (err) {
     res.statusCode = 500;
-    res.setHeader('Content-Type', 'application/json');
-    return res.end(JSON.stringify({ success: false, message: 'Database connection failed: ' + err.message }));
+    res.setHeader("Content-Type", "application/json");
+    return res.end(
+      JSON.stringify({
+        success: false,
+        message: "Database connection failed: " + err.message,
+      }),
+    );
   }
   return app(req, res);
 };

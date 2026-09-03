@@ -77,7 +77,13 @@
 }
 
 body {
-  background: linear-gradient(160deg, #ede7fb 0%, #e3f0f9 35%, #e1f5ee 65%, #fbe9da 100%);
+  background: linear-gradient(
+    160deg,
+    #ede7fb 0%,
+    #e3f0f9 35%,
+    #e1f5ee 65%,
+    #fbe9da 100%
+  );
   background-attachment: fixed;
   color: var(--ink2);
 }

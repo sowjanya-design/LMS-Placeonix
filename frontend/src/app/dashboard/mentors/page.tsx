@@ -5,7 +5,13 @@ import { api, ApiError } from "@/lib/api";
 import { useAuth } from "@/lib/auth-context";
 import { Modal } from "@/components/ui/modal";
 import { EmptyState } from "@/components/ui/empty-state";
-import { Field, Input, Select, ErrorText, ModalActions } from "@/components/ui/form";
+import {
+  Field,
+  Input,
+  Select,
+  ErrorText,
+  ModalActions,
+} from "@/components/ui/form";
 import type { User, Batch } from "@/lib/types";
 
 const STATUS_STYLE: Record<string, string> = {
@@ -24,7 +30,13 @@ interface AddMentorForm {
   experience: string;
 }
 
-function AddMentorModal({ onClose, onAdded }: { onClose: () => void; onAdded: (u: User) => void }) {
+function AddMentorModal({
+  onClose,
+  onAdded,
+}: {
+  onClose: () => void;
+  onAdded: (u: User) => void;
+}) {
   const [form, setForm] = useState<AddMentorForm>({
     firstName: "",
     lastName: "",
@@ -108,12 +120,20 @@ function AddMentorModal({ onClose, onAdded }: { onClose: () => void; onAdded: (u
           />
         </Field>
         <Field label="Phone" hint="Optional.">
-          <Input value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} />
+          <Input
+            value={form.phone}
+            onChange={(e) => setForm({ ...form, phone: e.target.value })}
+          />
         </Field>
-        <Field label="Specialization" hint="Optional. Comma-separated (e.g. React, Node.js).">
+        <Field
+          label="Specialization"
+          hint="Optional. Comma-separated (e.g. React, Node.js)."
+        >
           <Input
             value={form.specialization}
-            onChange={(e) => setForm({ ...form, specialization: e.target.value })}
+            onChange={(e) =>
+              setForm({ ...form, specialization: e.target.value })
+            }
           />
         </Field>
         <Field label="Experience (years)" hint="Optional.">
@@ -125,7 +145,11 @@ function AddMentorModal({ onClose, onAdded }: { onClose: () => void; onAdded: (u
           />
         </Field>
         <ErrorText>{error}</ErrorText>
-        <ModalActions onCancel={onClose} submitting={submitting} submitLabel="Add Mentor" />
+        <ModalActions
+          onCancel={onClose}
+          submitting={submitting}
+          submitLabel="Add Mentor"
+        />
       </form>
     </Modal>
   );
@@ -170,7 +194,9 @@ function EditMentorModal({
       onSaved(res.user);
       onClose();
     } catch (err) {
-      setError(err instanceof ApiError ? err.message : "Failed to update mentor");
+      setError(
+        err instanceof ApiError ? err.message : "Failed to update mentor",
+      );
     } finally {
       setSubmitting(false);
     }
@@ -196,17 +222,27 @@ function EditMentorModal({
           </Field>
         </div>
         <Field label="Phone">
-          <Input value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} />
+          <Input
+            value={form.phone}
+            onChange={(e) => setForm({ ...form, phone: e.target.value })}
+          />
         </Field>
         <Field label="Status">
-          <Select value={form.status} onChange={(e) => setForm({ ...form, status: e.target.value })}>
+          <Select
+            value={form.status}
+            onChange={(e) => setForm({ ...form, status: e.target.value })}
+          >
             <option value="active">active</option>
             <option value="inactive">inactive</option>
             <option value="suspended">suspended</option>
           </Select>
         </Field>
         <ErrorText>{error}</ErrorText>
-        <ModalActions onCancel={onClose} submitting={submitting} submitLabel="Save Changes" />
+        <ModalActions
+          onCancel={onClose}
+          submitting={submitting}
+          submitLabel="Save Changes"
+        />
       </form>
     </Modal>
   );
@@ -226,7 +262,11 @@ export default function MentorsPage() {
     api
       .get<User[]>("/users?role=mentor&sort=-createdAt&limit=100")
       .then(setMentors)
-      .catch((err) => setError(err instanceof ApiError ? err.message : "Failed to load mentors"));
+      .catch((err) =>
+        setError(
+          err instanceof ApiError ? err.message : "Failed to load mentors",
+        ),
+      );
     // mentorProfile has no stored student count — derive it from live batch
     // enrollment instead of trusting a field the backend never populates.
     api
@@ -258,14 +298,19 @@ export default function MentorsPage() {
     <div className="flex flex-col gap-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-xl font-bold text-ink">Mentors {mentors ? `(${mentors.length})` : ""}</h1>
+          <h1 className="text-xl font-bold text-ink">
+            Mentors {mentors ? `(${mentors.length})` : ""}
+          </h1>
           <p className="text-sm text-muted">Instructors across all batches.</p>
         </div>
         {isAdmin && (
           <button
             onClick={() => setShowAdd(true)}
             className="rounded-[10px] px-4 py-2.5 text-sm font-bold text-white shadow-[0_4px_14px_rgba(108,63,245,0.28)]"
-            style={{ background: "linear-gradient(135deg, var(--purple), var(--purple-dk))" }}
+            style={{
+              background:
+                "linear-gradient(135deg, var(--purple), var(--purple-dk))",
+            }}
           >
             + Add Mentor
           </button>
@@ -292,10 +337,14 @@ export default function MentorsPage() {
                   <div className="text-xs text-muted">{m.email}</div>
                 </div>
                 <div className="text-center text-sm">
-                  <div className="font-bold text-ink">{studentCount(m._id)}</div>
+                  <div className="font-bold text-ink">
+                    {studentCount(m._id)}
+                  </div>
                   <div className="text-xs text-muted">students</div>
                 </div>
-                <span className={`rounded-md px-2.5 py-1 text-xs font-semibold ${STATUS_STYLE[m.status] ?? STATUS_STYLE.active}`}>
+                <span
+                  className={`rounded-md px-2.5 py-1 text-xs font-semibold ${STATUS_STYLE[m.status] ?? STATUS_STYLE.active}`}
+                >
                   {m.status}
                 </span>
                 {isAdmin && (
@@ -333,7 +382,11 @@ export default function MentorsPage() {
         <EditMentorModal
           mentor={editing}
           onClose={() => setEditing(null)}
-          onSaved={(u) => setMentors((prev) => prev?.map((m) => (m._id === u._id ? u : m)) ?? prev)}
+          onSaved={(u) =>
+            setMentors(
+              (prev) => prev?.map((m) => (m._id === u._id ? u : m)) ?? prev,
+            )
+          }
         />
       )}
     </div>

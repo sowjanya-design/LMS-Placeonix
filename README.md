@@ -1,5 +1,7 @@
 # Placeonix Hub
 
+![CI](https://github.com/sowjanya-design/LMS-Placeonix/actions/workflows/ci.yml/badge.svg)
+
 Role-based portal (Admin · Mentor · Student) for **Placeonix** — an IT training &
 placement institute. Single-page frontend + Node/Express + MongoDB API.
 
@@ -8,7 +10,7 @@ placement institute. Single-page frontend + Node/Express + MongoDB API.
 <!-- Trigger Railway Rebuild -->
 <!-- Trigger Seed Rebuild -->
 - **Repo:** https://github.com/sowjanya-design/LMS-Placeonix
-- **Working branch:** `mohan` (push updates here)
+- **Working branch:** `sowjanya` (push updates here)
 
 ## Test logins (live + seeded local)
 

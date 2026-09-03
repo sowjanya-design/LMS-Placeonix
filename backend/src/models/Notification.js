@@ -1,28 +1,28 @@
-const mongoose = require('mongoose');
+const mongoose = require("mongoose");
 
 const notificationSchema = new mongoose.Schema(
   {
     recipient: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: 'User',
+      ref: "User",
       required: true,
       index: true,
     },
     type: {
       type: String,
       enum: [
-        'assignment_created',
-        'assignment_due',
-        'assignment_reviewed',
-        'announcement',
-        'placement_drive',
-        'placement_status',
-        'enrollment',
-        'attendance_warning',
-        'fee_reminder',
-        'message',
-        'certificate_issued',
-        'system',
+        "assignment_created",
+        "assignment_due",
+        "assignment_reviewed",
+        "announcement",
+        "placement_drive",
+        "placement_status",
+        "enrollment",
+        "attendance_warning",
+        "fee_reminder",
+        "message",
+        "certificate_issued",
+        "system",
       ],
       required: true,
       index: true,
@@ -32,15 +32,28 @@ const notificationSchema = new mongoose.Schema(
     icon: String, // optional emoji/icon hint
     link: String, // deep link, e.g. /dashboard/assignments/abc123
     relatedTo: {
-      model: { type: String, enum: ['Assignment', 'Course', 'Batch', 'PlacementDrive', 'Announcement'] },
+      model: {
+        type: String,
+        enum: [
+          "Assignment",
+          "Course",
+          "Batch",
+          "PlacementDrive",
+          "Announcement",
+        ],
+      },
       id: { type: mongoose.Schema.Types.ObjectId },
     },
-    priority: { type: String, enum: ['low', 'normal', 'high'], default: 'normal' },
+    priority: {
+      type: String,
+      enum: ["low", "normal", "high"],
+      default: "normal",
+    },
     isRead: { type: Boolean, default: false, index: true },
     readAt: Date,
-    sender: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
+    sender: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
   },
-  { timestamps: true }
+  { timestamps: true },
 );
 
 notificationSchema.index({ recipient: 1, isRead: 1, createdAt: -1 });
@@ -54,4 +67,4 @@ notificationSchema.statics.notify = async function (data) {
   return this.create(data);
 };
 
-module.exports = mongoose.model('Notification', notificationSchema);
+module.exports = mongoose.model("Notification", notificationSchema);

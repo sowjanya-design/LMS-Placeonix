@@ -8,6 +8,7 @@
     "dev": "nodemon src/server.js",
     "seed": "node src/seeders/seed.js",
     "seed:roles": "node src/seeders/seedRoles.js",
+    "local-mongo": "node src/scripts/local-mongo.js",
     "migrate:alumni-refs": "node src/scripts/migrateAlumniRefs.js",
     "hygiene:report": "node src/scripts/dataHygieneReport.js",
     "lint": "eslint src/",
@@ -39,6 +40,7 @@
     "express-mongo-sanitize": "^2.2.0",
     "express-rate-limit": "^7.1.5",
     "express-validator": "^7.0.1",
+    "google-auth-library": "^11.0.2",
     "helmet": "^7.1.0",
     "hpp": "^0.2.3",
     "jsonwebtoken": "^9.0.2",
@@ -48,8 +50,7 @@
     "multer-s3": "^3.0.1",
     "node-cron": "^3.0.3",
     "nodemailer": "^6.9.7",
-    "winston": "^3.11.0",
-    "xss-clean": "^0.1.4"
+    "winston": "^3.11.0"
   },
   "devDependencies": {
     "eslint": "^9.39.5",
@@ -71,5 +72,8 @@
       "/node_modules/",
       "/__tests__/"
     ]
+  },
+  "allowScripts": {
+    "mongodb-memory-server@9.5.0": true
   }
 }

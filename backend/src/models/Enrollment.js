@@ -1,11 +1,25 @@
-const mongoose = require('mongoose');
-const { ENROLLMENT_STATUS } = require('../config/constants');
+const mongoose = require("mongoose");
+const { ENROLLMENT_STATUS } = require("../config/constants");
 
 const enrollmentSchema = new mongoose.Schema(
   {
-    student: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true, index: true },
-    batch: { type: mongoose.Schema.Types.ObjectId, ref: 'Batch', required: true, index: true },
-    course: { type: mongoose.Schema.Types.ObjectId, ref: 'Course', required: true },
+    student: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
+      required: true,
+      index: true,
+    },
+    batch: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Batch",
+      required: true,
+      index: true,
+    },
+    course: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Course",
+      required: true,
+    },
 
     enrollmentDate: { type: Date, default: Date.now },
     completionDate: Date,
@@ -29,6 +43,28 @@ const enrollmentSchema = new mongoose.Schema(
       ],
     },
 
+    // Restored — this subdocument backs the entire fee/payments feature
+    // (paymentController.js, batchController.enrollStudent, the fee-reminder
+    // cron job). It was accidentally stripped from the schema at some point
+    // (Mongoose silently drops unknown fields in strict mode, so every write
+    // to enrollment.fee since then was a silent no-op, and every read
+    // crashed with "Cannot read properties of undefined" — see the payments
+    // test suite, which was failing against this exact gap).
+    fee: {
+      total: { type: Number, default: 0, min: 0 },
+      paid: { type: Number, default: 0, min: 0 },
+      due: { type: Number, default: 0, min: 0 },
+      payments: [
+        {
+          amount: Number,
+          method: String,
+          transactionId: String,
+          paidOn: Date,
+          notes: String,
+        },
+      ],
+    },
+
     certificateIssued: { type: Boolean, default: false },
     certificateUrl: String,
 
@@ -43,12 +79,14 @@ const enrollmentSchema = new mongoose.Schema(
 
     notes: String,
   },
-  { timestamps: true }
+  { timestamps: true },
 );
+
+enrollmentSchema.virtual("isPaidFull").get(function () {
+  return (this.fee?.due || 0) <= 0;
+});
 
 enrollmentSchema.index({ student: 1, batch: 1 }, { unique: true });
 enrollmentSchema.index({ status: 1, batch: 1 });
 
-
-
-module.exports = mongoose.model('Enrollment', enrollmentSchema);
+module.exports = mongoose.model("Enrollment", enrollmentSchema);

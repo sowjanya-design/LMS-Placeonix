@@ -5,7 +5,12 @@ import { useAuth } from "@/lib/auth-context";
 import { api, ApiError } from "@/lib/api";
 import { Field, Select } from "@/components/ui/form";
 import { EmptyState } from "@/components/ui/empty-state";
-import type { AttendanceRecord, AttendanceStatus, AttendanceSummary, Batch } from "@/lib/types";
+import type {
+  AttendanceRecord,
+  AttendanceStatus,
+  AttendanceSummary,
+  Batch,
+} from "@/lib/types";
 
 const STATUS_STYLE: Record<AttendanceStatus, string> = {
   present: "bg-green-lt text-green",
@@ -48,12 +53,20 @@ interface BatchAttendanceRecord {
 }
 
 function summarize(records: BatchAttendanceRecord[]): AttendanceSummary {
-  const s: AttendanceSummary = { present: 0, absent: 0, late: 0, excused: 0, total: 0, percentage: 0 };
+  const s: AttendanceSummary = {
+    present: 0,
+    absent: 0,
+    late: 0,
+    excused: 0,
+    total: 0,
+    percentage: 0,
+  };
   for (const r of records) {
     s[r.status] += 1;
     s.total += 1;
   }
-  s.percentage = s.total > 0 ? Math.round(((s.present + s.late) / s.total) * 100) : 0;
+  s.percentage =
+    s.total > 0 ? Math.round(((s.present + s.late) / s.total) * 100) : 0;
   return s;
 }
 
@@ -68,19 +81,27 @@ export default function AttendancePage() {
     // fire it once we know who's logged in, and only if they're a student.
     if (!user || user.role !== "student") return;
     api
-      .get<{ records: AttendanceRecord[]; summary: AttendanceSummary }>("/attendance/me")
+      .get<{ records: AttendanceRecord[]; summary: AttendanceSummary }>(
+        "/attendance/me",
+      )
       .then((data) => {
         setRecords(data.records);
         setSummary(data.summary);
       })
-      .catch((err) => setError(err instanceof ApiError ? err.message : "Failed to load attendance"));
+      .catch((err) =>
+        setError(
+          err instanceof ApiError ? err.message : "Failed to load attendance",
+        ),
+      );
   }, [user]);
 
   // Mentor/admin batch view state.
   const isStaff = !!user && user.role !== "student";
   const [batches, setBatches] = useState<Batch[] | null>(null);
   const [selectedBatch, setSelectedBatch] = useState("");
-  const [batchRecords, setBatchRecords] = useState<BatchAttendanceRecord[] | null>(null);
+  const [batchRecords, setBatchRecords] = useState<
+    BatchAttendanceRecord[] | null
+  >(null);
   const [batchLoading, setBatchLoading] = useState(false);
 
   useEffect(() => {
@@ -88,7 +109,11 @@ export default function AttendancePage() {
     api
       .get<Batch[]>("/batches?limit=100")
       .then((data) => setBatches(data))
-      .catch((err) => setError(err instanceof ApiError ? err.message : "Failed to load batches"));
+      .catch((err) =>
+        setError(
+          err instanceof ApiError ? err.message : "Failed to load batches",
+        ),
+      );
   }, [isStaff]);
 
   useEffect(() => {
@@ -99,11 +124,17 @@ export default function AttendancePage() {
     setBatchLoading(true);
     setError(null);
     api
-      .get<{ records: BatchAttendanceRecord[]; count: number }>(`/attendance/batch/${selectedBatch}`)
+      .get<{ records: BatchAttendanceRecord[]; count: number }>(
+        `/attendance/batch/${selectedBatch}`,
+      )
       .then((data) => setBatchRecords(data.records))
       .catch((err) => {
         setBatchRecords(null);
-        setError(err instanceof ApiError ? err.message : "Failed to load batch attendance");
+        setError(
+          err instanceof ApiError
+            ? err.message
+            : "Failed to load batch attendance",
+        );
       })
       .finally(() => setBatchLoading(false));
   }, [isStaff, selectedBatch]);
@@ -114,14 +145,19 @@ export default function AttendancePage() {
       <div className="flex flex-col gap-6">
         <div>
           <h1 className="text-xl font-bold text-ink">Attendance</h1>
-          <p className="text-sm text-muted">Pick a batch to review its attendance records.</p>
+          <p className="text-sm text-muted">
+            Pick a batch to review its attendance records.
+          </p>
         </div>
 
         {error && <p className="text-sm text-red">{error}</p>}
 
         <div className="max-w-sm">
           <Field label="Batch">
-            <Select value={selectedBatch} onChange={(e) => setSelectedBatch(e.target.value)}>
+            <Select
+              value={selectedBatch}
+              onChange={(e) => setSelectedBatch(e.target.value)}
+            >
               <option value="">Select a batch…</option>
               {(batches ?? []).map((b) => (
                 <option key={b._id} value={b._id}>
@@ -132,16 +168,22 @@ export default function AttendancePage() {
           </Field>
         </div>
 
-        {batchLoading && <p className="text-sm text-muted">Loading attendance…</p>}
+        {batchLoading && (
+          <p className="text-sm text-muted">Loading attendance…</p>
+        )}
 
         {!batchLoading && batchSummary && (
           <div className="grid grid-cols-2 gap-4 sm:grid-cols-5">
             <div className="rounded-xl border border-line bg-white p-4 shadow-[0_1px_2px_rgba(24,24,27,.04)]">
-              <p className="text-2xl font-bold text-ink">{batchSummary.percentage}%</p>
+              <p className="text-2xl font-bold text-ink">
+                {batchSummary.percentage}%
+              </p>
               <p className="text-xs text-muted">Overall</p>
             </div>
             <div className="rounded-xl border border-line bg-white p-4 shadow-[0_1px_2px_rgba(24,24,27,.04)]">
-              <p className="text-2xl font-bold text-ink">{batchSummary.present}</p>
+              <p className="text-2xl font-bold text-ink">
+                {batchSummary.present}
+              </p>
               <p className="text-xs text-muted">Present</p>
             </div>
             <div className="rounded-xl border border-line bg-white p-4 shadow-[0_1px_2px_rgba(24,24,27,.04)]">
@@ -149,11 +191,15 @@ export default function AttendancePage() {
               <p className="text-xs text-muted">Late</p>
             </div>
             <div className="rounded-xl border border-line bg-white p-4 shadow-[0_1px_2px_rgba(24,24,27,.04)]">
-              <p className="text-2xl font-bold text-ink">{batchSummary.excused}</p>
+              <p className="text-2xl font-bold text-ink">
+                {batchSummary.excused}
+              </p>
               <p className="text-xs text-muted">Excused</p>
             </div>
             <div className="rounded-xl border border-line bg-white p-4 shadow-[0_1px_2px_rgba(24,24,27,.04)]">
-              <p className="text-2xl font-bold text-ink">{batchSummary.absent}</p>
+              <p className="text-2xl font-bold text-ink">
+                {batchSummary.absent}
+              </p>
               <p className="text-xs text-muted">Absent</p>
             </div>
           </div>
@@ -164,7 +210,12 @@ export default function AttendancePage() {
         )}
 
         {!batchLoading && batchRecords && batchRecords.length > 0 && (
-          <div className="overflow-hidden rounded-xl border border-line bg-white shadow-[0_1px_2px_rgba(24,24,27,.04)]" tabIndex={0} role="region" aria-label="Batch attendance records">
+          <div
+            className="overflow-hidden rounded-xl border border-line bg-white shadow-[0_1px_2px_rgba(24,24,27,.04)]"
+            tabIndex={0}
+            role="region"
+            aria-label="Batch attendance records"
+          >
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b border-line text-left text-xs tracking-wide text-muted uppercase">
@@ -176,14 +227,25 @@ export default function AttendancePage() {
               </thead>
               <tbody>
                 {batchRecords.map((r) => (
-                  <tr key={r._id} className="border-b border-line last:border-0">
-                    <td className="px-4 py-3 text-ink2">{formatDate(r.date)}</td>
+                  <tr
+                    key={r._id}
+                    className="border-b border-line last:border-0"
+                  >
                     <td className="px-4 py-3 text-ink2">
-                      {r.student ? `${r.student.firstName} ${r.student.lastName}` : "—"}
+                      {formatDate(r.date)}
                     </td>
-                    <td className="px-4 py-3 text-muted">{r.sessionTitle || "—"}</td>
+                    <td className="px-4 py-3 text-ink2">
+                      {r.student
+                        ? `${r.student.firstName} ${r.student.lastName}`
+                        : "—"}
+                    </td>
+                    <td className="px-4 py-3 text-muted">
+                      {r.sessionTitle || "—"}
+                    </td>
                     <td className="px-4 py-3">
-                      <span className={`rounded-full px-2.5 py-1 text-xs font-semibold ${STATUS_STYLE[r.status]}`}>
+                      <span
+                        className={`rounded-full px-2.5 py-1 text-xs font-semibold ${STATUS_STYLE[r.status]}`}
+                      >
                         {STATUS_LABEL[r.status]}
                       </span>
                     </td>
@@ -231,10 +293,17 @@ export default function AttendancePage() {
         </div>
       )}
 
-      {records && records.length === 0 && <EmptyState message="No attendance recorded yet." />}
+      {records && records.length === 0 && (
+        <EmptyState message="No attendance recorded yet." />
+      )}
 
       {records && records.length > 0 && (
-        <div className="overflow-hidden rounded-xl border border-line bg-white shadow-[0_1px_2px_rgba(24,24,27,.04)]" tabIndex={0} role="region" aria-label="Your attendance records">
+        <div
+          className="overflow-hidden rounded-xl border border-line bg-white shadow-[0_1px_2px_rgba(24,24,27,.04)]"
+          tabIndex={0}
+          role="region"
+          aria-label="Your attendance records"
+        >
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b border-line text-left text-xs tracking-wide text-muted uppercase">
@@ -248,10 +317,16 @@ export default function AttendancePage() {
               {records.map((r) => (
                 <tr key={r._id} className="border-b border-line last:border-0">
                   <td className="px-4 py-3 text-ink2">{formatDate(r.date)}</td>
-                  <td className="px-4 py-3 text-muted">{r.batch?.name || "Unknown"}</td>
-                  <td className="px-4 py-3 text-muted">{r.sessionTitle || "—"}</td>
+                  <td className="px-4 py-3 text-muted">
+                    {r.batch?.name || "Unknown"}
+                  </td>
+                  <td className="px-4 py-3 text-muted">
+                    {r.sessionTitle || "—"}
+                  </td>
                   <td className="px-4 py-3">
-                    <span className={`rounded-full px-2.5 py-1 text-xs font-semibold ${STATUS_STYLE[r.status]}`}>
+                    <span
+                      className={`rounded-full px-2.5 py-1 text-xs font-semibold ${STATUS_STYLE[r.status]}`}
+                    >
                       {STATUS_LABEL[r.status]}
                     </span>
                   </td>

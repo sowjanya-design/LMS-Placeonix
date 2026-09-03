@@ -17,7 +17,11 @@ export default function LeaderboardPage() {
     api
       .get<LeaderboardRow[]>("/users/leaderboard")
       .then(setRows)
-      .catch((err) => setError(err instanceof ApiError ? err.message : "Failed to load leaderboard"));
+      .catch((err) =>
+        setError(
+          err instanceof ApiError ? err.message : "Failed to load leaderboard",
+        ),
+      );
   }, []);
 
   return (
@@ -38,10 +42,17 @@ export default function LeaderboardPage() {
                 key={r.id}
                 className={`flex items-center gap-4 border-b border-line px-5 py-3.5 last:border-0 ${isMe ? "bg-purple-lt" : ""}`}
               >
-                <div className="w-8 text-center font-bold text-ink">{MEDAL[r.rank - 1] || `#${r.rank}`}</div>
+                <div className="w-8 text-center font-bold text-ink">
+                  {MEDAL[r.rank - 1] || `#${r.rank}`}
+                </div>
                 <div className="flex-1">
                   <div className="font-semibold text-ink">
-                    {r.name} {isMe && <span className="text-xs font-normal text-purple">(you)</span>}
+                    {r.name}{" "}
+                    {isMe && (
+                      <span className="text-xs font-normal text-purple">
+                        (you)
+                      </span>
+                    )}
                   </div>
                   <div className="text-xs text-muted">{r.enrollmentId}</div>
                 </div>
@@ -53,7 +64,9 @@ export default function LeaderboardPage() {
                   <div className="font-bold text-ink">{r.attendance}%</div>
                   attendance
                 </div>
-                <div className="w-16 text-right font-bold text-purple">{r.points}</div>
+                <div className="w-16 text-right font-bold text-purple">
+                  {r.points}
+                </div>
               </div>
             );
           })}

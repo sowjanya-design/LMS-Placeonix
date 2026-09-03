@@ -13,21 +13,32 @@ export default function ProfilePage() {
   const [firstName, setFirstName] = useState(user?.firstName ?? "");
   const [lastName, setLastName] = useState(user?.lastName ?? "");
   const [phone, setPhone] = useState(user?.phone ?? "");
+  const [dateOfBirth, setDateOfBirth] = useState(
+    user?.dateOfBirth ? user.dateOfBirth.slice(0, 10) : "",
+  );
   const [bio, setBio] = useState(user?.bio ?? "");
   // Student career fields — resume is the one that actually gates placement applications.
   const [resume, setResume] = useState(sp?.resume ?? "");
   const [skills, setSkills] = useState((sp?.skills ?? []).join(", "));
   const [college, setCollege] = useState(sp?.college ?? "");
   const [degree, setDegree] = useState(sp?.degree ?? "");
-  const [graduationYear, setGraduationYear] = useState(sp?.graduationYear ? String(sp.graduationYear) : "");
+  const [graduationYear, setGraduationYear] = useState(
+    sp?.graduationYear ? String(sp.graduationYear) : "",
+  );
   const [linkedIn, setLinkedIn] = useState(sp?.linkedIn ?? "");
   const [github, setGithub] = useState(sp?.github ?? "");
   const [portfolio, setPortfolio] = useState(sp?.portfolio ?? "");
   const [experience, setExperience] = useState(sp?.experience ?? "");
-  const [expectedSalary, setExpectedSalary] = useState(sp?.expectedSalary ?? "");
-  const [preferredLocation, setPreferredLocation] = useState(sp?.preferredLocation ?? "");
+  const [expectedSalary, setExpectedSalary] = useState(
+    sp?.expectedSalary ?? "",
+  );
+  const [preferredLocation, setPreferredLocation] = useState(
+    sp?.preferredLocation ?? "",
+  );
   const [saving, setSaving] = useState(false);
-  const [message, setMessage] = useState<{ ok: boolean; text: string } | null>(null);
+  const [message, setMessage] = useState<{ ok: boolean; text: string } | null>(
+    null,
+  );
 
   if (!user) return null;
   const isStudent = user.role === "student";
@@ -37,11 +48,20 @@ export default function ProfilePage() {
     setSaving(true);
     setMessage(null);
     try {
-      const payload: Record<string, unknown> = { firstName, lastName, phone, bio };
+      const payload: Record<string, unknown> = {
+        firstName,
+        lastName,
+        phone,
+        bio,
+        dateOfBirth: dateOfBirth || null,
+      };
       if (isStudent) {
         payload.studentProfile = {
           resume: resume.trim(),
-          skills: skills.split(",").map((s) => s.trim()).filter(Boolean),
+          skills: skills
+            .split(",")
+            .map((s) => s.trim())
+            .filter(Boolean),
           college: college.trim(),
           degree: degree.trim(),
           graduationYear: graduationYear ? Number(graduationYear) : undefined,
@@ -56,7 +76,11 @@ export default function ProfilePage() {
       await api.patch(`/users/${user!._id}`, payload);
       setMessage({ ok: true, text: "Profile updated." });
     } catch (err) {
-      setMessage({ ok: false, text: err instanceof ApiError ? err.message : "Failed to update profile" });
+      setMessage({
+        ok: false,
+        text:
+          err instanceof ApiError ? err.message : "Failed to update profile",
+      });
     } finally {
       setSaving(false);
     }
@@ -82,26 +106,48 @@ export default function ProfilePage() {
               {user.firstName} {user.lastName}
             </div>
             <div className="text-sm text-muted">{user.email}</div>
-            <div className="mt-1 text-xs font-semibold text-purple capitalize">{user.role}</div>
+            <div className="mt-1 text-xs font-semibold text-purple capitalize">
+              {user.role}
+            </div>
           </div>
         </div>
 
         <div className="grid grid-cols-2 gap-4">
           <Field label="First name">
-            <Input value={firstName} onChange={(e) => setFirstName(e.target.value)} />
+            <Input
+              value={firstName}
+              onChange={(e) => setFirstName(e.target.value)}
+            />
           </Field>
           <Field label="Last name">
-            <Input value={lastName} onChange={(e) => setLastName(e.target.value)} />
+            <Input
+              value={lastName}
+              onChange={(e) => setLastName(e.target.value)}
+            />
           </Field>
         </div>
-        <div className="mt-4">
+        <div className="mt-4 grid grid-cols-2 gap-4">
           <Field label="Phone">
             <Input value={phone} onChange={(e) => setPhone(e.target.value)} />
+          </Field>
+          <Field
+            label="Date of birth"
+            hint="Shows up on the Calendar for everyone on your birthday."
+          >
+            <Input
+              type="date"
+              value={dateOfBirth}
+              onChange={(e) => setDateOfBirth(e.target.value)}
+            />
           </Field>
         </div>
         <div className="mt-4">
           <Field label="Bio">
-            <Textarea rows={2} value={bio} onChange={(e) => setBio(e.target.value)} />
+            <Textarea
+              rows={2}
+              value={bio}
+              onChange={(e) => setBio(e.target.value)}
+            />
           </Field>
         </div>
 
@@ -124,16 +170,28 @@ export default function ProfilePage() {
               </Field>
             </div>
             <div className="mt-4">
-              <Field label="Skills" hint="Comma-separated (e.g. React, Node.js, MongoDB)">
-                <Input value={skills} onChange={(e) => setSkills(e.target.value)} />
+              <Field
+                label="Skills"
+                hint="Comma-separated (e.g. React, Node.js, MongoDB)"
+              >
+                <Input
+                  value={skills}
+                  onChange={(e) => setSkills(e.target.value)}
+                />
               </Field>
             </div>
             <div className="mt-4 grid grid-cols-2 gap-4">
               <Field label="College">
-                <Input value={college} onChange={(e) => setCollege(e.target.value)} />
+                <Input
+                  value={college}
+                  onChange={(e) => setCollege(e.target.value)}
+                />
               </Field>
               <Field label="Degree">
-                <Input value={degree} onChange={(e) => setDegree(e.target.value)} />
+                <Input
+                  value={degree}
+                  onChange={(e) => setDegree(e.target.value)}
+                />
               </Field>
             </div>
             <div className="mt-4 grid grid-cols-2 gap-4">
@@ -145,35 +203,63 @@ export default function ProfilePage() {
                 />
               </Field>
               <Field label="LinkedIn">
-                <Input type="url" value={linkedIn} onChange={(e) => setLinkedIn(e.target.value)} />
+                <Input
+                  type="url"
+                  value={linkedIn}
+                  onChange={(e) => setLinkedIn(e.target.value)}
+                />
               </Field>
             </div>
             <div className="mt-4 grid grid-cols-2 gap-4">
               <Field label="GitHub">
-                <Input type="url" value={github} onChange={(e) => setGithub(e.target.value)} />
+                <Input
+                  type="url"
+                  value={github}
+                  onChange={(e) => setGithub(e.target.value)}
+                />
               </Field>
               <Field label="Portfolio">
-                <Input type="url" value={portfolio} onChange={(e) => setPortfolio(e.target.value)} />
+                <Input
+                  type="url"
+                  value={portfolio}
+                  onChange={(e) => setPortfolio(e.target.value)}
+                />
               </Field>
             </div>
             <div className="mt-4 grid grid-cols-2 gap-4">
               <Field label="Experience" hint="E.g., Fresher, 1 year, 2 years">
-                <Input value={experience} onChange={(e) => setExperience(e.target.value)} />
+                <Input
+                  value={experience}
+                  onChange={(e) => setExperience(e.target.value)}
+                />
               </Field>
               <Field label="Expected Salary" hint="E.g., 5 LPA, 8 LPA">
-                <Input value={expectedSalary} onChange={(e) => setExpectedSalary(e.target.value)} />
+                <Input
+                  value={expectedSalary}
+                  onChange={(e) => setExpectedSalary(e.target.value)}
+                />
               </Field>
             </div>
             <div className="mt-4">
-              <Field label="Preferred Location" hint="E.g., Hyderabad, Bangalore, Remote">
-                <Input value={preferredLocation} onChange={(e) => setPreferredLocation(e.target.value)} />
+              <Field
+                label="Preferred Location"
+                hint="E.g., Hyderabad, Bangalore, Remote"
+              >
+                <Input
+                  value={preferredLocation}
+                  onChange={(e) => setPreferredLocation(e.target.value)}
+                />
               </Field>
             </div>
           </>
         )}
 
         {message && (
-          <p className={`mt-3 text-sm ${message.ok ? "text-green" : "text-red"}`}>{message.text}</p>
+          <p
+            className={`mt-3 text-sm ${message.ok ? "text-green" : "text-red"}`}
+          >
+            {message.text}
+          </p>
         )}
         <div className="mt-4">
           <PrimaryButton onClick={handleSave} disabled={saving}>

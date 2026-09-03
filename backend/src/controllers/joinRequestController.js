@@ -1,16 +1,16 @@
-const JoinRequest = require('../models/JoinRequest');
-const Batch = require('../models/Batch');
-const ApiResponse = require('../utils/ApiResponse');
-const AppError = require('../utils/AppError');
-const asyncHandler = require('../utils/asyncHandler');
+const JoinRequest = require("../models/JoinRequest");
+const Batch = require("../models/Batch");
+const ApiResponse = require("../utils/ApiResponse");
+const AppError = require("../utils/AppError");
+const asyncHandler = require("../utils/asyncHandler");
 
 // @desc   Student requests to join a class online
 // @route  POST /api/v1/join-requests
 exports.create = asyncHandler(async (req, res, next) => {
   const { batchId, date, reason } = req.body;
-  if (!batchId) return next(new AppError('batchId is required', 400));
+  if (!batchId) return next(new AppError("batchId is required", 400));
   const batch = await Batch.findById(batchId);
-  if (!batch) return next(new AppError('Batch not found', 404));
+  if (!batch) return next(new AppError("Batch not found", 404));
 
   const request = await JoinRequest.create({
     student: req.user._id,
@@ -20,23 +20,23 @@ exports.create = asyncHandler(async (req, res, next) => {
     requestedDate: date ? new Date(date) : undefined,
     reason,
   });
-  return ApiResponse.created(res, 'Online-join request submitted', request);
+  return ApiResponse.created(res, "Online-join request submitted", request);
 });
 
 // @desc   List join requests (role-scoped)
 // @route  GET /api/v1/join-requests
 exports.list = asyncHandler(async (req, res) => {
   const filter = {};
-  if (req.user.role === 'mentor') filter.mentor = req.user._id;
-  else if (req.user.role === 'student') filter.student = req.user._id;
+  if (req.user.role === "mentor") filter.mentor = req.user._id;
+  else if (req.user.role === "student") filter.student = req.user._id;
   if (req.query.status) filter.status = req.query.status;
 
   const requests = await JoinRequest.find(filter)
-    .populate('student', 'firstName lastName email')
-    .populate('batch', 'name mode')
-    .populate('course', 'title')
-    .sort('-createdAt');
-  return ApiResponse.success(res, 200, 'Join requests fetched', requests);
+    .populate("student", "firstName lastName email")
+    .populate("batch", "name mode")
+    .populate("course", "title")
+    .sort("-createdAt");
+  return ApiResponse.success(res, 200, "Join requests fetched", requests);
 });
 
 // @desc   Approve / reject a request (mentor/admin)
@@ -44,9 +44,17 @@ exports.list = asyncHandler(async (req, res) => {
 exports.update = asyncHandler(async (req, res, next) => {
   const { status, meetingLink } = req.body;
   const request = await JoinRequest.findById(req.params.id);
-  if (!request) return next(new AppError('Request not found', 404));
-  if (req.user.role === 'mentor' && String(request.mentor) !== String(req.user._id)) {
-    return next(new AppError('Forbidden — you can only respond to your own join requests', 403));
+  if (!request) return next(new AppError("Request not found", 404));
+  if (
+    req.user.role === "mentor" &&
+    String(request.mentor) !== String(req.user._id)
+  ) {
+    return next(
+      new AppError(
+        "Forbidden — you can only respond to your own join requests",
+        403,
+      ),
+    );
   }
 
   if (status) request.status = status;
@@ -54,5 +62,5 @@ exports.update = asyncHandler(async (req, res, next) => {
   request.respondedBy = req.user._id;
   request.respondedAt = new Date();
   await request.save();
-  return ApiResponse.success(res, 200, 'Request updated', request);
+  return ApiResponse.success(res, 200, "Request updated", request);
 });

@@ -14,14 +14,13 @@ export default function UploadVideoPage() {
       </div>
 
       <div className="bg-white rounded-[14px] border border-line p-6">
-        <VideoUpload 
-          // Note: In a fully finished version, you would use a dropdown 
+        <VideoUpload
+          // Note: In a fully finished version, you would use a dropdown
           // to let the mentor select which course/lesson this is for.
-          courseId="64b1f1c7d3f2e1a4c8a2b5e2" 
-          lessonId="64b1f1c7d3f2e1a4c8a2b5e3" 
-          onUploadComplete={(data: unknown) => {
-            const typedData = data as { videoUID: string };
-            alert("Video uploaded successfully! UID: " + typedData.videoUID);
+          courseId="64b1f1c7d3f2e1a4c8a2b5e2"
+          lessonId="64b1f1c7d3f2e1a4c8a2b5e3"
+          onUploadComplete={(data) => {
+            alert("Video uploaded successfully! UID: " + data.videoUID);
           }}
         />
       </div>

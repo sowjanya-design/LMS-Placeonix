@@ -3,8 +3,7 @@ import { Plus_Jakarta_Sans } from "next/font/google";
 import { AuthProvider } from "@/lib/auth-context";
 import "./globals.css";
 
-// Matches the live site's brand font (see :root font-family in
-// frontend/legacy_html/placeonix-hub-portal.html).
+// Matches the live site's brand font.
 const plusJakartaSans = Plus_Jakarta_Sans({
   variable: "--font-plus-jakarta-sans",
   subsets: ["latin"],
@@ -17,7 +16,10 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
-    <html lang="en" className={`${plusJakartaSans.variable} h-full antialiased`}>
+    <html
+      lang="en"
+      className={`${plusJakartaSans.variable} h-full antialiased`}
+    >
       <body className="min-h-full flex flex-col">
         <AuthProvider>{children}</AuthProvider>
       </body>

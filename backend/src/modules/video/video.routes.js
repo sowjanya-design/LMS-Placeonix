@@ -1,64 +1,41 @@
-const express = require('express');
+const express = require("express");
 const router = express.Router();
-const videoController = require('./video.controller');
-const videoValidator = require('./video.validator');
+const videoController = require("./video.controller");
+const videoValidator = require("./video.validator");
 
-const { protect } = require('../../middleware/auth');
-const { videoUpload } = require('../../services/uploadService');
+const { protect } = require("../../middleware/auth");
+const { videoUpload } = require("../../services/uploadService");
 // POST /videos/direct-upload
 router.post(
-  '/direct-upload',
+  "/direct-upload",
   protect,
   videoValidator.validateUploadRequest,
   videoValidator.handleValidationErrors,
-  videoController.getDirectUploadUrl
+  videoController.getDirectUploadUrl,
 );
 
 // POST /videos/mock-cloudflare-upload (Local Dev Mock)
 router.post(
-  '/mock-cloudflare-upload',
-  videoUpload.single('file'),
-  videoController.mockCloudflareUpload
+  "/mock-cloudflare-upload",
+  videoUpload.single("file"),
+  videoController.mockCloudflareUpload,
 );
 
 // POST /videos/finalize (Frontend fallback)
-router.post(
-  '/finalize',
-  protect,
-  videoController.finalizeUpload
-);
+router.post("/finalize", protect, videoController.finalizeUpload);
 // POST /videos/webhook
-router.post(
-  '/webhook',
-  videoController.handleWebhook
-);
+router.post("/webhook", videoController.handleWebhook);
 
 // GET /videos/:id
-router.get(
-  '/:id',
-  protect,
-  videoController.getVideoById
-);
+router.get("/:id", protect, videoController.getVideoById);
 
 // PUT /videos/:id
-router.put(
-  '/:id',
-  protect,
-  videoController.updateVideo
-);
+router.put("/:id", protect, videoController.updateVideo);
 
 // DELETE /videos/:id
-router.delete(
-  '/:id',
-  protect,
-  videoController.deleteVideo
-);
+router.delete("/:id", protect, videoController.deleteVideo);
 
 // GET /videos/course/:courseId
-router.get(
-  '/course/:courseId',
-  protect,
-  videoController.getVideosByCourse
-);
+router.get("/course/:courseId", protect, videoController.getVideosByCourse);
 
 module.exports = router;

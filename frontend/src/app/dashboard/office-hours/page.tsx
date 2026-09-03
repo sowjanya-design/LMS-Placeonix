@@ -5,7 +5,13 @@ import { useAuth } from "@/lib/auth-context";
 import { api, ApiError } from "@/lib/api";
 import type { OfficeHourSlot, User } from "@/lib/types";
 import { Modal } from "@/components/ui/modal";
-import { Field, Input, Select, ModalActions, ErrorText } from "@/components/ui/form";
+import {
+  Field,
+  Input,
+  Select,
+  ModalActions,
+  ErrorText,
+} from "@/components/ui/form";
 import { EmptyState } from "@/components/ui/empty-state";
 
 const STATUS_STYLE: Record<string, string> = {
@@ -15,7 +21,13 @@ const STATUS_STYLE: Record<string, string> = {
 };
 
 function fmt(iso: string) {
-  return new Date(iso).toLocaleString(undefined, { weekday: "short", month: "short", day: "numeric", hour: "numeric", minute: "2-digit" });
+  return new Date(iso).toLocaleString(undefined, {
+    weekday: "short",
+    month: "short",
+    day: "numeric",
+    hour: "numeric",
+    minute: "2-digit",
+  });
 }
 
 interface AddSlotForm {
@@ -27,7 +39,13 @@ interface AddSlotForm {
   venue: string;
 }
 
-function AddSlotModal({ onClose, onAdded }: { onClose: () => void; onAdded: () => void }) {
+function AddSlotModal({
+  onClose,
+  onAdded,
+}: {
+  onClose: () => void;
+  onAdded: () => void;
+}) {
   const { user } = useAuth();
   const isAdmin = user?.role === "admin";
   const [form, setForm] = useState<AddSlotForm>({
@@ -65,8 +83,10 @@ function AddSlotModal({ onClose, onAdded }: { onClose: () => void; onAdded: () =
       if (isAdmin) payload.mentor = mentorId;
       if (form.endTime) payload.endTime = new Date(form.endTime).toISOString();
       if (form.topic.trim()) payload.topic = form.topic.trim();
-      if (form.mode === "online" && form.meetingLink.trim()) payload.meetingLink = form.meetingLink.trim();
-      if (form.mode === "offline" && form.venue.trim()) payload.venue = form.venue.trim();
+      if (form.mode === "online" && form.meetingLink.trim())
+        payload.meetingLink = form.meetingLink.trim();
+      if (form.mode === "offline" && form.venue.trim())
+        payload.venue = form.venue.trim();
       await api.post("/office-hours", payload);
       onAdded();
       onClose();
@@ -82,7 +102,11 @@ function AddSlotModal({ onClose, onAdded }: { onClose: () => void; onAdded: () =
       <form onSubmit={handleSubmit} className="flex flex-col gap-3">
         {isAdmin && (
           <Field label="Mentor" required>
-            <Select value={mentorId} onChange={(e) => setMentorId(e.target.value)} required>
+            <Select
+              value={mentorId}
+              onChange={(e) => setMentorId(e.target.value)}
+              required
+            >
               <option value="">Select a mentor…</option>
               {mentors.map((m) => (
                 <option key={m._id} value={m._id}>
@@ -119,7 +143,9 @@ function AddSlotModal({ onClose, onAdded }: { onClose: () => void; onAdded: () =
         <Field label="Mode">
           <Select
             value={form.mode}
-            onChange={(e) => setForm({ ...form, mode: e.target.value as "online" | "offline" })}
+            onChange={(e) =>
+              setForm({ ...form, mode: e.target.value as "online" | "offline" })
+            }
           >
             <option value="online">Online</option>
             <option value="offline">Offline</option>
@@ -129,7 +155,9 @@ function AddSlotModal({ onClose, onAdded }: { onClose: () => void; onAdded: () =
           <Field label="Meeting link">
             <Input
               value={form.meetingLink}
-              onChange={(e) => setForm({ ...form, meetingLink: e.target.value })}
+              onChange={(e) =>
+                setForm({ ...form, meetingLink: e.target.value })
+              }
               placeholder="Optional"
             />
           </Field>
@@ -143,7 +171,12 @@ function AddSlotModal({ onClose, onAdded }: { onClose: () => void; onAdded: () =
           </Field>
         )}
         {error && <ErrorText>{error}</ErrorText>}
-        <ModalActions onCancel={onClose} submitting={submitting} submitLabel="Add Slot" disabled={!form.startTime || (isAdmin && !mentorId)} />
+        <ModalActions
+          onCancel={onClose}
+          submitting={submitting}
+          submitLabel="Add Slot"
+          disabled={!form.startTime || (isAdmin && !mentorId)}
+        />
       </form>
     </Modal>
   );
@@ -161,7 +194,11 @@ export default function OfficeHoursPage() {
     api
       .get<OfficeHourSlot[]>("/office-hours?limit=100")
       .then(setSlots)
-      .catch((err) => setError(err instanceof ApiError ? err.message : "Failed to load office hours"));
+      .catch((err) =>
+        setError(
+          err instanceof ApiError ? err.message : "Failed to load office hours",
+        ),
+      );
   }
   useEffect(load, []);
 
@@ -213,7 +250,10 @@ export default function OfficeHoursPage() {
           <button
             onClick={() => setShowAdd(true)}
             className="rounded-lg px-4 py-2 text-sm font-bold text-white shadow-[0_4px_14px_rgba(108,63,245,0.28)]"
-            style={{ background: "linear-gradient(135deg, var(--purple), var(--purple-dk))" }}
+            style={{
+              background:
+                "linear-gradient(135deg, var(--purple), var(--purple-dk))",
+            }}
           >
             + Add Slot
           </button>
@@ -227,35 +267,47 @@ export default function OfficeHoursPage() {
           {slots.map((s) => {
             const isMine = user?._id === s.bookedBy?._id;
             return (
-              <div key={s._id} className="flex flex-wrap items-center gap-4 rounded-[14px] border border-line bg-white p-4">
+              <div
+                key={s._id}
+                className="flex flex-wrap items-center gap-4 rounded-[14px] border border-line bg-white p-4"
+              >
                 <div className="min-w-[200px] flex-1">
                   <div className="font-bold text-ink">
-                    {s.topic || "Office Hour"} — {s.mentor.firstName} {s.mentor.lastName}
+                    {s.topic || "Office Hour"} — {s.mentor.firstName}{" "}
+                    {s.mentor.lastName}
                   </div>
                   <div className="text-xs text-muted">
                     {fmt(s.startTime)} · {s.mode}
                   </div>
                 </div>
-                <span className={`rounded-full px-2.5 py-1 text-xs font-semibold ${STATUS_STYLE[s.status]}`}>{s.status}</span>
+                <span
+                  className={`rounded-full px-2.5 py-1 text-xs font-semibold ${STATUS_STYLE[s.status]}`}
+                >
+                  {s.status}
+                </span>
                 {user?.role === "student" && s.status === "available" && (
                   <button
                     onClick={() => handleBook(s)}
                     disabled={busyId === s._id}
                     className="rounded-lg px-3 py-1.5 text-xs font-bold text-white disabled:opacity-60"
-                    style={{ background: "linear-gradient(135deg, var(--purple), var(--purple-dk))" }}
+                    style={{
+                      background:
+                        "linear-gradient(135deg, var(--purple), var(--purple-dk))",
+                    }}
                   >
                     {busyId === s._id ? "Booking…" : "Book"}
                   </button>
                 )}
-                {s.status === "booked" && (isMine || user?.role !== "student") && (
-                  <button
-                    onClick={() => handleCancel(s)}
-                    disabled={busyId === s._id}
-                    className="rounded-lg border-[1.5px] border-line px-3 py-1.5 text-xs font-semibold text-red hover:border-red hover:bg-red-lt"
-                  >
-                    Cancel
-                  </button>
-                )}
+                {s.status === "booked" &&
+                  (isMine || user?.role !== "student") && (
+                    <button
+                      onClick={() => handleCancel(s)}
+                      disabled={busyId === s._id}
+                      className="rounded-lg border-[1.5px] border-line px-3 py-1.5 text-xs font-semibold text-red hover:border-red hover:bg-red-lt"
+                    >
+                      Cancel
+                    </button>
+                  )}
                 {canManage && (
                   <button
                     onClick={() => handleDelete(s)}
@@ -268,11 +320,15 @@ export default function OfficeHoursPage() {
               </div>
             );
           })}
-          {slots.length === 0 && <EmptyState message="No office hour slots yet." />}
+          {slots.length === 0 && (
+            <EmptyState message="No office hour slots yet." />
+          )}
         </div>
       )}
 
-      {showAdd && <AddSlotModal onClose={() => setShowAdd(false)} onAdded={load} />}
+      {showAdd && (
+        <AddSlotModal onClose={() => setShowAdd(false)} onAdded={load} />
+      )}
     </div>
   );
 }

@@ -1,6 +1,6 @@
-const AuditLog = require('../models/AuditLog');
-const ApiResponse = require('../utils/ApiResponse');
-const asyncHandler = require('../utils/asyncHandler');
+const AuditLog = require("../models/AuditLog");
+const ApiResponse = require("../utils/ApiResponse");
+const asyncHandler = require("../utils/asyncHandler");
 
 // @desc   List audit logs (admin only)
 // @route  GET /api/v1/audit-logs?module=&action=&userId=&status=&page=&limit=
@@ -14,9 +14,16 @@ exports.listAuditLogs = asyncHandler(async (req, res) => {
 
   const total = await AuditLog.countDocuments(filter);
   const logs = await AuditLog.find(filter)
-    .sort('-createdAt')
+    .sort("-createdAt")
     .skip((page - 1) * limit)
     .limit(Number(limit));
 
-  return ApiResponse.paginated(res, 'Audit logs fetched', logs, page, limit, total);
+  return ApiResponse.paginated(
+    res,
+    "Audit logs fetched",
+    logs,
+    page,
+    limit,
+    total,
+  );
 });

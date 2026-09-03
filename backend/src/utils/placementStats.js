@@ -1,4 +1,4 @@
-const PlacementDrive = require('../models/PlacementDrive');
+const PlacementDrive = require("../models/PlacementDrive");
 
 /**
  * Single source of truth for "how many students are placed" and the
@@ -12,13 +12,13 @@ const PlacementDrive = require('../models/PlacementDrive');
 const getPlacementStats = async () => {
   const [totalApplications, placedCount] = await Promise.all([
     PlacementDrive.aggregate([
-      { $project: { count: { $size: { $ifNull: ['$applications', []] } } } },
-      { $group: { _id: null, total: { $sum: '$count' } } },
+      { $project: { count: { $size: { $ifNull: ["$applications", []] } } } },
+      { $group: { _id: null, total: { $sum: "$count" } } },
     ]),
     PlacementDrive.aggregate([
-      { $unwind: '$applications' },
-      { $match: { 'applications.status': 'placed' } },
-      { $count: 'total' },
+      { $unwind: "$applications" },
+      { $match: { "applications.status": "placed" } },
+      { $count: "total" },
     ]),
   ]);
 

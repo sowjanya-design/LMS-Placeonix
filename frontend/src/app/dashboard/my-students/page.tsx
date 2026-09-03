@@ -20,7 +20,11 @@ export default function MyStudentsPage() {
     api
       .get<{ students: MyStudentRow[] }>("/users/my-students")
       .then((res) => setRows(res.students))
-      .catch((err) => setError(err instanceof ApiError ? err.message : "Failed to load students"));
+      .catch((err) =>
+        setError(
+          err instanceof ApiError ? err.message : "Failed to load students",
+        ),
+      );
   }, []);
 
   return (
@@ -48,18 +52,26 @@ export default function MyStudentsPage() {
                 <tr key={r._id} className="border-b border-line last:border-0">
                   <td className="px-4 py-3">
                     <div className="font-semibold text-ink">
-                      {r.student?.firstName || "Unknown"} {r.student?.lastName || "Student"}
+                      {r.student?.firstName || "Unknown"}{" "}
+                      {r.student?.lastName || "Student"}
                     </div>
-                    <div className="text-xs text-muted">{r.student?.email || "No email provided"}</div>
+                    <div className="text-xs text-muted">
+                      {r.student?.email || "No email provided"}
+                    </div>
                   </td>
                   <td className="px-4 py-3 text-ink2">{r.batch?.name}</td>
                   <td className="px-4 py-3 text-ink2">{r.course?.title}</td>
                   <td className="px-4 py-3">
                     <div className="flex items-center gap-2">
                       <div className="h-1.5 w-24 overflow-hidden rounded-full bg-line">
-                        <div className="h-full rounded-full bg-purple" style={{ width: `${r.progress?.overall ?? 0}%` }} />
+                        <div
+                          className="h-full rounded-full bg-purple"
+                          style={{ width: `${r.progress?.overall ?? 0}%` }}
+                        />
                       </div>
-                      <span className="text-xs text-muted">{r.progress?.overall ?? 0}%</span>
+                      <span className="text-xs text-muted">
+                        {r.progress?.overall ?? 0}%
+                      </span>
                     </div>
                   </td>
                 </tr>

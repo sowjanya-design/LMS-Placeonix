@@ -1,4 +1,4 @@
-const mongoose = require('mongoose');
+const mongoose = require("mongoose");
 
 const answerSchema = new mongoose.Schema(
   {
@@ -7,14 +7,28 @@ const answerSchema = new mongoose.Schema(
     isCorrect: Boolean,
     pointsAwarded: { type: Number, default: 0 },
   },
-  { _id: false }
+  { _id: false },
 );
 
 const quizResultSchema = new mongoose.Schema(
   {
-    quiz: { type: mongoose.Schema.Types.ObjectId, ref: 'Quiz', required: true, index: true },
-    student: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true, index: true },
-    batch: { type: mongoose.Schema.Types.ObjectId, ref: 'Batch', required: true },
+    quiz: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Quiz",
+      required: true,
+      index: true,
+    },
+    student: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
+      required: true,
+      index: true,
+    },
+    batch: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Batch",
+      required: true,
+    },
 
     attemptNumber: { type: Number, required: true, default: 1 },
     answers: [answerSchema],
@@ -24,13 +38,21 @@ const quizResultSchema = new mongoose.Schema(
     percentage: { type: Number, default: 0 },
     passed: { type: Boolean, default: false },
 
-    status: { type: String, enum: ['in_progress', 'submitted'], default: 'in_progress', index: true },
+    status: {
+      type: String,
+      enum: ["in_progress", "submitted"],
+      default: "in_progress",
+      index: true,
+    },
     startedAt: { type: Date, default: Date.now },
     submittedAt: Date,
   },
-  { timestamps: true }
+  { timestamps: true },
 );
 
-quizResultSchema.index({ quiz: 1, student: 1, attemptNumber: 1 }, { unique: true });
+quizResultSchema.index(
+  { quiz: 1, student: 1, attemptNumber: 1 },
+  { unique: true },
+);
 
-module.exports = mongoose.model('QuizResult', quizResultSchema);
+module.exports = mongoose.model("QuizResult", quizResultSchema);

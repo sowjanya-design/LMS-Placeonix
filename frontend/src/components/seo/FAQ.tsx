@@ -1,4 +1,4 @@
-import React from 'react';
+import React from "react";
 
 interface FAQItem {
   question: string;
@@ -21,13 +21,11 @@ export default function FAQ({ items }: FAQProps) {
             <h3 className="text-lg font-medium text-gray-900">
               {item.question}
             </h3>
-            <p className="mt-2 text-base text-gray-500">
-              {item.answer}
-            </p>
+            <p className="mt-2 text-base text-gray-500">{item.answer}</p>
           </div>
         ))}
       </div>
-      
+
       {/* Schema.org FAQ Structured Data */}
       <script
         type="application/ld+json"
@@ -35,15 +33,15 @@ export default function FAQ({ items }: FAQProps) {
           __html: JSON.stringify({
             "@context": "https://schema.org",
             "@type": "FAQPage",
-            "mainEntity": items.map(item => ({
+            mainEntity: items.map((item) => ({
               "@type": "Question",
-              "name": item.question,
-              "acceptedAnswer": {
+              name: item.question,
+              acceptedAnswer: {
                 "@type": "Answer",
-                "text": item.answer
-              }
-            }))
-          })
+                text: item.answer,
+              },
+            })),
+          }),
         }}
       />
     </div>

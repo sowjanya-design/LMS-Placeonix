@@ -32,7 +32,9 @@ export function EmptyState({
   className?: string;
 }) {
   return (
-    <div className={`flex flex-col items-center gap-2 py-8 text-center ${className}`}>
+    <div
+      className={`flex flex-col items-center gap-2 py-8 text-center ${className}`}
+    >
       <Image
         src={MASCOTS[mascot]}
         alt=""

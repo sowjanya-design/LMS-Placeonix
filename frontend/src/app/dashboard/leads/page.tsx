@@ -4,7 +4,14 @@ import { useEffect, useState } from "react";
 import { api, ApiError } from "@/lib/api";
 import { useAuth } from "@/lib/auth-context";
 import { Modal } from "@/components/ui/modal";
-import { Field, Input, Textarea, ModalActions, DangerButton, ErrorText } from "@/components/ui/form";
+import {
+  Field,
+  Input,
+  Textarea,
+  ModalActions,
+  DangerButton,
+  ErrorText,
+} from "@/components/ui/form";
 import type { Lead } from "@/lib/types";
 import { EmptyState } from "@/components/ui/empty-state";
 
@@ -17,7 +24,14 @@ const STATUS_STYLE: Record<string, string> = {
   spam: "bg-bg text-muted",
 };
 
-const STATUS_OPTIONS = ["new", "contacted", "follow-up", "converted", "rejected", "spam"];
+const STATUS_OPTIONS = [
+  "new",
+  "contacted",
+  "follow-up",
+  "converted",
+  "rejected",
+  "spam",
+];
 
 interface AddLeadForm {
   firstName: string;
@@ -30,7 +44,13 @@ interface AddLeadForm {
 
 // createLead whitelists: firstName, lastName, email, phone, message,
 // courseInterested, courseInterestedName — and returns only { leadId }.
-function AddLeadModal({ onClose, onSaved }: { onClose: () => void; onSaved: () => void }) {
+function AddLeadModal({
+  onClose,
+  onSaved,
+}: {
+  onClose: () => void;
+  onSaved: () => void;
+}) {
   const [form, setForm] = useState<AddLeadForm>({
     firstName: "",
     lastName: "",
@@ -53,7 +73,8 @@ function AddLeadModal({ onClose, onSaved }: { onClose: () => void; onSaved: () =
         email: form.email.trim(),
         phone: form.phone.trim(),
       };
-      if (form.courseInterestedName.trim()) body.courseInterestedName = form.courseInterestedName.trim();
+      if (form.courseInterestedName.trim())
+        body.courseInterestedName = form.courseInterestedName.trim();
       if (form.message.trim()) body.message = form.message.trim();
       await api.post("/leads", body);
       onSaved();
@@ -102,7 +123,9 @@ function AddLeadModal({ onClose, onSaved }: { onClose: () => void; onSaved: () =
         <Field label="Interested in" hint="Course name (optional)">
           <Input
             value={form.courseInterestedName}
-            onChange={(e) => setForm({ ...form, courseInterestedName: e.target.value })}
+            onChange={(e) =>
+              setForm({ ...form, courseInterestedName: e.target.value })
+            }
           />
         </Field>
         <Field label="Message" hint="Optional">
@@ -113,14 +136,26 @@ function AddLeadModal({ onClose, onSaved }: { onClose: () => void; onSaved: () =
           />
         </Field>
         <ErrorText>{error}</ErrorText>
-        <ModalActions onCancel={onClose} submitting={submitting} submitLabel="Add Lead" />
+        <ModalActions
+          onCancel={onClose}
+          submitting={submitting}
+          submitLabel="Add Lead"
+        />
       </form>
     </Modal>
   );
 }
 
 // addNote reads exactly req.body.text (trimmed) and requires it non-empty.
-function AddNoteModal({ lead, onClose, onSaved }: { lead: Lead; onClose: () => void; onSaved: () => void }) {
+function AddNoteModal({
+  lead,
+  onClose,
+  onSaved,
+}: {
+  lead: Lead;
+  onClose: () => void;
+  onSaved: () => void;
+}) {
   const [text, setText] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
@@ -141,7 +176,10 @@ function AddNoteModal({ lead, onClose, onSaved }: { lead: Lead; onClose: () => v
   }
 
   return (
-    <Modal title={`Add note — ${lead.firstName} ${lead.lastName}`} onClose={onClose}>
+    <Modal
+      title={`Add note — ${lead.firstName} ${lead.lastName}`}
+      onClose={onClose}
+    >
       <form onSubmit={handleSubmit} className="flex flex-col gap-3">
         <Field label="Note" required>
           <Textarea
@@ -177,14 +215,23 @@ export default function LeadsPage() {
     api
       .get<Lead[]>("/leads?limit=100")
       .then(setLeads)
-      .catch((err) => setError(err instanceof ApiError ? err.message : "Failed to load leads"));
+      .catch((err) =>
+        setError(
+          err instanceof ApiError ? err.message : "Failed to load leads",
+        ),
+      );
   }
 
   useEffect(load, []);
 
   async function handleStatusChange(l: Lead, status: string) {
     const prev = leads;
-    setLeads((cur) => cur?.map((x) => (x._id === l._id ? { ...x, status: status as Lead["status"] } : x)) ?? cur);
+    setLeads(
+      (cur) =>
+        cur?.map((x) =>
+          x._id === l._id ? { ...x, status: status as Lead["status"] } : x,
+        ) ?? cur,
+    );
     try {
       await api.patch(`/leads/${l._id}`, { status });
     } catch (err) {
@@ -194,7 +241,12 @@ export default function LeadsPage() {
   }
 
   async function handleDelete(l: Lead) {
-    if (!confirm(`Delete lead ${l.firstName} ${l.lastName}? This cannot be undone.`)) return;
+    if (
+      !confirm(
+        `Delete lead ${l.firstName} ${l.lastName}? This cannot be undone.`,
+      )
+    )
+      return;
     setDeletingId(l._id);
     try {
       await api.delete(`/leads/${l._id}`);
@@ -210,14 +262,19 @@ export default function LeadsPage() {
     <div className="flex flex-col gap-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-xl font-bold text-ink">Leads {leads ? `(${leads.length})` : ""}</h1>
+          <h1 className="text-xl font-bold text-ink">
+            Leads {leads ? `(${leads.length})` : ""}
+          </h1>
           <p className="text-sm text-muted">Admissions pipeline.</p>
         </div>
         {isAdmin && (
           <button
             onClick={() => setShowAdd(true)}
             className="rounded-[10px] px-4 py-2.5 text-sm font-bold text-white shadow-[0_4px_14px_rgba(108,63,245,0.28)]"
-            style={{ background: "linear-gradient(135deg, var(--purple), var(--purple-dk))" }}
+            style={{
+              background:
+                "linear-gradient(135deg, var(--purple), var(--purple-dk))",
+            }}
           >
             + Add Lead
           </button>
@@ -236,7 +293,9 @@ export default function LeadsPage() {
                 <th className="px-4 py-3 font-semibold">Interested In</th>
                 <th className="px-4 py-3 font-semibold">Source</th>
                 <th className="px-4 py-3 font-semibold">Status</th>
-                {isAdmin && <th className="px-4 py-3 font-semibold">Actions</th>}
+                {isAdmin && (
+                  <th className="px-4 py-3 font-semibold">Actions</th>
+                )}
               </tr>
             </thead>
             <tbody>
@@ -249,7 +308,9 @@ export default function LeadsPage() {
                     <div>{l.email}</div>
                     <div className="text-xs text-muted">{l.phone}</div>
                   </td>
-                  <td className="px-4 py-3 text-ink2">{l.courseInterestedName || "—"}</td>
+                  <td className="px-4 py-3 text-ink2">
+                    {l.courseInterestedName || "—"}
+                  </td>
                   <td className="px-4 py-3 text-ink2 capitalize">{l.source}</td>
                   <td className="px-4 py-3">
                     <select
@@ -296,8 +357,16 @@ export default function LeadsPage() {
         </div>
       )}
 
-      {showAdd && <AddLeadModal onClose={() => setShowAdd(false)} onSaved={load} />}
-      {noteFor && <AddNoteModal lead={noteFor} onClose={() => setNoteFor(null)} onSaved={load} />}
+      {showAdd && (
+        <AddLeadModal onClose={() => setShowAdd(false)} onSaved={load} />
+      )}
+      {noteFor && (
+        <AddNoteModal
+          lead={noteFor}
+          onClose={() => setNoteFor(null)}
+          onSaved={load}
+        />
+      )}
     </div>
   );
 }

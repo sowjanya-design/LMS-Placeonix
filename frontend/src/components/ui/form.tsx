@@ -33,18 +33,31 @@ export function Field({
 }
 
 export function Input(props: React.InputHTMLAttributes<HTMLInputElement>) {
-  return <input {...props} className={`${controlClass} ${props.className ?? ""}`} />;
+  return (
+    <input {...props} className={`${controlClass} ${props.className ?? ""}`} />
+  );
 }
 
-export function Textarea(props: React.TextareaHTMLAttributes<HTMLTextAreaElement>) {
-  return <textarea {...props} className={`${controlClass} ${props.className ?? ""}`} />;
+export function Textarea(
+  props: React.TextareaHTMLAttributes<HTMLTextAreaElement>,
+) {
+  return (
+    <textarea
+      {...props}
+      className={`${controlClass} ${props.className ?? ""}`}
+    />
+  );
 }
 
 export function Select(props: React.SelectHTMLAttributes<HTMLSelectElement>) {
-  return <select {...props} className={`${controlClass} ${props.className ?? ""}`} />;
+  return (
+    <select {...props} className={`${controlClass} ${props.className ?? ""}`} />
+  );
 }
 
-export function PrimaryButton(props: React.ButtonHTMLAttributes<HTMLButtonElement>) {
+export function PrimaryButton(
+  props: React.ButtonHTMLAttributes<HTMLButtonElement>,
+) {
   return (
     <button
       {...props}
@@ -54,7 +67,9 @@ export function PrimaryButton(props: React.ButtonHTMLAttributes<HTMLButtonElemen
   );
 }
 
-export function SecondaryButton(props: React.ButtonHTMLAttributes<HTMLButtonElement>) {
+export function SecondaryButton(
+  props: React.ButtonHTMLAttributes<HTMLButtonElement>,
+) {
   return (
     <button
       {...props}
@@ -63,7 +78,9 @@ export function SecondaryButton(props: React.ButtonHTMLAttributes<HTMLButtonElem
   );
 }
 
-export function DangerButton(props: React.ButtonHTMLAttributes<HTMLButtonElement>) {
+export function DangerButton(
+  props: React.ButtonHTMLAttributes<HTMLButtonElement>,
+) {
   return (
     <button
       {...props}

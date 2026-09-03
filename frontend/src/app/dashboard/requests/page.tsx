@@ -27,14 +27,24 @@ export default function RequestsPage() {
     api
       .get<JoinRequest[]>("/join-requests")
       .then(setRequests)
-      .catch((err) => setError(err instanceof ApiError ? err.message : "Failed to load requests"));
+      .catch((err) =>
+        setError(
+          err instanceof ApiError ? err.message : "Failed to load requests",
+        ),
+      );
   }
   useEffect(load, []);
 
-  async function handleRespond(r: JoinRequest, status: "approved" | "rejected") {
+  async function handleRespond(
+    r: JoinRequest,
+    status: "approved" | "rejected",
+  ) {
     setBusyId(r._id);
     try {
-      const meetingLink = status === "approved" ? prompt("Meeting link to share with the student:") || undefined : undefined;
+      const meetingLink =
+        status === "approved"
+          ? prompt("Meeting link to share with the student:") || undefined
+          : undefined;
       await api.patch(`/join-requests/${r._id}`, { status, meetingLink });
       load();
     } catch (err) {
@@ -48,7 +58,9 @@ export default function RequestsPage() {
     <div className="flex flex-col gap-6">
       <div>
         <h1 className="text-xl font-bold text-ink">Online Requests</h1>
-        <p className="text-sm text-muted">Offline students requesting to join online.</p>
+        <p className="text-sm text-muted">
+          Offline students requesting to join online.
+        </p>
       </div>
 
       {error && <p className="text-sm text-red">{error}</p>}
@@ -56,16 +68,24 @@ export default function RequestsPage() {
       {requests && (
         <div className="flex flex-col gap-3">
           {requests.map((r) => (
-            <div key={r._id} className="flex flex-wrap items-center gap-4 rounded-[14px] border border-line bg-white p-4">
+            <div
+              key={r._id}
+              className="flex flex-wrap items-center gap-4 rounded-[14px] border border-line bg-white p-4"
+            >
               <div className="min-w-[200px] flex-1">
                 <div className="font-bold text-ink">
-                  {r.student?.firstName || "Unknown"} {r.student?.lastName || "Student"}
+                  {r.student?.firstName || "Unknown"}{" "}
+                  {r.student?.lastName || "Student"}
                 </div>
                 <div className="text-xs text-muted">
                   {r.batch?.name} {r.reason && `· ${r.reason}`}
                 </div>
               </div>
-              <span className={`rounded-full px-2.5 py-1 text-xs font-semibold ${STATUS_STYLE[r.status]}`}>{r.status}</span>
+              <span
+                className={`rounded-full px-2.5 py-1 text-xs font-semibold ${STATUS_STYLE[r.status]}`}
+              >
+                {r.status}
+              </span>
               {r.status === "pending" && (
                 <div className="flex gap-2">
                   <button
@@ -87,7 +107,9 @@ export default function RequestsPage() {
               )}
             </div>
           ))}
-          {requests.length === 0 && <p className="py-8 text-center text-sm text-muted">No requests.</p>}
+          {requests.length === 0 && (
+            <p className="py-8 text-center text-sm text-muted">No requests.</p>
+          )}
         </div>
       )}
     </div>
