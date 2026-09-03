@@ -3,7 +3,7 @@ import { NextRequest, NextResponse } from "next/server";
 export const maxDuration = 60;
 export const dynamic = "force-dynamic";
 
-async function proxy(request: NextRequest, { params }: { params: { path: string[] } }) {
+async function proxy(request: NextRequest, { params }: { params: Promise<{ path: string[] }> }) {
   const origin = request.headers.get("Origin") || "*";
 
   // Handle CORS preflight directly without bothering the backend
