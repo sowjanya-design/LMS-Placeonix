@@ -160,22 +160,6 @@ export function Sidebar() {
         })}
       </div>
 
-      <div className="px-4 pb-2">
-        <a
-          href="https://ide.placeonix.com"
-          target="_blank"
-          rel="noreferrer"
-          className="flex w-full items-center justify-center gap-2 rounded-full py-2.5 text-[0.82rem] font-bold text-white transition-all hover:opacity-90 active:scale-95"
-          style={{ background: "linear-gradient(135deg, #6c3ff5, #4f23e0)" }}
-        >
-          <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round">
-            <polyline points="16 18 22 12 16 6" />
-            <polyline points="8 6 2 12 8 18" />
-          </svg>
-          Open IDE
-        </a>
-      </div>
-
       <div className="p-4">
         <button
           onClick={handleLogout}
