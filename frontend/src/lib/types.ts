@@ -1,9 +1,12 @@
-export type Role = "super_admin" | "admin" | "mentor" | "student" | "hr" | "recruiter";
+export type Role =
+  "super_admin" | "admin" | "mentor" | "student" | "hr" | "recruiter";
 
 // Enrollment.course / Certificate.course come back populated on most endpoints, but a
 // few return the raw ObjectId string instead. Narrow with these rather than `as`-casting
 // past the union at each call site.
-export function populatedCourse<T extends { title: string }>(course: T | string | undefined | null): T | null {
+export function populatedCourse<T extends { title: string }>(
+  course: T | string | undefined | null,
+): T | null {
   return course && typeof course === "object" ? course : null;
 }
 
@@ -17,7 +20,21 @@ export interface User {
   status: string;
   avatar?: string | null;
   createdAt: string;
-  studentProfile?: { enrollmentId?: string; resume?: string; skills?: string[]; college?: string; degree?: string; graduationYear?: number; linkedIn?: string; github?: string; portfolio?: string; experience?: string; expectedSalary?: string; preferredLocation?: string; }; bio?: string;
+  studentProfile?: {
+    enrollmentId?: string;
+    resume?: string;
+    skills?: string[];
+    college?: string;
+    degree?: string;
+    graduationYear?: number;
+    linkedIn?: string;
+    github?: string;
+    portfolio?: string;
+    experience?: string;
+    expectedSalary?: string;
+    preferredLocation?: string;
+  };
+  bio?: string;
   mentorProfile?: { studentCount?: number };
   dateOfBirth?: string;
 }
@@ -28,7 +45,6 @@ export interface Birthday {
   month: number; // 1-12
   day: number;
 }
-
 
 export interface AnalyticsOverview {
   students: { total: number; active: number };
@@ -67,7 +83,8 @@ export interface Batch {
   status?: "upcoming" | "enrolling" | "active" | "completed" | "cancelled";
 }
 
-export type EnrollmentStatus = "enrolled" | "in_progress" | "completed" | "dropped" | "at_risk";
+export type EnrollmentStatus =
+  "enrolled" | "in_progress" | "completed" | "dropped" | "at_risk";
 
 export interface Enrollment {
   _id: string;
@@ -142,7 +159,9 @@ export interface QuizAnswer {
 export interface QuizResult {
   _id: string;
   quiz: string;
-  student: { _id: string; firstName: string; lastName: string; email?: string } | string;
+  student:
+    | { _id: string; firstName: string; lastName: string; email?: string }
+    | string;
   batch: string;
   attemptNumber: number;
   answers: QuizAnswer[];
@@ -203,7 +222,9 @@ export interface TestCaseResult {
 export interface CodingSubmission {
   _id: string;
   challenge: string;
-  student: { _id: string; firstName: string; lastName: string; email?: string } | string;
+  student:
+    | { _id: string; firstName: string; lastName: string; email?: string }
+    | string;
   batch: string;
   language: string;
   code: string;
@@ -307,7 +328,13 @@ export interface Payment {
   enrollment?: { _id: string };
   amount: number;
   method: string;
-  status: "pending" | "processing" | "completed" | "failed" | "refunded" | "partial-refund";
+  status:
+    | "pending"
+    | "processing"
+    | "completed"
+    | "failed"
+    | "refunded"
+    | "partial-refund";
   paidOn?: string;
   transactionId?: string;
 }

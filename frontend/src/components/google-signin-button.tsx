@@ -30,14 +30,20 @@ const SCRIPT_ID = "google-identity-services";
  * env var (frontend/.env.local) once you have a Client ID from Google Cloud
  * Console (see backend/.env.example for the exact steps) to turn it on.
  */
-export function GoogleSignInButton({ onCredential }: { onCredential: (credential: string) => void }) {
+export function GoogleSignInButton({
+  onCredential,
+}: {
+  onCredential: (credential: string) => void;
+}) {
   const clientId = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID;
   const containerRef = useRef<HTMLDivElement>(null);
   const [scriptReady, setScriptReady] = useState(false);
 
   useEffect(() => {
     if (!clientId) return;
-    const existing = document.getElementById(SCRIPT_ID) as HTMLScriptElement | null;
+    const existing = document.getElementById(
+      SCRIPT_ID,
+    ) as HTMLScriptElement | null;
     if (existing) {
       if (window.google) setScriptReady(true);
       else existing.addEventListener("load", () => setScriptReady(true));
@@ -53,7 +59,8 @@ export function GoogleSignInButton({ onCredential }: { onCredential: (credential
   }, [clientId]);
 
   useEffect(() => {
-    if (!clientId || !scriptReady || !window.google || !containerRef.current) return;
+    if (!clientId || !scriptReady || !window.google || !containerRef.current)
+      return;
     window.google.accounts.id.initialize({
       client_id: clientId,
       callback: (response) => onCredential(response.credential),

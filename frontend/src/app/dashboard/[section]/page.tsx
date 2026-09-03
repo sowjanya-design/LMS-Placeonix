@@ -10,11 +10,15 @@ import { NAV } from "@/lib/nav";
 export default function SectionPlaceholder() {
   const { user } = useAuth();
   const params = useParams<{ section: string }>();
-  const item = user ? NAV[user.role].find((n) => n.id === params.section) : undefined;
+  const item = user
+    ? NAV[user.role].find((n) => n.id === params.section)
+    : undefined;
 
   return (
     <div className="flex flex-col gap-2">
-      <h1 className="text-xl font-bold text-ink">{item?.label ?? "Coming soon"}</h1>
+      <h1 className="text-xl font-bold text-ink">
+        {item?.label ?? "Coming soon"}
+      </h1>
       <p className="text-sm text-muted">
         This section hasn&apos;t been migrated to the new Next.js frontend yet.
       </p>

@@ -1,23 +1,33 @@
-const mongoose = require('mongoose');
-const bcrypt = require('bcryptjs');
-const { ROLES, USER_STATUS } = require('../config/constants');
+const mongoose = require("mongoose");
+const bcrypt = require("bcryptjs");
+const { ROLES, USER_STATUS } = require("../config/constants");
 
 const userSchema = new mongoose.Schema(
   {
-    firstName: { type: String, required: [true, 'First name is required'], trim: true, maxlength: 50 },
-    lastName: { type: String, required: [true, 'Last name is required'], trim: true, maxlength: 50 },
+    firstName: {
+      type: String,
+      required: [true, "First name is required"],
+      trim: true,
+      maxlength: 50,
+    },
+    lastName: {
+      type: String,
+      required: [true, "Last name is required"],
+      trim: true,
+      maxlength: 50,
+    },
     email: {
       type: String,
-      required: [true, 'Email is required'],
+      required: [true, "Email is required"],
       unique: true,
       lowercase: true,
       trim: true,
-      match: [/^[^\s@]+@[^\s@]+\.[^\s@]+$/, 'Please provide a valid email'],
+      match: [/^[^\s@]+@[^\s@]+\.[^\s@]+$/, "Please provide a valid email"],
     },
     password: {
       type: String,
-      required: [true, 'Password is required'],
-      minlength: [8, 'Password must be at least 8 characters'],
+      required: [true, "Password is required"],
+      minlength: [8, "Password must be at least 8 characters"],
       select: false,
     },
     // Set the first time this account signs in with "Continue with Google"
@@ -25,9 +35,23 @@ const userSchema = new mongoose.Schema(
     // account matched by email — it never creates a new one — so `password`
     // above stays required and every user keeps a fallback way to log in.
     googleId: { type: String, sparse: true, unique: true, select: false },
-    phone: { type: String, trim: true, match: [/^[+]?[\d\s-()]{8,20}$/, 'Invalid phone number'] },
-    role: { type: String, enum: Object.values(ROLES), default: ROLES.STUDENT, index: true },
-    status: { type: String, enum: Object.values(USER_STATUS), default: USER_STATUS.ACTIVE, index: true },
+    phone: {
+      type: String,
+      trim: true,
+      match: [/^[+]?[\d\s-()]{8,20}$/, "Invalid phone number"],
+    },
+    role: {
+      type: String,
+      enum: Object.values(ROLES),
+      default: ROLES.STUDENT,
+      index: true,
+    },
+    status: {
+      type: String,
+      enum: Object.values(USER_STATUS),
+      default: USER_STATUS.ACTIVE,
+      index: true,
+    },
     avatar: { type: String, default: null },
 
     // Common fields
@@ -74,30 +98,30 @@ const userSchema = new mongoose.Schema(
     loginAttempts: { type: Number, default: 0 },
     lockUntil: Date,
 
-    createdBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
+    createdBy: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
   },
   {
     timestamps: true,
     toJSON: { virtuals: true },
     toObject: { virtuals: true },
-  }
+  },
 );
 
 userSchema.index({ email: 1, role: 1 });
 // status already indexed via `index: true` on the field (line 25); the
 // enrollmentId sparse-unique index already indexed via `unique: true` (line 35).
 
-userSchema.virtual('fullName').get(function () {
+userSchema.virtual("fullName").get(function () {
   return `${this.firstName} ${this.lastName}`;
 });
 
-userSchema.virtual('isLocked').get(function () {
+userSchema.virtual("isLocked").get(function () {
   return this.lockUntil && this.lockUntil > Date.now();
 });
 
 // Hash password before save
-userSchema.pre('save', async function (next) {
-  if (!this.isModified('password')) return next();
+userSchema.pre("save", async function (next) {
+  if (!this.isModified("password")) return next();
   const salt = await bcrypt.genSalt(12);
   this.password = await bcrypt.hash(this.password, salt);
   next();
@@ -106,30 +130,39 @@ userSchema.pre('save', async function (next) {
 // Auto-generate a UNIQUE enrollment ID for students.
 // Uses the highest existing PLX{year}#### + 1 and then probes for the next free
 // slot, so it never collides after a student has been deleted (count-based IDs did).
-userSchema.pre('save', async function (next) {
-  if (this.isNew && this.role === 'student' && !this.studentProfile?.enrollmentId) {
-    const Model = mongoose.model('User');
+userSchema.pre("save", async function (next) {
+  if (
+    this.isNew &&
+    this.role === "student" &&
+    !this.studentProfile?.enrollmentId
+  ) {
+    const Model = mongoose.model("User");
     const year = new Date().getFullYear();
     const prefix = `PLX${year}`;
     this.studentProfile = this.studentProfile || {};
 
-    const last = await Model.findOne({ 'studentProfile.enrollmentId': new RegExp('^' + prefix) })
-      .sort({ 'studentProfile.enrollmentId': -1 })
-      .select('studentProfile.enrollmentId')
+    const last = await Model.findOne({
+      "studentProfile.enrollmentId": new RegExp("^" + prefix),
+    })
+      .sort({ "studentProfile.enrollmentId": -1 })
+      .select("studentProfile.enrollmentId")
       .lean();
 
     let n = 1;
     if (last && last.studentProfile && last.studentProfile.enrollmentId) {
-      const parsed = parseInt(last.studentProfile.enrollmentId.slice(prefix.length), 10);
+      const parsed = parseInt(
+        last.studentProfile.enrollmentId.slice(prefix.length),
+        10,
+      );
       if (!Number.isNaN(parsed)) n = parsed + 1;
     }
 
     // Probe forward until we find an unused ID (guards against gaps/races).
     let candidate;
     do {
-      candidate = `${prefix}${String(n).padStart(4, '0')}`;
+      candidate = `${prefix}${String(n).padStart(4, "0")}`;
       n += 1;
-    } while (await Model.exists({ 'studentProfile.enrollmentId': candidate }));
+    } while (await Model.exists({ "studentProfile.enrollmentId": candidate }));
 
     this.studentProfile.enrollmentId = candidate;
   }
@@ -160,4 +193,4 @@ userSchema.methods.resetLoginAttempts = async function () {
   await this.save();
 };
 
-module.exports = mongoose.model('User', userSchema);
+module.exports = mongoose.model("User", userSchema);

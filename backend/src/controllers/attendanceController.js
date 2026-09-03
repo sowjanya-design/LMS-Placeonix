@@ -1,295 +1,337 @@
-const mongoose = require('mongoose');
-const Attendance = require('../models/Attendance');
-const Enrollment = require('../models/Enrollment');
-const Batch = require('../models/Batch');
-const AppError = require('../utils/AppError');
-const ApiResponse = require('../utils/ApiResponse');
-const asyncHandler = require('../utils/asyncHandler');
-const { ATTENDANCE } = require('../config/constants');
+const mongoose = require("mongoose");
+const Attendance = require("../models/Attendance");
+const CorrectionRequest = require("../models/CorrectionRequest");
+const AttendanceSettings = require("../models/AttendanceSettings");
+const Enrollment = require("../models/Enrollment");
+const Batch = require("../models/Batch");
+const AppError = require("../utils/AppError");
+const ApiResponse = require("../utils/ApiResponse");
+const asyncHandler = require("../utils/asyncHandler");
+const { ATTENDANCE } = require("../config/constants");
+const { auditLog } = require("../utils/audit");
 
-const VALID_STATUSES = Object.values(ATTENDANCE); // ['present','absent','late','excused']
+const getTodayDate = () => {
+  const d = new Date();
+  d.setUTCHours(0, 0, 0, 0);
+  return d;
+};
 
-// @desc   Admin day-wise / batch-wise attendance overview
-// @route  GET /api/v1/attendance/overview?date=&batch=
-exports.attendanceOverview = asyncHandler(async (req, res) => {
-  const date = req.query.date ? new Date(req.query.date) : new Date();
-  const dayStart = new Date(date); dayStart.setHours(0, 0, 0, 0);
-  const dayEnd = new Date(date); dayEnd.setHours(23, 59, 59, 999);
-
-  const recFilter = { date: { $gte: dayStart, $lte: dayEnd } };
-  if (req.query.batch) recFilter.batch = req.query.batch;
-
-  const records = await Attendance.find(recFilter)
-    .populate({ path: 'batch', select: 'name code mentor', populate: { path: 'mentor', select: 'firstName lastName' } })
-    .populate('student', 'firstName lastName studentProfile.enrollmentId');
-
-  // Group by batch
-  const byBatch = {};
-  records.forEach((r) => {
-    const bid = r.batch ? String(r.batch._id) : 'unknown';
-    if (!byBatch[bid]) {
-      byBatch[bid] = {
-        batchId: bid,
-        batchName: r.batch ? r.batch.name : 'Unknown',
-        batchCode: r.batch ? r.batch.code : '',
-        mentor: r.batch && r.batch.mentor ? `${r.batch.mentor.firstName || ''} ${r.batch.mentor.lastName || ''}`.trim() : '—',
-        present: 0, absent: 0, late: 0, total: 0, students: [],
-      };
-    }
-    const b = byBatch[bid];
-    b.total += 1;
-    if (r.status === 'present') b.present += 1;
-    else if (r.status === 'late') b.late += 1;
-    else b.absent += 1;
-    b.students.push({
-      name: r.student ? `${r.student.firstName || ''} ${r.student.lastName || ''}`.trim() : 'Student',
-      enrollmentId: r.student && r.student.studentProfile ? r.student.studentProfile.enrollmentId : '',
-      status: r.status,
-    });
-  });
-
-  const batches = Object.values(byBatch).map((b) => ({
-    ...b,
-    percentage: b.total ? Math.round(((b.present + b.late) / b.total) * 100) : 0,
-  }));
-
-  // Mentor activity that day: sessions held + whether attendance was taken
-  const Session = require('../models/Session');
-  const sessions = await Session.find({ startTime: { $gte: dayStart, $lte: dayEnd } })
-    .populate('instructor', 'firstName lastName')
-    .populate('batch', 'name code');
-  const mentorActivity = sessions.map((s) => ({
-    mentor: s.instructor ? `${s.instructor.firstName || ''} ${s.instructor.lastName || ''}`.trim() : '—',
-    batch: s.batch ? s.batch.name : '',
-    title: s.title,
-    status: s.status,
-    attendanceTaken: !!s.attendanceTaken,
-    startTime: s.startTime,
-  }));
-
-  const totals = batches.reduce(
-    (a, b) => ({ present: a.present + b.present, absent: a.absent + b.absent, late: a.late + b.late, total: a.total + b.total }),
-    { present: 0, absent: 0, late: 0, total: 0 }
-  );
-
-  return ApiResponse.success(res, 200, 'Attendance overview', {
-    date: dayStart,
-    batches,
-    mentorActivity,
-    totals,
-    percentage: totals.total ? Math.round(((totals.present + totals.late) / totals.total) * 100) : 0,
-  });
+exports.getTodayStatus = asyncHandler(async (req, res) => {
+  const date = getTodayDate();
+  let record = await Attendance.findOne({ student: req.user._id, date });
+  return ApiResponse.success(res, 200, "Today status", { record });
 });
 
-// @desc   Mark attendance for a batch on a date (mentor/admin)
-// @route  POST /api/v1/attendance/mark
-// @body   { batchId, date, sessionTitle, records: [{studentId, status, notes}] }
-exports.markAttendance = asyncHandler(async (req, res, next) => {
-  const { batchId, date, sessionTitle, records } = req.body;
+exports.punchIn = asyncHandler(async (req, res, next) => {
+  const date = getTodayDate();
+  let record = await Attendance.findOne({ student: req.user._id, date });
 
-  // ── Validation ──
-  if (!batchId) return next(new AppError('batchId is required', 400));
-  if (!mongoose.isValidObjectId(batchId)) return next(new AppError('Invalid batchId', 400));
-  if (!date) return next(new AppError('date is required (YYYY-MM-DD or ISO format)', 400));
-
-  const parsedDate = new Date(date);
-  if (isNaN(parsedDate.getTime())) {
-    return next(new AppError('Invalid date format. Use YYYY-MM-DD or ISO format', 400));
-  }
-  // Normalise to start of day so duplicates are detected correctly
-  parsedDate.setHours(0, 0, 0, 0);
-
-  if (!Array.isArray(records) || records.length === 0) {
-    return next(new AppError('records must be a non-empty array', 400));
+  if (record && record.inTime) {
+    return next(new AppError("Already punched in today", 400));
   }
 
-  // Validate each record
-  for (let i = 0; i < records.length; i++) {
-    const r = records[i];
-    if (!r.studentId) return next(new AppError(`records[${i}].studentId is required`, 400));
-    if (!mongoose.isValidObjectId(r.studentId)) {
-      return next(new AppError(`records[${i}].studentId is not a valid id`, 400));
-    }
-    if (!r.status) return next(new AppError(`records[${i}].status is required`, 400));
-    if (!VALID_STATUSES.includes(r.status)) {
-      return next(
-        new AppError(
-          `records[${i}].status must be one of: ${VALID_STATUSES.join(', ')}`,
-          400
-        )
-      );
-    }
+  // Find student's active batch to assign mentor
+  const enrollment = await Enrollment.findOne({
+    student: req.user._id,
+    status: "enrolled",
+  }).populate("batch");
+  const batchId = enrollment ? enrollment.batch._id : undefined;
+  const mentorId =
+    enrollment && enrollment.batch ? enrollment.batch.mentor : undefined;
+
+  if (!record) {
+    record = new Attendance({
+      student: req.user._id,
+      date,
+      batch: batchId,
+      mentor: mentorId,
+      status: ATTENDANCE.ON_DUTY,
+      inTime: new Date(),
+    });
+  } else {
+    record.inTime = new Date();
+    record.status = ATTENDANCE.ON_DUTY;
   }
 
-  // ── Verify batch + permissions ──
-  const batch = await Batch.findById(batchId);
-  if (!batch) return next(new AppError('Batch not found', 404));
+  record.auditLog.push({
+    action: "punch_in",
+    actorId: req.user._id,
+    actorRole: "student",
+    timestamp: new Date(),
+  });
 
-  if (req.user.role === 'mentor' && String(batch.mentor) !== String(req.user._id)) {
-    return next(new AppError('Not authorised for this batch', 403));
+  await record.save();
+  return ApiResponse.success(res, 200, "Punched in", { record });
+});
+
+exports.breakStart = asyncHandler(async (req, res, next) => {
+  const date = getTodayDate();
+  const record = await Attendance.findOne({ student: req.user._id, date });
+  if (!record || !record.inTime || record.outTime) {
+    return next(new AppError("Invalid state for break", 400));
   }
 
-  // ── Verify all students are enrolled in this batch ──
-  const enrolledStudents = await Enrollment.find({ batch: batchId }).distinct('student');
-  const enrolledIds = enrolledStudents.map(String);
+  record.breaks.push({ start: new Date() });
 
-  const invalidStudents = records
-    .map((r) => String(r.studentId))
-    .filter((id) => !enrolledIds.includes(id));
+  record.auditLog.push({
+    action: "break_start",
+    actorId: req.user._id,
+    actorRole: "student",
+    timestamp: new Date(),
+  });
 
-  if (invalidStudents.length > 0) {
-    return next(
-      new AppError(
-        `Students not enrolled in this batch: ${invalidStudents.join(', ')}`,
-        400
-      )
+  await record.save();
+  return ApiResponse.success(res, 200, "Break started", { record });
+});
+
+exports.breakEnd = asyncHandler(async (req, res, next) => {
+  const date = getTodayDate();
+  const record = await Attendance.findOne({ student: req.user._id, date });
+  if (!record || !record.breaks.length)
+    return next(new AppError("No active break", 400));
+
+  const currentBreak = record.breaks[record.breaks.length - 1];
+  if (currentBreak.end) return next(new AppError("Break already ended", 400));
+
+  currentBreak.end = new Date();
+  currentBreak.durationMinutes = Math.round(
+    (currentBreak.end - currentBreak.start) / 60000,
+  );
+
+  record.totalBreakMinutes = record.breaks.reduce(
+    (acc, b) => acc + (b.durationMinutes || 0),
+    0,
+  );
+
+  record.auditLog.push({
+    action: "break_end",
+    actorId: req.user._id,
+    actorRole: "student",
+    timestamp: new Date(),
+  });
+
+  await record.save();
+  return ApiResponse.success(res, 200, "Break ended", { record });
+});
+
+exports.punchOut = asyncHandler(async (req, res, next) => {
+  const date = getTodayDate();
+  const record = await Attendance.findOne({ student: req.user._id, date });
+  if (!record || !record.inTime || record.outTime) {
+    return next(new AppError("Cannot punch out", 400));
+  }
+
+  // Close active break if exists
+  const currentBreak = record.breaks.length
+    ? record.breaks[record.breaks.length - 1]
+    : null;
+  if (currentBreak && !currentBreak.end) {
+    currentBreak.end = new Date();
+    currentBreak.durationMinutes = Math.round(
+      (currentBreak.end - currentBreak.start) / 60000,
+    );
+    record.totalBreakMinutes = record.breaks.reduce(
+      (acc, b) => acc + (b.durationMinutes || 0),
+      0,
     );
   }
 
-  // ── Build bulk ops ──
-  const ops = records.map((r) => ({
-    updateOne: {
-      filter: {
-        student: new mongoose.Types.ObjectId(r.studentId),
-        batch: new mongoose.Types.ObjectId(batchId),
-        date: parsedDate,
-      },
-      update: {
-        $set: {
-          status: r.status,
-          sessionTitle: sessionTitle || undefined,
-          notes: r.notes || undefined,
-          markedBy: req.user._id,
-        },
-        $setOnInsert: {
-          student: new mongoose.Types.ObjectId(r.studentId),
-          batch: new mongoose.Types.ObjectId(batchId),
-          date: parsedDate,
-        },
-      },
-      upsert: true,
-    },
-  }));
+  record.outTime = new Date();
+  record.totalWorkingMinutes = Math.max(
+    0,
+    Math.round((record.outTime - record.inTime) / 60000) -
+      record.totalBreakMinutes,
+  );
 
-  let result;
-  try {
-    result = await Attendance.bulkWrite(ops, { ordered: false });
-  } catch (err) {
-    return next(new AppError(`Bulk write failed: ${err.message}`, 500));
+  // Compute final status based on thresholds
+  let settings = await AttendanceSettings.findOne();
+  if (!settings) settings = await AttendanceSettings.create({});
+
+  if (record.totalWorkingMinutes >= settings.presentThresholdMinutes) {
+    record.status = ATTENDANCE.PRESENT;
+  } else if (record.totalWorkingMinutes >= settings.halfDayThresholdMinutes) {
+    record.status = ATTENDANCE.HALF_DAY;
+  } else {
+    record.status = ATTENDANCE.ABSENT;
   }
 
-  return ApiResponse.success(res, 200, 'Attendance marked', {
-    marked: records.length,
-    inserted: result.upsertedCount || 0,
-    updated: result.modifiedCount || 0,
-    matched: result.matchedCount || 0,
+  record.auditLog.push({
+    action: "punch_out",
+    actorId: req.user._id,
+    actorRole: "student",
+    newValue: record.status,
+    timestamp: new Date(),
+  });
+
+  await record.save();
+  return ApiResponse.success(res, 200, "Punched out", { record });
+});
+
+
+exports.raiseCorrection = asyncHandler(async (req, res, next) => {
+  const { date, reason, description } = req.body;
+  if (!date || !reason || !description)
+    return next(new AppError("Missing fields", 400));
+
+  const targetDate = new Date(date);
+  targetDate.setUTCHours(0, 0, 0, 0);
+
+  const reqObj = await CorrectionRequest.create({
+    student: req.user._id,
+    date: targetDate,
+    reason,
+    description,
+    status: "Pending",
+  });
+
+  return ApiResponse.success(res, 201, "Correction raised", {
+    request: reqObj,
   });
 });
 
-// @desc   Get attendance for batch
-// @route  GET /api/v1/attendance/batch/:batchId
-exports.getBatchAttendance = asyncHandler(async (req, res, next) => {
-  const { batchId } = req.params;
-  if (!mongoose.isValidObjectId(batchId)) return next(new AppError('Invalid batchId', 400));
-
-  if (req.user.role === 'mentor') {
-    const batch = await Batch.findById(batchId).select('mentor');
-    if (!batch || String(batch.mentor) !== String(req.user._id)) {
-      return next(new AppError('Not authorised for this batch', 403));
-    }
+exports.getCorrectionRequests = asyncHandler(async (req, res) => {
+  let filter = {};
+  if (req.user.role === "mentor") {
+    // Only students enrolled in mentor's batches
+    const myBatches = await Batch.find({ mentor: req.user._id }).select("_id");
+    const enrollments = await Enrollment.find({
+      batch: { $in: myBatches },
+    }).select("student");
+    filter.student = { $in: enrollments.map((e) => e.student) };
   }
-
-  const { from, to, date } = req.query;
-  const filter = { batch: batchId };
-
-  if (date) {
-    const d = new Date(date);
-    d.setHours(0, 0, 0, 0);
-    const next = new Date(d);
-    next.setDate(next.getDate() + 1);
-    filter.date = { $gte: d, $lt: next };
-  } else if (from || to) {
-    filter.date = {};
-    if (from) filter.date.$gte = new Date(from);
-    if (to) filter.date.$lte = new Date(to);
-  }
-
-  const records = await Attendance.find(filter)
-    .populate('student', 'firstName lastName email avatar studentProfile.enrollmentId')
-    .populate('markedBy', 'firstName lastName')
-    .sort('-date');
-
-  return ApiResponse.success(res, 200, 'Attendance fetched', {
-    records,
-    count: records.length,
-  });
+  const requests = await CorrectionRequest.find(filter)
+    .populate("student", "firstName lastName avatar email")
+    .sort("-createdAt");
+  return ApiResponse.success(res, 200, "Correction requests", { requests });
 });
 
-// @desc   Get my attendance (student)
-// @route  GET /api/v1/attendance/me
+exports.approveCorrection = asyncHandler(async (req, res, next) => {
+  const cr = await CorrectionRequest.findById(req.params.id);
+  if (!cr) return next(new AppError("Not found", 404));
+
+  const { newStatus, inTime, outTime, remark } = req.body;
+  if (!newStatus) return next(new AppError("newStatus is required", 400));
+
+  cr.status = "Approved";
+  cr.reviewedBy = req.user._id;
+  cr.reviewRemark = remark;
+  cr.resolvedAt = new Date();
+  await cr.save();
+
+  // Update or create Attendance
+  let record = await Attendance.findOne({ student: cr.student, date: cr.date });
+  if (!record) {
+    record = new Attendance({ student: cr.student, date: cr.date });
+  }
+
+  const oldStatus = record.status;
+  record.status = newStatus;
+  if (inTime) record.inTime = new Date(inTime);
+  if (outTime) record.outTime = new Date(outTime);
+  record.isCorrected = true;
+  record.correctionRequestId = cr._id;
+  record.markedBy = req.user.role;
+  record.markedByUser = req.user._id;
+
+  record.auditLog.push({
+    action: "correction_approved",
+    actorId: req.user._id,
+    actorRole: req.user.role,
+    oldValue: oldStatus,
+    newValue: newStatus,
+    reason: remark || cr.reason,
+    timestamp: new Date(),
+  });
+
+  await record.save();
+  return ApiResponse.success(res, 200, "Correction approved", { record });
+});
+
+exports.rejectCorrection = asyncHandler(async (req, res, next) => {
+  const cr = await CorrectionRequest.findById(req.params.id);
+  if (!cr) return next(new AppError("Not found", 404));
+
+  const { remark } = req.body;
+  if (!remark) return next(new AppError("Remark required for rejection", 400));
+
+  cr.status = "Rejected";
+  cr.reviewedBy = req.user._id;
+  cr.reviewRemark = remark;
+  cr.resolvedAt = new Date();
+  await cr.save();
+
+  return ApiResponse.success(res, 200, "Correction rejected", { request: cr });
+});
+
+
+exports.overrideAttendance = asyncHandler(async (req, res, next) => {
+  const { studentId, date, newStatus, reason, inTime, outTime } = req.body;
+  if (!reason)
+    return next(new AppError("Reason is mandatory for override", 400));
+
+  const targetDate = new Date(date);
+  targetDate.setUTCHours(0, 0, 0, 0);
+
+  let record = await Attendance.findOne({
+    student: studentId,
+    date: targetDate,
+  });
+  if (!record)
+    record = new Attendance({ student: studentId, date: targetDate });
+
+  const oldStatus = record.status;
+  record.status = newStatus;
+  if (inTime) record.inTime = new Date(inTime);
+  if (outTime) record.outTime = new Date(outTime);
+  record.markedBy = req.user.role;
+  record.markedByUser = req.user._id;
+
+  record.auditLog.push({
+    action: "override",
+    actorId: req.user._id,
+    actorRole: req.user.role,
+    oldValue: oldStatus,
+    newValue: newStatus,
+    reason,
+    timestamp: new Date(),
+  });
+
+  await record.save();
+  return ApiResponse.success(res, 200, "Overridden", { record });
+});
+
+// Legacy compatibility endpoints
 exports.myAttendance = asyncHandler(async (req, res) => {
-  const { from, to, batchId } = req.query;
-  const filter = { student: req.user._id };
-  if (batchId) filter.batch = batchId;
-  if (from || to) {
-    filter.date = {};
-    if (from) filter.date.$gte = new Date(from);
-    if (to) filter.date.$lte = new Date(to);
-  }
-
-  const records = await Attendance.find(filter)
-    .populate('batch', 'name code')
-    .sort('-date');
-
-  const summary = records.reduce(
-    (acc, r) => {
-      acc[r.status] = (acc[r.status] || 0) + 1;
-      acc.total += 1;
-      return acc;
-    },
-    { present: 0, absent: 0, late: 0, excused: 0, total: 0 }
+  const records = await Attendance.find({ student: req.user._id }).sort(
+    "-date",
   );
-  summary.percentage =
-    summary.total > 0
-      ? Math.round(((summary.present + summary.late) / summary.total) * 100)
-      : 0;
-
-  return ApiResponse.success(res, 200, 'Attendance fetched', { records, summary });
+  return ApiResponse.success(res, 200, "My attendance", { records });
 });
 
-// @desc   Get attendance for a specific student
-// @route  GET /api/v1/attendance/student/:studentId
-exports.getStudentAttendance = asyncHandler(async (req, res, next) => {
-  const { studentId } = req.params;
-  if (!mongoose.isValidObjectId(studentId)) return next(new AppError('Invalid studentId', 400));
+exports.attendanceOverview = asyncHandler(async (req, res) => {
+  const records = await Attendance.find()
+    .populate("student batch")
+    .sort("-date")
+    .limit(100);
+  return ApiResponse.success(res, 200, "Overview", { records });
+});
 
-  if (req.user.role === 'mentor') {
-    const myBatches = await Batch.find({ mentor: req.user._id }).select('_id');
-    const taughtStudent = await Enrollment.exists({
-      student: studentId,
-      batch: { $in: myBatches.map((b) => b._id) },
-    });
-    if (!taughtStudent) {
-      return next(new AppError('Not authorised for this student', 403));
-    }
-  }
+exports.getBatchAttendance = asyncHandler(async (req, res) => {
+  const records = await Attendance.find({ batch: req.params.batchId })
+    .populate("student")
+    .sort("-date");
+  return ApiResponse.success(res, 200, "Batch attendance", { records });
+});
 
-  const records = await Attendance.find({ student: studentId })
-    .populate('batch', 'name code')
-    .sort('-date');
-
-  const summary = records.reduce(
-    (acc, r) => {
-      acc[r.status] = (acc[r.status] || 0) + 1;
-      acc.total += 1;
-      return acc;
-    },
-    { present: 0, absent: 0, late: 0, excused: 0, total: 0 }
+exports.getStudentAttendance = asyncHandler(async (req, res) => {
+  const records = await Attendance.find({ student: req.params.studentId }).sort(
+    "-date",
   );
-  summary.percentage =
-    summary.total > 0
-      ? Math.round(((summary.present + summary.late) / summary.total) * 100)
-      : 0;
+  return ApiResponse.success(res, 200, "Student attendance", { records });
+});
 
-  return ApiResponse.success(res, 200, 'Attendance fetched', { records, summary });
+exports.bulkMarkAttendance = asyncHandler(async (req, res, next) => {
+  return next(
+    new AppError("Use override endpoint for new Time & Attendance module", 400),
+  );
 });

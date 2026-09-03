@@ -6,7 +6,15 @@ import { useAuth } from "@/lib/auth-context";
 import type { Batch, Course, User } from "@/lib/types";
 import { Modal } from "@/components/ui/modal";
 import { EmptyState } from "@/components/ui/empty-state";
-import { Field, Input, Select, ErrorText, ModalActions, DangerButton, SecondaryButton } from "@/components/ui/form";
+import {
+  Field,
+  Input,
+  Select,
+  ErrorText,
+  ModalActions,
+  DangerButton,
+  SecondaryButton,
+} from "@/components/ui/form";
 
 const STATUS_STYLE: Record<string, string> = {
   upcoming: "bg-blue-lt text-blue",
@@ -16,7 +24,13 @@ const STATUS_STYLE: Record<string, string> = {
   cancelled: "bg-red-lt text-red",
 };
 
-const STATUS_OPTIONS = ["upcoming", "enrolling", "active", "completed", "cancelled"] as const;
+const STATUS_OPTIONS = [
+  "upcoming",
+  "enrolling",
+  "active",
+  "completed",
+  "cancelled",
+] as const;
 
 // The list endpoint returns startDate/endDate that aren't part of the shared
 // Batch type; extend locally so the edit form can prefill them.
@@ -38,7 +52,13 @@ interface CreateForm {
   capacity: string;
 }
 
-function CreateBatchModal({ onClose, onSaved }: { onClose: () => void; onSaved: () => void }) {
+function CreateBatchModal({
+  onClose,
+  onSaved,
+}: {
+  onClose: () => void;
+  onSaved: () => void;
+}) {
   const [form, setForm] = useState<CreateForm>({
     name: "",
     code: "",
@@ -54,8 +74,14 @@ function CreateBatchModal({ onClose, onSaved }: { onClose: () => void; onSaved: 
   const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
-    api.get<Course[]>("/courses?limit=100").then(setCourses).catch(() => setCourses([]));
-    api.get<User[]>("/users?role=mentor&limit=100").then(setMentors).catch(() => setMentors([]));
+    api
+      .get<Course[]>("/courses?limit=100")
+      .then(setCourses)
+      .catch(() => setCourses([]));
+    api
+      .get<User[]>("/users?role=mentor&limit=100")
+      .then(setMentors)
+      .catch(() => setMentors([]));
   }, []);
 
   async function handleSubmit(e: React.FormEvent) {
@@ -76,7 +102,9 @@ function CreateBatchModal({ onClose, onSaved }: { onClose: () => void; onSaved: 
       onSaved();
       onClose();
     } catch (err) {
-      setError(err instanceof ApiError ? err.message : "Failed to create batch");
+      setError(
+        err instanceof ApiError ? err.message : "Failed to create batch",
+      );
     } finally {
       setSubmitting(false);
     }
@@ -87,14 +115,26 @@ function CreateBatchModal({ onClose, onSaved }: { onClose: () => void; onSaved: 
       <form onSubmit={handleSubmit} className="flex flex-col gap-3">
         <div className="grid grid-cols-2 gap-3">
           <Field label="Name" required>
-            <Input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} required />
+            <Input
+              value={form.name}
+              onChange={(e) => setForm({ ...form, name: e.target.value })}
+              required
+            />
           </Field>
           <Field label="Code" required>
-            <Input value={form.code} onChange={(e) => setForm({ ...form, code: e.target.value })} required />
+            <Input
+              value={form.code}
+              onChange={(e) => setForm({ ...form, code: e.target.value })}
+              required
+            />
           </Field>
         </div>
         <Field label="Course" required>
-          <Select value={form.course} onChange={(e) => setForm({ ...form, course: e.target.value })} required>
+          <Select
+            value={form.course}
+            onChange={(e) => setForm({ ...form, course: e.target.value })}
+            required
+          >
             <option value="">Select a course…</option>
             {courses.map((c) => (
               <option key={c._id} value={c._id}>
@@ -104,7 +144,11 @@ function CreateBatchModal({ onClose, onSaved }: { onClose: () => void; onSaved: 
           </Select>
         </Field>
         <Field label="Mentor" required>
-          <Select value={form.mentor} onChange={(e) => setForm({ ...form, mentor: e.target.value })} required>
+          <Select
+            value={form.mentor}
+            onChange={(e) => setForm({ ...form, mentor: e.target.value })}
+            required
+          >
             <option value="">Select a mentor…</option>
             {mentors.map((m) => (
               <option key={m._id} value={m._id}>
@@ -141,7 +185,11 @@ function CreateBatchModal({ onClose, onSaved }: { onClose: () => void; onSaved: 
           />
         </Field>
         <ErrorText>{error}</ErrorText>
-        <ModalActions onCancel={onClose} submitting={submitting} submitLabel="Create Batch" />
+        <ModalActions
+          onCancel={onClose}
+          submitting={submitting}
+          submitLabel="Create Batch"
+        />
       </form>
     </Modal>
   );
@@ -155,7 +203,15 @@ interface EditForm {
   status: string;
 }
 
-function EditBatchModal({ batch, onClose, onSaved }: { batch: BatchRow; onClose: () => void; onSaved: () => void }) {
+function EditBatchModal({
+  batch,
+  onClose,
+  onSaved,
+}: {
+  batch: BatchRow;
+  onClose: () => void;
+  onSaved: () => void;
+}) {
   const [form, setForm] = useState<EditForm>({
     name: batch.name ?? "",
     capacity: batch.capacity != null ? String(batch.capacity) : "",
@@ -176,13 +232,16 @@ function EditBatchModal({ batch, onClose, onSaved }: { batch: BatchRow; onClose:
         status: form.status,
       };
       if (form.capacity) payload.capacity = Number(form.capacity);
-      if (form.startDate) payload.startDate = new Date(form.startDate).toISOString();
+      if (form.startDate)
+        payload.startDate = new Date(form.startDate).toISOString();
       if (form.endDate) payload.endDate = new Date(form.endDate).toISOString();
       await api.patch(`/batches/${batch._id}`, payload);
       onSaved();
       onClose();
     } catch (err) {
-      setError(err instanceof ApiError ? err.message : "Failed to update batch");
+      setError(
+        err instanceof ApiError ? err.message : "Failed to update batch",
+      );
     } finally {
       setSubmitting(false);
     }
@@ -192,7 +251,11 @@ function EditBatchModal({ batch, onClose, onSaved }: { batch: BatchRow; onClose:
     <Modal title="Edit Batch" onClose={onClose}>
       <form onSubmit={handleSubmit} className="flex flex-col gap-3">
         <Field label="Name" required>
-          <Input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} required />
+          <Input
+            value={form.name}
+            onChange={(e) => setForm({ ...form, name: e.target.value })}
+            required
+          />
         </Field>
         <div className="grid grid-cols-2 gap-3">
           <Field label="Start date">
@@ -203,7 +266,11 @@ function EditBatchModal({ batch, onClose, onSaved }: { batch: BatchRow; onClose:
             />
           </Field>
           <Field label="End date">
-            <Input type="date" value={form.endDate} onChange={(e) => setForm({ ...form, endDate: e.target.value })} />
+            <Input
+              type="date"
+              value={form.endDate}
+              onChange={(e) => setForm({ ...form, endDate: e.target.value })}
+            />
           </Field>
         </div>
         <div className="grid grid-cols-2 gap-3">
@@ -217,7 +284,10 @@ function EditBatchModal({ batch, onClose, onSaved }: { batch: BatchRow; onClose:
             />
           </Field>
           <Field label="Status">
-            <Select value={form.status} onChange={(e) => setForm({ ...form, status: e.target.value })}>
+            <Select
+              value={form.status}
+              onChange={(e) => setForm({ ...form, status: e.target.value })}
+            >
               {STATUS_OPTIONS.map((s) => (
                 <option key={s} value={s}>
                   {s}
@@ -227,24 +297,44 @@ function EditBatchModal({ batch, onClose, onSaved }: { batch: BatchRow; onClose:
           </Field>
         </div>
         <ErrorText>{error}</ErrorText>
-        <ModalActions onCancel={onClose} submitting={submitting} submitLabel="Save Changes" />
+        <ModalActions
+          onCancel={onClose}
+          submitting={submitting}
+          submitLabel="Save Changes"
+        />
       </form>
     </Modal>
   );
 }
 
-function BulkEnrollModal({ batch, onClose, onSaved }: { batch: BatchRow; onClose: () => void; onSaved: () => void }) {
+function BulkEnrollModal({
+  batch,
+  onClose,
+  onSaved,
+}: {
+  batch: BatchRow;
+  onClose: () => void;
+  onSaved: () => void;
+}) {
   const [students, setStudents] = useState<User[]>([]);
   const [selected, setSelected] = useState<string[]>([]);
-  const [progress, setProgress] = useState<{ done: number; total: number } | null>(null);
+  const [progress, setProgress] = useState<{
+    done: number;
+    total: number;
+  } | null>(null);
   const [results, setResults] = useState<Record<string, string>>({});
 
   useEffect(() => {
-    api.get<User[]>("/users?role=student&limit=200").then(setStudents).catch(() => setStudents([]));
+    api
+      .get<User[]>("/users?role=student&limit=200")
+      .then(setStudents)
+      .catch(() => setStudents([]));
   }, []);
 
   function toggle(id: string) {
-    setSelected((prev) => (prev.includes(id) ? prev.filter((s) => s !== id) : [...prev, id]));
+    setSelected((prev) =>
+      prev.includes(id) ? prev.filter((s) => s !== id) : [...prev, id],
+    );
   }
 
   async function handleEnroll() {
@@ -256,7 +346,8 @@ function BulkEnrollModal({ batch, onClose, onSaved }: { batch: BatchRow; onClose
         await api.post(`/batches/${batch._id}/enroll`, { studentId });
         nextResults[studentId] = "Enrolled";
       } catch (err) {
-        nextResults[studentId] = err instanceof ApiError ? err.message : "Failed";
+        nextResults[studentId] =
+          err instanceof ApiError ? err.message : "Failed";
       }
       setProgress({ done: i + 1, total: selected.length });
       setResults({ ...nextResults });
@@ -267,20 +358,40 @@ function BulkEnrollModal({ batch, onClose, onSaved }: { batch: BatchRow; onClose
   return (
     <Modal title={`Bulk Enroll — ${batch.name}`} onClose={onClose} wide>
       <div className="flex flex-col gap-3">
-        <p className="text-sm text-muted">Select students to enroll into this batch. Each is enrolled independently — a full batch or an already-enrolled student won&apos;t block the rest.</p>
+        <p className="text-sm text-muted">
+          Select students to enroll into this batch. Each is enrolled
+          independently — a full batch or an already-enrolled student won&apos;t
+          block the rest.
+        </p>
         <div className="max-h-72 overflow-y-auto rounded-lg border border-line">
           {students.map((s) => (
-            <label key={s._id} className="flex items-center justify-between gap-3 border-b border-line px-3 py-2 text-sm last:border-0">
+            <label
+              key={s._id}
+              className="flex items-center justify-between gap-3 border-b border-line px-3 py-2 text-sm last:border-0"
+            >
               <span className="flex items-center gap-2">
-                <input type="checkbox" checked={selected.includes(s._id)} onChange={() => toggle(s._id)} className="accent-purple" disabled={!!progress} />
-                {s.firstName} {s.lastName} <span className="text-xs text-muted">({s.email})</span>
+                <input
+                  type="checkbox"
+                  checked={selected.includes(s._id)}
+                  onChange={() => toggle(s._id)}
+                  className="accent-purple"
+                  disabled={!!progress}
+                />
+                {s.firstName} {s.lastName}{" "}
+                <span className="text-xs text-muted">({s.email})</span>
               </span>
               {results[s._id] && (
-                <span className={`text-xs font-semibold ${results[s._id] === "Enrolled" ? "text-green" : "text-red"}`}>{results[s._id]}</span>
+                <span
+                  className={`text-xs font-semibold ${results[s._id] === "Enrolled" ? "text-green" : "text-red"}`}
+                >
+                  {results[s._id]}
+                </span>
               )}
             </label>
           ))}
-          {students.length === 0 && <p className="p-3 text-sm text-muted">No students found.</p>}
+          {students.length === 0 && (
+            <p className="p-3 text-sm text-muted">No students found.</p>
+          )}
         </div>
         {progress && (
           <p className="text-sm text-ink2">
@@ -296,7 +407,10 @@ function BulkEnrollModal({ batch, onClose, onSaved }: { batch: BatchRow; onClose
               onClick={handleEnroll}
               disabled={selected.length === 0}
               className="rounded-full px-5 py-2.5 text-sm font-bold text-white disabled:opacity-50"
-              style={{ background: "linear-gradient(135deg, var(--purple), var(--purple-dk))" }}
+              style={{
+                background:
+                  "linear-gradient(135deg, var(--purple), var(--purple-dk))",
+              }}
             >
               Enroll {selected.length || ""}
             </button>
@@ -307,7 +421,13 @@ function BulkEnrollModal({ batch, onClose, onSaved }: { batch: BatchRow; onClose
   );
 }
 
-function BulkEmailModal({ batch, onClose }: { batch: BatchRow; onClose: () => void }) {
+function BulkEmailModal({
+  batch,
+  onClose,
+}: {
+  batch: BatchRow;
+  onClose: () => void;
+}) {
   const [subject, setSubject] = useState("");
   const [body, setBody] = useState("");
   const [sending, setSending] = useState(false);
@@ -320,10 +440,13 @@ function BulkEmailModal({ batch, onClose }: { batch: BatchRow; onClose: () => vo
     setError(null);
     setResult(null);
     try {
-      const res = await api.post<{ sent: number; total: number }>(`/batches/${batch._id}/bulk-email`, {
-        subject,
-        body: `<p>${body.replace(/\n/g, "</p><p>")}</p>`,
-      });
+      const res = await api.post<{ sent: number; total: number }>(
+        `/batches/${batch._id}/bulk-email`,
+        {
+          subject,
+          body: `<p>${body.replace(/\n/g, "</p><p>")}</p>`,
+        },
+      );
       setResult(`Sent to ${res.sent} of ${res.total} students.`);
     } catch (err) {
       setError(err instanceof ApiError ? err.message : "Failed to send");
@@ -336,7 +459,11 @@ function BulkEmailModal({ batch, onClose }: { batch: BatchRow; onClose: () => vo
     <Modal title={`Email — ${batch.name}`} onClose={onClose}>
       <form onSubmit={handleSend} className="flex flex-col gap-3">
         <Field label="Subject" required>
-          <Input value={subject} onChange={(e) => setSubject(e.target.value)} required />
+          <Input
+            value={subject}
+            onChange={(e) => setSubject(e.target.value)}
+            required
+          />
         </Field>
         <Field label="Message" required>
           <textarea
@@ -349,7 +476,11 @@ function BulkEmailModal({ batch, onClose }: { batch: BatchRow; onClose: () => vo
         </Field>
         {result && <p className="text-sm font-semibold text-green">{result}</p>}
         <ErrorText>{error}</ErrorText>
-        <ModalActions onCancel={onClose} submitting={sending} submitLabel="Send to batch" />
+        <ModalActions
+          onCancel={onClose}
+          submitting={sending}
+          submitLabel="Send to batch"
+        />
       </form>
     </Modal>
   );
@@ -370,7 +501,11 @@ export default function BatchesPage() {
     api
       .get<BatchRow[]>("/batches?limit=100")
       .then(setBatches)
-      .catch((err) => setError(err instanceof ApiError ? err.message : "Failed to load batches"));
+      .catch((err) =>
+        setError(
+          err instanceof ApiError ? err.message : "Failed to load batches",
+        ),
+      );
   }
 
   useEffect(load, []);
@@ -399,7 +534,10 @@ export default function BatchesPage() {
           <button
             onClick={() => setShowCreate(true)}
             className="rounded-[10px] px-4 py-2.5 text-sm font-bold text-white shadow-[0_4px_14px_rgba(108,63,245,0.28)]"
-            style={{ background: "linear-gradient(135deg, var(--purple), var(--purple-dk))" }}
+            style={{
+              background:
+                "linear-gradient(135deg, var(--purple), var(--purple-dk))",
+            }}
           >
             + Create Batch
           </button>
@@ -411,33 +549,52 @@ export default function BatchesPage() {
       {batches && (
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {batches.map((b) => (
-            <div key={b._id} className="flex flex-col gap-3 rounded-[14px] border border-line bg-white p-5">
+            <div
+              key={b._id}
+              className="flex flex-col gap-3 rounded-[14px] border border-line bg-white p-5"
+            >
               <div className="flex items-start gap-3">
                 <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-[10px] bg-purple-lt text-purple">
                   👥
                 </div>
                 <div className="min-w-0 flex-1">
                   <div className="font-bold text-ink">{b.name}</div>
-                  <div className="truncate text-xs text-muted">{b.course?.title || b.code}</div>
+                  <div className="truncate text-xs text-muted">
+                    {b.course?.title || b.code}
+                  </div>
                 </div>
                 {b.status && (
-                  <span className={`shrink-0 rounded-full px-2.5 py-1 text-xs font-semibold ${STATUS_STYLE[b.status]}`}>
+                  <span
+                    className={`shrink-0 rounded-full px-2.5 py-1 text-xs font-semibold ${STATUS_STYLE[b.status]}`}
+                  >
                     {b.status}
                   </span>
                 )}
               </div>
               <div className="flex items-center justify-between border-t border-line pt-3 text-xs text-muted">
-                <span>{b.mentor ? `${b.mentor.firstName} ${b.mentor.lastName}` : "Unassigned"}</span>
+                <span>
+                  {b.mentor
+                    ? `${b.mentor.firstName} ${b.mentor.lastName}`
+                    : "Unassigned"}
+                </span>
                 <span>
                   {b.enrolledCount ?? 0}/{b.capacity ?? "—"} seats
                 </span>
               </div>
               {isAdmin && (
                 <div className="flex flex-wrap justify-end gap-2 border-t border-line pt-3">
-                  <SecondaryButton type="button" onClick={() => setBulkEnrolling(b)} className="!px-3 !py-1.5 !text-xs">
+                  <SecondaryButton
+                    type="button"
+                    onClick={() => setBulkEnrolling(b)}
+                    className="!px-3 !py-1.5 !text-xs"
+                  >
                     Bulk Enroll
                   </SecondaryButton>
-                  <SecondaryButton type="button" onClick={() => setEmailing(b)} className="!px-3 !py-1.5 !text-xs">
+                  <SecondaryButton
+                    type="button"
+                    onClick={() => setEmailing(b)}
+                    className="!px-3 !py-1.5 !text-xs"
+                  >
                     Email Batch
                   </SecondaryButton>
                   <SecondaryButton
@@ -447,21 +604,46 @@ export default function BatchesPage() {
                   >
                     Edit
                   </SecondaryButton>
-                  <DangerButton type="button" onClick={() => handleDelete(b)} disabled={deletingId === b._id}>
+                  <DangerButton
+                    type="button"
+                    onClick={() => handleDelete(b)}
+                    disabled={deletingId === b._id}
+                  >
                     {deletingId === b._id ? "Deleting…" : "Delete"}
                   </DangerButton>
                 </div>
               )}
             </div>
           ))}
-          {batches.length === 0 && <EmptyState message="No batches yet." className="col-span-full" />}
+          {batches.length === 0 && (
+            <EmptyState message="No batches yet." className="col-span-full" />
+          )}
         </div>
       )}
 
-      {showCreate && <CreateBatchModal onClose={() => setShowCreate(false)} onSaved={load} />}
-      {editing && <EditBatchModal batch={editing} onClose={() => setEditing(null)} onSaved={load} />}
-      {bulkEnrolling && <BulkEnrollModal batch={bulkEnrolling} onClose={() => { setBulkEnrolling(null); load(); }} onSaved={load} />}
-      {emailing && <BulkEmailModal batch={emailing} onClose={() => setEmailing(null)} />}
+      {showCreate && (
+        <CreateBatchModal onClose={() => setShowCreate(false)} onSaved={load} />
+      )}
+      {editing && (
+        <EditBatchModal
+          batch={editing}
+          onClose={() => setEditing(null)}
+          onSaved={load}
+        />
+      )}
+      {bulkEnrolling && (
+        <BulkEnrollModal
+          batch={bulkEnrolling}
+          onClose={() => {
+            setBulkEnrolling(null);
+            load();
+          }}
+          onSaved={load}
+        />
+      )}
+      {emailing && (
+        <BulkEmailModal batch={emailing} onClose={() => setEmailing(null)} />
+      )}
     </div>
   );
 }

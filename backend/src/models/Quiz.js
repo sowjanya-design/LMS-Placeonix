@@ -1,4 +1,4 @@
-const mongoose = require('mongoose');
+const mongoose = require("mongoose");
 
 // Options/Questions are embedded (not separate collections) — same pattern this
 // codebase already uses for Assignment.submissions. Keeps auto-grading a single
@@ -9,24 +9,25 @@ const optionSchema = new mongoose.Schema(
     text: { type: String, required: true, trim: true, maxlength: 500 },
     isCorrect: { type: Boolean, default: false },
   },
-  { _id: true }
+  { _id: true },
 );
 
 const questionSchema = new mongoose.Schema(
   {
     text: { type: String, required: true, trim: true, maxlength: 1000 },
-    type: { type: String, enum: ['single', 'multi'], default: 'single' }, // single = one correct option, multi = one-or-more
+    type: { type: String, enum: ["single", "multi"], default: "single" }, // single = one correct option, multi = one-or-more
     options: {
       type: [optionSchema],
       validate: {
         validator: (opts) => opts.length >= 2 && opts.some((o) => o.isCorrect),
-        message: 'Each question needs at least 2 options and at least 1 marked correct',
+        message:
+          "Each question needs at least 2 options and at least 1 marked correct",
       },
     },
     points: { type: Number, default: 1, min: 0 },
     order: { type: Number, default: 0 },
   },
-  { _id: true }
+  { _id: true },
 );
 
 const quizSchema = new mongoose.Schema(
@@ -34,15 +35,25 @@ const quizSchema = new mongoose.Schema(
     title: { type: String, required: true, trim: true, maxlength: 200 },
     description: String,
 
-    course: { type: mongoose.Schema.Types.ObjectId, ref: 'Course', required: true, index: true },
-    batch: { type: mongoose.Schema.Types.ObjectId, ref: 'Batch', required: true, index: true },
+    course: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Course",
+      required: true,
+      index: true,
+    },
+    batch: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Batch",
+      required: true,
+      index: true,
+    },
     module: { type: mongoose.Schema.Types.ObjectId },
 
     questions: {
       type: [questionSchema],
       validate: {
         validator: (qs) => qs.length > 0,
-        message: 'A quiz needs at least 1 question',
+        message: "A quiz needs at least 1 question",
       },
     },
 
@@ -53,22 +64,35 @@ const quizSchema = new mongoose.Schema(
     availableFrom: Date,
     availableUntil: Date,
 
-    status: { type: String, enum: ['draft', 'published', 'closed'], default: 'draft', index: true },
+    status: {
+      type: String,
+      enum: ["draft", "published", "closed"],
+      default: "draft",
+      index: true,
+    },
 
-    createdBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
+    createdBy: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
+      required: true,
+    },
   },
-  { timestamps: true, toJSON: { virtuals: true }, toObject: { virtuals: true } }
+  {
+    timestamps: true,
+    toJSON: { virtuals: true },
+    toObject: { virtuals: true },
+  },
 );
 
 quizSchema.index({ batch: 1, status: 1 });
 
-quizSchema.virtual('maxScore').get(function () {
+quizSchema.virtual("maxScore").get(function () {
   return this.questions.reduce((sum, q) => sum + (q.points || 0), 0);
 });
 
-quizSchema.virtual('isOpen').get(function () {
+quizSchema.virtual("isOpen").get(function () {
   const now = new Date();
-  if (this.status !== 'published') return false;
+  if (this.status !== "published") return false;
   if (this.availableFrom && now < this.availableFrom) return false;
   if (this.availableUntil && now > this.availableUntil) return false;
   return true;
@@ -86,4 +110,4 @@ quizSchema.methods.toStudentView = function () {
   return obj;
 };
 
-module.exports = mongoose.model('Quiz', quizSchema);
+module.exports = mongoose.model("Quiz", quizSchema);

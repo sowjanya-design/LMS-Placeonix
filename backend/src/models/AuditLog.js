@@ -1,8 +1,8 @@
-const mongoose = require('mongoose');
+const mongoose = require("mongoose");
 
 const auditLogSchema = new mongoose.Schema(
   {
-    userId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', index: true },
+    userId: { type: mongoose.Schema.Types.ObjectId, ref: "User", index: true },
     userEmail: String, // denormalized so logs stay readable if the user is later deleted
     module: { type: String, required: true, index: true }, // e.g. 'auth', 'users', 'payments'
     action: { type: String, required: true, index: true }, // e.g. 'login', 'update_role', 'refund'
@@ -12,10 +12,10 @@ const auditLogSchema = new mongoose.Schema(
     newValue: mongoose.Schema.Types.Mixed,
     ipAddress: String,
     userAgent: String,
-    status: { type: String, enum: ['success', 'failure'], default: 'success' },
+    status: { type: String, enum: ["success", "failure"], default: "success" },
     message: String,
   },
-  { timestamps: true }
+  { timestamps: true },
 );
 
 auditLogSchema.index({ module: 1, action: 1, createdAt: -1 });
@@ -26,8 +26,8 @@ auditLogSchema.statics.record = async function (entry) {
   try {
     await this.create(entry);
   } catch (err) {
-    require('../utils/logger').error(`AuditLog write failed: ${err.message}`);
+    require("../utils/logger").error(`AuditLog write failed: ${err.message}`);
   }
 };
 
-module.exports = mongoose.model('AuditLog', auditLogSchema);
+module.exports = mongoose.model("AuditLog", auditLogSchema);

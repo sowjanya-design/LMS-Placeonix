@@ -7,16 +7,32 @@ import type { Certificate, Enrollment, User } from "@/lib/types";
 import { populatedCourse } from "@/lib/types";
 import { Modal } from "@/components/ui/modal";
 import { EmptyState } from "@/components/ui/empty-state";
-import { Field, Input, Select, DangerButton, ErrorText, ModalActions } from "@/components/ui/form";
+import {
+  Field,
+  Input,
+  Select,
+  DangerButton,
+  ErrorText,
+  ModalActions,
+} from "@/components/ui/form";
 
 // The list can carry either a `status` string or the raw `isRevoked` flag
 // depending on the backend serializer, so treat both as authoritative.
 type AdminCertificate = Certificate & { isRevoked?: boolean };
 
-const CERT_TYPES = ["completion", "merit", "internship", "specialization"] as const;
+const CERT_TYPES = [
+  "completion",
+  "merit",
+  "internship",
+  "specialization",
+] as const;
 
 function fmt(iso: string) {
-  return new Date(iso).toLocaleDateString(undefined, { day: "numeric", month: "short", year: "numeric" });
+  return new Date(iso).toLocaleDateString(undefined, {
+    day: "numeric",
+    month: "short",
+    year: "numeric",
+  });
 }
 
 type RGB = readonly [number, number, number];
@@ -116,9 +132,16 @@ async function downloadCertificatePdf(cert: AdminCertificate) {
   doc.setFont("helvetica", "bold");
   doc.setFontSize(9.5);
   doc.setTextColor(...PURPLE);
-  doc.text("T R A I N I N G   •   P L A C E M E N T   •   F U T U R E", cx, 42, { align: "center" });
+  doc.text(
+    "T R A I N I N G   •   P L A C E M E N T   •   F U T U R E",
+    cx,
+    42,
+    { align: "center" },
+  );
 
-  const title = cert.type ? `Certificate of ${cert.type.charAt(0).toUpperCase()}${cert.type.slice(1)}` : "Certificate of Completion";
+  const title = cert.type
+    ? `Certificate of ${cert.type.charAt(0).toUpperCase()}${cert.type.slice(1)}`
+    : "Certificate of Completion";
   doc.setFont("times", "bold");
   doc.setFontSize(32);
   doc.setTextColor(...NAVY);
@@ -129,7 +152,9 @@ async function downloadCertificatePdf(cert: AdminCertificate) {
   doc.setTextColor(...GRAY);
   doc.text("This is proudly presented to", cx, 76, { align: "center" });
 
-  const studentName = cert.student ? `${cert.student.firstName} ${cert.student.lastName}` : "Student";
+  const studentName = cert.student
+    ? `${cert.student.firstName} ${cert.student.lastName}`
+    : "Student";
   doc.setFont("times", "bolditalic");
   doc.setFontSize(38);
   doc.setTextColor(...PURPLE_DK);
@@ -142,7 +167,9 @@ async function downloadCertificatePdf(cert: AdminCertificate) {
   doc.setFont("times", "normal");
   doc.setFontSize(12);
   doc.setTextColor(...GRAY);
-  doc.text("for successfully completing the program", cx, 115, { align: "center" });
+  doc.text("for successfully completing the program", cx, 115, {
+    align: "center",
+  });
 
   const courseTitle = populatedCourse(cert.course)?.title || "the course";
   doc.setFont("times", "bold");
@@ -154,7 +181,10 @@ async function downloadCertificatePdf(cert: AdminCertificate) {
     doc.setFont("helvetica", "normal");
     doc.setFontSize(10.5);
     doc.setTextColor(...NAVY);
-    const parts = [cert.grade ? `Grade: ${cert.grade}` : "", cert.score != null ? `Score: ${cert.score}%` : ""].filter(Boolean);
+    const parts = [
+      cert.grade ? `Grade: ${cert.grade}` : "",
+      cert.score != null ? `Score: ${cert.score}%` : "",
+    ].filter(Boolean);
     doc.text(parts.join("   ·   "), cx, 137, { align: "center" });
   }
 
@@ -188,7 +218,14 @@ async function downloadCertificatePdf(cert: AdminCertificate) {
   doc.text("VERIFIED", cx, rowY + 7.5, { align: "center" });
   if (markDataUrl) {
     const markSize = 11;
-    doc.addImage(markDataUrl, "PNG", cx - markSize / 2, rowY - 3 - markSize / 2, markSize, markSize);
+    doc.addImage(
+      markDataUrl,
+      "PNG",
+      cx - markSize / 2,
+      rowY - 3 - markSize / 2,
+      markSize,
+      markSize,
+    );
   }
 
   const signX = w - 42;
@@ -211,7 +248,12 @@ async function downloadCertificatePdf(cert: AdminCertificate) {
   doc.setFont("helvetica", "normal");
   doc.setFontSize(9);
   doc.setTextColor(...PURPLE);
-  doc.text(`Verify this certificate at: www.placeonix.com/verify/${cert.certificateNumber}`, cx, h - 14, { align: "center" });
+  doc.text(
+    `Verify this certificate at: www.placeonix.com/verify/${cert.certificateNumber}`,
+    cx,
+    h - 14,
+    { align: "center" },
+  );
 
   if (cert.isRevoked || cert.status === "revoked") {
     doc.setFont("helvetica", "bold");
@@ -231,7 +273,13 @@ interface IssueForm {
   score: string;
 }
 
-function IssueCertificateModal({ onClose, onIssued }: { onClose: () => void; onIssued: () => void }) {
+function IssueCertificateModal({
+  onClose,
+  onIssued,
+}: {
+  onClose: () => void;
+  onIssued: () => void;
+}) {
   const [students, setStudents] = useState<User[] | null>(null);
   const [enrollments, setEnrollments] = useState<Enrollment[] | null>(null);
   const [loadingEnrollments, setLoadingEnrollments] = useState(false);
@@ -249,7 +297,11 @@ function IssueCertificateModal({ onClose, onIssued }: { onClose: () => void; onI
     api
       .get<User[]>("/users?role=student&limit=100")
       .then(setStudents)
-      .catch((err) => setError(err instanceof ApiError ? err.message : "Failed to load students"));
+      .catch((err) =>
+        setError(
+          err instanceof ApiError ? err.message : "Failed to load students",
+        ),
+      );
   }, []);
 
   async function handleStudentChange(studentId: string) {
@@ -259,10 +311,14 @@ function IssueCertificateModal({ onClose, onIssued }: { onClose: () => void; onI
     setLoadingEnrollments(true);
     setError(null);
     try {
-      const list = await api.get<Enrollment[]>(`/users/${studentId}/enrollments`);
+      const list = await api.get<Enrollment[]>(
+        `/users/${studentId}/enrollments`,
+      );
       setEnrollments(list);
     } catch (err) {
-      setError(err instanceof ApiError ? err.message : "Failed to load enrollments");
+      setError(
+        err instanceof ApiError ? err.message : "Failed to load enrollments",
+      );
     } finally {
       setLoadingEnrollments(false);
     }
@@ -277,7 +333,12 @@ function IssueCertificateModal({ onClose, onIssued }: { onClose: () => void; onI
     setSubmitting(true);
     setError(null);
     try {
-      const payload: { enrollmentId: string; type: string; grade?: string; score?: number } = {
+      const payload: {
+        enrollmentId: string;
+        type: string;
+        grade?: string;
+        score?: number;
+      } = {
         enrollmentId: form.enrollmentId,
         type: form.type,
       };
@@ -287,7 +348,9 @@ function IssueCertificateModal({ onClose, onIssued }: { onClose: () => void; onI
       onIssued();
       onClose();
     } catch (err) {
-      setError(err instanceof ApiError ? err.message : "Failed to issue certificate");
+      setError(
+        err instanceof ApiError ? err.message : "Failed to issue certificate",
+      );
     } finally {
       setSubmitting(false);
     }
@@ -302,7 +365,9 @@ function IssueCertificateModal({ onClose, onIssued }: { onClose: () => void; onI
             onChange={(e) => handleStudentChange(e.target.value)}
             disabled={!students}
           >
-            <option value="">{students ? "Select a student…" : "Loading…"}</option>
+            <option value="">
+              {students ? "Select a student…" : "Loading…"}
+            </option>
             {students?.map((s) => (
               <option key={s._id} value={s._id}>
                 {s.firstName} {s.lastName} — {s.email}
@@ -311,10 +376,16 @@ function IssueCertificateModal({ onClose, onIssued }: { onClose: () => void; onI
           </Select>
         </Field>
 
-        <Field label="Enrollment" required hint="Certificates are issued against a specific course enrollment.">
+        <Field
+          label="Enrollment"
+          required
+          hint="Certificates are issued against a specific course enrollment."
+        >
           <Select
             value={form.enrollmentId}
-            onChange={(e) => setForm((f) => ({ ...f, enrollmentId: e.target.value }))}
+            onChange={(e) =>
+              setForm((f) => ({ ...f, enrollmentId: e.target.value }))
+            }
             disabled={!form.studentId || loadingEnrollments || !enrollments}
           >
             <option value="">
@@ -338,7 +409,12 @@ function IssueCertificateModal({ onClose, onIssued }: { onClose: () => void; onI
         <Field label="Type" required>
           <Select
             value={form.type}
-            onChange={(e) => setForm((f) => ({ ...f, type: e.target.value as IssueForm["type"] }))}
+            onChange={(e) =>
+              setForm((f) => ({
+                ...f,
+                type: e.target.value as IssueForm["type"],
+              }))
+            }
           >
             {CERT_TYPES.map((t) => (
               <option key={t} value={t}>
@@ -352,7 +428,9 @@ function IssueCertificateModal({ onClose, onIssued }: { onClose: () => void; onI
           <Field label="Grade" hint="Optional — defaults to enrollment grade.">
             <Input
               value={form.grade}
-              onChange={(e) => setForm((f) => ({ ...f, grade: e.target.value }))}
+              onChange={(e) =>
+                setForm((f) => ({ ...f, grade: e.target.value }))
+              }
               placeholder="e.g. A"
             />
           </Field>
@@ -360,14 +438,20 @@ function IssueCertificateModal({ onClose, onIssued }: { onClose: () => void; onI
             <Input
               type="number"
               value={form.score}
-              onChange={(e) => setForm((f) => ({ ...f, score: e.target.value }))}
+              onChange={(e) =>
+                setForm((f) => ({ ...f, score: e.target.value }))
+              }
               placeholder="e.g. 92"
             />
           </Field>
         </div>
 
         <ErrorText>{error}</ErrorText>
-        <ModalActions onCancel={onClose} submitting={submitting} submitLabel="Issue Certificate" />
+        <ModalActions
+          onCancel={onClose}
+          submitting={submitting}
+          submitLabel="Issue Certificate"
+        />
       </form>
     </Modal>
   );
@@ -384,17 +468,27 @@ export default function CertificatesPage() {
 
   const load = useCallback(() => {
     if (!user) return;
-    const path = user.role === "student" ? "/certificates/me" : "/certificates?limit=100";
+    const path =
+      user.role === "student" ? "/certificates/me" : "/certificates?limit=100";
     api
       .get<AdminCertificate[]>(path)
       .then(setCerts)
-      .catch((err) => setError(err instanceof ApiError ? err.message : "Failed to load certificates"));
+      .catch((err) =>
+        setError(
+          err instanceof ApiError ? err.message : "Failed to load certificates",
+        ),
+      );
   }, [user]);
 
   useEffect(load, [load]);
 
   async function handleRevoke(c: AdminCertificate) {
-    if (!confirm(`Revoke certificate ${c.certificateNumber}? This cannot be undone.`)) return;
+    if (
+      !confirm(
+        `Revoke certificate ${c.certificateNumber}? This cannot be undone.`,
+      )
+    )
+      return;
     const reason = prompt("Reason for revocation:");
     if (reason === null) return;
     setRevokingId(c._id);
@@ -402,7 +496,9 @@ export default function CertificatesPage() {
       await api.post(`/certificates/${c._id}/revoke`, { reason });
       load();
     } catch (err) {
-      alert(err instanceof ApiError ? err.message : "Failed to revoke certificate");
+      alert(
+        err instanceof ApiError ? err.message : "Failed to revoke certificate",
+      );
     } finally {
       setRevokingId(null);
     }
@@ -414,14 +510,19 @@ export default function CertificatesPage() {
         <div>
           <h1 className="text-xl font-bold text-ink">Certificates</h1>
           <p className="text-sm text-muted">
-            {user?.role === "student" ? "Your earned certificates." : "Issued certificates."}
+            {user?.role === "student"
+              ? "Your earned certificates."
+              : "Issued certificates."}
           </p>
         </div>
         {isAdmin && (
           <button
             onClick={() => setShowIssue(true)}
             className="rounded-[10px] px-4 py-2.5 text-sm font-bold text-white shadow-[0_4px_14px_rgba(108,63,245,0.28)]"
-            style={{ background: "linear-gradient(135deg, var(--purple), var(--purple-dk))" }}
+            style={{
+              background:
+                "linear-gradient(135deg, var(--purple), var(--purple-dk))",
+            }}
           >
             + Issue Certificate
           </button>
@@ -435,9 +536,14 @@ export default function CertificatesPage() {
           {certs.map((c) => {
             const revoked = c.isRevoked === true || c.status === "revoked";
             return (
-              <div key={c._id} className="flex flex-col gap-2 rounded-[14px] border border-line bg-white p-5">
+              <div
+                key={c._id}
+                className="flex flex-col gap-2 rounded-[14px] border border-line bg-white p-5"
+              >
                 <div className="flex items-start justify-between">
-                  <div className="flex h-10 w-10 items-center justify-center rounded-[10px] bg-amber-lt text-lg">🏆</div>
+                  <div className="flex h-10 w-10 items-center justify-center rounded-[10px] bg-amber-lt text-lg">
+                    🏆
+                  </div>
                   <span
                     className={`rounded-full px-2.5 py-1 text-xs font-semibold ${
                       revoked ? "bg-red-lt text-red" : "bg-green-lt text-green"
@@ -446,14 +552,18 @@ export default function CertificatesPage() {
                     {revoked ? "revoked" : "active"}
                   </span>
                 </div>
-                <div className="font-bold text-ink">{populatedCourse(c.course)?.title}</div>
+                <div className="font-bold text-ink">
+                  {populatedCourse(c.course)?.title}
+                </div>
                 {user?.role !== "student" && (
                   <div className="text-xs text-muted">
                     {c.student?.firstName} {c.student?.lastName}
                   </div>
                 )}
                 <div className="text-xs text-muted">{c.certificateNumber}</div>
-                <div className="text-xs text-muted">Issued {fmt(c.issuedDate)}</div>
+                <div className="text-xs text-muted">
+                  Issued {fmt(c.issuedDate)}
+                </div>
                 <div className="mt-1 flex flex-wrap gap-2">
                   <button
                     onClick={() => downloadCertificatePdf(c)}
@@ -473,11 +583,21 @@ export default function CertificatesPage() {
               </div>
             );
           })}
-          {certs.length === 0 && <EmptyState message="No certificates yet." className="col-span-full" />}
+          {certs.length === 0 && (
+            <EmptyState
+              message="No certificates yet."
+              className="col-span-full"
+            />
+          )}
         </div>
       )}
 
-      {showIssue && <IssueCertificateModal onClose={() => setShowIssue(false)} onIssued={load} />}
+      {showIssue && (
+        <IssueCertificateModal
+          onClose={() => setShowIssue(false)}
+          onIssued={load}
+        />
+      )}
     </div>
   );
 }

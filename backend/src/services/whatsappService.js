@@ -1,4 +1,4 @@
-const logger = require('../utils/logger');
+const logger = require("../utils/logger");
 
 // Uses Meta's WhatsApp Cloud API directly (no reseller markup, free
 // developer tier) rather than a wrapper like Twilio — same shape as
@@ -6,9 +6,10 @@ const logger = require('../utils/logger');
 // fully wired and testable today, functional the moment real credentials
 // (WHATSAPP_PHONE_NUMBER_ID, WHATSAPP_ACCESS_TOKEN) are added to .env.
 // See https://developers.facebook.com/docs/whatsapp/cloud-api.
-const API_VERSION = 'v20.0';
+const API_VERSION = "v20.0";
 
-const isConfigured = () => !!(process.env.WHATSAPP_PHONE_NUMBER_ID && process.env.WHATSAPP_ACCESS_TOKEN);
+const isConfigured = () =>
+  !!(process.env.WHATSAPP_PHONE_NUMBER_ID && process.env.WHATSAPP_ACCESS_TOKEN);
 
 /**
  * Sends a plain-text WhatsApp message. `to` must be an E.164-ish number
@@ -18,9 +19,9 @@ const isConfigured = () => !!(process.env.WHATSAPP_PHONE_NUMBER_ID && process.en
  * attached to, same rule as sendEmail's callers already follow.
  */
 async function sendWhatsAppMessage({ to, body }) {
-  const digitsOnly = String(to || '').replace(/\D/g, '');
+  const digitsOnly = String(to || "").replace(/\D/g, "");
   if (!digitsOnly) {
-    logger.warn('sendWhatsAppMessage: no valid phone number, skipping');
+    logger.warn("sendWhatsAppMessage: no valid phone number, skipping");
     return { skipped: true };
   }
 
@@ -33,22 +34,24 @@ async function sendWhatsAppMessage({ to, body }) {
     const res = await fetch(
       `https://graph.facebook.com/${API_VERSION}/${process.env.WHATSAPP_PHONE_NUMBER_ID}/messages`,
       {
-        method: 'POST',
+        method: "POST",
         headers: {
           Authorization: `Bearer ${process.env.WHATSAPP_ACCESS_TOKEN}`,
-          'Content-Type': 'application/json',
+          "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          messaging_product: 'whatsapp',
+          messaging_product: "whatsapp",
           to: digitsOnly,
-          type: 'text',
+          type: "text",
           text: { body },
         }),
-      }
+      },
     );
     const data = await res.json();
     if (!res.ok) {
-      logger.error(`WhatsApp send failed to ${digitsOnly}: ${JSON.stringify(data)}`);
+      logger.error(
+        `WhatsApp send failed to ${digitsOnly}: ${JSON.stringify(data)}`,
+      );
       return { error: data };
     }
     logger.info(`WhatsApp message sent to ${digitsOnly}`);

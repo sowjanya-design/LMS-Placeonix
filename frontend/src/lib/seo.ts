@@ -1,4 +1,4 @@
-import { Metadata } from 'next';
+import { Metadata } from "next";
 
 interface SEOProps {
   title: string;
@@ -14,27 +14,27 @@ export function constructMetadata({
   description,
   keywords = [],
   canonicalUrl,
-  ogImage = '/default-og.png', // Add default image path
+  ogImage = "/default-og.png", // Add default image path
   noindex = false,
 }: SEOProps): Metadata {
   return {
     title: `${title} | Placeonix`,
     description,
-    keywords: keywords.join(', '),
+    keywords: keywords.join(", "),
     openGraph: {
       title: `${title} | Placeonix`,
       description,
-      type: 'website',
+      type: "website",
       url: canonicalUrl,
       images: [
         {
           url: ogImage,
         },
       ],
-      siteName: 'Placeonix',
+      siteName: "Placeonix",
     },
     twitter: {
-      card: 'summary_large_image',
+      card: "summary_large_image",
       title: `${title} | Placeonix`,
       description,
       images: [ogImage],

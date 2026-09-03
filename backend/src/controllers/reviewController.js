@@ -1,9 +1,9 @@
-const Review = require('../models/Review');
-const User = require('../models/User');
-const Course = require('../models/Course');
-const AppError = require('../utils/AppError');
-const ApiResponse = require('../utils/ApiResponse');
-const asyncHandler = require('../utils/asyncHandler');
+const Review = require("../models/Review");
+const User = require("../models/User");
+const Course = require("../models/Course");
+const AppError = require("../utils/AppError");
+const ApiResponse = require("../utils/ApiResponse");
+const asyncHandler = require("../utils/asyncHandler");
 
 // @desc   List reviews for a target
 // @route  GET /api/v1/reviews?targetType=mentor&target=<id>
@@ -16,8 +16,8 @@ exports.listReviews = asyncHandler(async (req, res) => {
 
   const total = await Review.countDocuments(filter);
   const reviews = await Review.find(filter)
-    .populate('student', 'firstName lastName avatar')
-    .sort('-createdAt')
+    .populate("student", "firstName lastName avatar")
+    .sort("-createdAt")
     .skip((page - 1) * limit)
     .limit(Number(limit));
 
@@ -25,13 +25,20 @@ exports.listReviews = asyncHandler(async (req, res) => {
   const data = reviews.map((r) => {
     if (r.isAnonymous) {
       const obj = r.toObject();
-      obj.student = { firstName: 'Anonymous', lastName: 'Student' };
+      obj.student = { firstName: "Anonymous", lastName: "Student" };
       return obj;
     }
     return r;
   });
 
-  return ApiResponse.paginated(res, 'Reviews fetched', data, page, limit, total);
+  return ApiResponse.paginated(
+    res,
+    "Reviews fetched",
+    data,
+    page,
+    limit,
+    total,
+  );
 });
 
 // @desc   Create review
@@ -44,54 +51,70 @@ exports.createReview = asyncHandler(async (req, res, next) => {
     targetType,
     target,
   });
-  if (existing) return next(new AppError('You already reviewed this', 409));
+  if (existing) return next(new AppError("You already reviewed this", 409));
 
   const review = await Review.create({ ...req.body, student: req.user._id });
 
   // Update aggregate rating
   await updateTargetRating(targetType, target);
 
-  return ApiResponse.created(res, 'Review submitted', { review });
+  return ApiResponse.created(res, "Review submitted", { review });
 });
 
 // @desc   Update review
 // @route  PATCH /api/v1/reviews/:id
 exports.updateReview = asyncHandler(async (req, res, next) => {
-  const review = await Review.findOne({ _id: req.params.id, student: req.user._id });
-  if (!review) return next(new AppError('Review not found', 404));
+  const review = await Review.findOne({
+    _id: req.params.id,
+    student: req.user._id,
+  });
+  if (!review) return next(new AppError("Review not found", 404));
 
   // targetType/target define what the review is about — not editable after
   // creation (that would let a review be silently re-pointed at a different
   // mentor/course while keeping its original helpful count and history).
-  const { rating, title, comment, aspects, wouldRecommend, isAnonymous } = req.body;
-  const updates = { rating, title, comment, aspects, wouldRecommend, isAnonymous };
-  Object.keys(updates).forEach((k) => updates[k] === undefined && delete updates[k]);
+  const { rating, title, comment, aspects, wouldRecommend, isAnonymous } =
+    req.body;
+  const updates = {
+    rating,
+    title,
+    comment,
+    aspects,
+    wouldRecommend,
+    isAnonymous,
+  };
+  Object.keys(updates).forEach(
+    (k) => updates[k] === undefined && delete updates[k],
+  );
   Object.assign(review, updates);
   await review.save();
 
   await updateTargetRating(review.targetType, review.target);
 
-  return ApiResponse.success(res, 200, 'Review updated', { review });
+  return ApiResponse.success(res, 200, "Review updated", { review });
 });
 
 // @desc   Delete review
 // @route  DELETE /api/v1/reviews/:id
 exports.deleteReview = asyncHandler(async (req, res, next) => {
-  if (req.user.role === 'admin') {
+  if (req.user.role === "admin") {
     const review = await Review.findById(req.params.id);
-    if (!review) return next(new AppError('Review not found', 404));
+    if (!review) return next(new AppError("Review not found", 404));
     await review.deleteOne();
     await updateTargetRating(review.targetType, review.target);
-    return ApiResponse.success(res, 200, 'Review deleted');
+    return ApiResponse.success(res, 200, "Review deleted");
   }
 
-  const review = await Review.findOne({ _id: req.params.id, student: req.user._id });
-  if (!review) return next(new AppError('Review not found', 404));
+  const review = await Review.findOne({
+    _id: req.params.id,
+    student: req.user._id,
+  });
+  if (!review) return next(new AppError("Review not found", 404));
 
   await review.deleteOne();
   await updateTargetRating(review.targetType, review.target);
 
-  return ApiResponse.success(res, 200, 'Review deleted');
+  return ApiResponse.success(res, 200, "Review deleted");
 });
 
 // @desc   Mark review helpful
@@ -103,26 +126,33 @@ exports.markHelpful = asyncHandler(async (req, res, next) => {
   const review = await Review.findOneAndUpdate(
     { _id: req.params.id, helpfulBy: { $ne: req.user._id } },
     { $inc: { helpful: 1 }, $push: { helpfulBy: req.user._id } },
-    { new: true }
+    { new: true },
   );
   if (review) {
-    return ApiResponse.success(res, 200, 'Marked helpful', { helpful: review.helpful });
+    return ApiResponse.success(res, 200, "Marked helpful", {
+      helpful: review.helpful,
+    });
   }
 
-  const existing = await Review.findById(req.params.id).select('helpful');
-  if (!existing) return next(new AppError('Review not found', 404));
-  return ApiResponse.success(res, 200, 'Already marked helpful', { helpful: existing.helpful });
+  const existing = await Review.findById(req.params.id).select("helpful");
+  if (!existing) return next(new AppError("Review not found", 404));
+  return ApiResponse.success(res, 200, "Already marked helpful", {
+    helpful: existing.helpful,
+  });
 });
 
 // @desc   Mentor/admin response to review
 // @route  POST /api/v1/reviews/:id/respond
 exports.respondToReview = asyncHandler(async (req, res, next) => {
   const review = await Review.findById(req.params.id);
-  if (!review) return next(new AppError('Review not found', 404));
+  if (!review) return next(new AppError("Review not found", 404));
 
   // Only target user (mentor) or admin can respond
-  if (req.user.role !== 'admin' && String(review.target) !== String(req.user._id)) {
-    return next(new AppError('Not authorized to respond', 403));
+  if (
+    req.user.role !== "admin" &&
+    String(review.target) !== String(req.user._id)
+  ) {
+    return next(new AppError("Not authorized to respond", 403));
   }
 
   review.response = {
@@ -131,7 +161,7 @@ exports.respondToReview = asyncHandler(async (req, res, next) => {
     respondedAt: new Date(),
   };
   await review.save();
-  return ApiResponse.success(res, 200, 'Response added', { review });
+  return ApiResponse.success(res, 200, "Response added", { review });
 });
 
 // ── Helper: recalculate aggregate rating ──
@@ -141,7 +171,7 @@ async function updateTargetRating(targetType, targetId) {
     {
       $group: {
         _id: null,
-        avgRating: { $avg: '$rating' },
+        avgRating: { $avg: "$rating" },
         count: { $sum: 1 },
       },
     },
@@ -149,12 +179,12 @@ async function updateTargetRating(targetType, targetId) {
 
   const data = stats[0] || { avgRating: 0, count: 0 };
 
-  if (targetType === 'mentor') {
+  if (targetType === "mentor") {
     await User.findByIdAndUpdate(targetId, {
-      'mentorProfile.rating': Math.round(data.avgRating * 10) / 10,
-      'mentorProfile.totalReviews': data.count,
+      "mentorProfile.rating": Math.round(data.avgRating * 10) / 10,
+      "mentorProfile.totalReviews": data.count,
     });
-  } else if (targetType === 'course') {
+  } else if (targetType === "course") {
     await Course.findByIdAndUpdate(targetId, {
       rating: Math.round(data.avgRating * 10) / 10,
       reviewCount: data.count,

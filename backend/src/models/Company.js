@@ -1,4 +1,4 @@
-const mongoose = require('mongoose');
+const mongoose = require("mongoose");
 
 const companySchema = new mongoose.Schema(
   {
@@ -11,9 +11,13 @@ const companySchema = new mongoose.Schema(
     contactEmail: String,
     contactPhone: String,
     notes: String,
-    createdBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
+    createdBy: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
+      required: true,
+    },
   },
-  { timestamps: true }
+  { timestamps: true },
 );
 
-module.exports = mongoose.model('Company', companySchema);
+module.exports = mongoose.model("Company", companySchema);

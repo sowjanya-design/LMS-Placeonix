@@ -1,20 +1,33 @@
-const mongoose = require('mongoose');
+const mongoose = require("mongoose");
 
 const paymentSchema = new mongoose.Schema(
   {
     enrollment: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: 'Enrollment',
+      ref: "Enrollment",
       required: true,
       index: true,
     },
-    student: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true, index: true },
+    student: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
+      required: true,
+      index: true,
+    },
 
     amount: { type: Number, required: true, min: 0 },
-    currency: { type: String, default: 'INR' },
+    currency: { type: String, default: "INR" },
     method: {
       type: String,
-      enum: ['cash', 'upi', 'card', 'bank_transfer', 'razorpay', 'stripe', 'other'],
+      enum: [
+        "cash",
+        "upi",
+        "card",
+        "bank_transfer",
+        "razorpay",
+        "stripe",
+        "other",
+      ],
       required: true,
     },
 
@@ -24,8 +37,15 @@ const paymentSchema = new mongoose.Schema(
 
     status: {
       type: String,
-      enum: ['pending', 'processing', 'completed', 'failed', 'refunded', 'partial-refund'],
-      default: 'pending',
+      enum: [
+        "pending",
+        "processing",
+        "completed",
+        "failed",
+        "refunded",
+        "partial-refund",
+      ],
+      default: "pending",
       index: true,
     },
     paidOn: Date,
@@ -41,19 +61,19 @@ const paymentSchema = new mongoose.Schema(
       refundTransactionId: String,
     },
 
-    receivedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
+    receivedBy: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
     metadata: { type: Map, of: String },
   },
-  { timestamps: true }
+  { timestamps: true },
 );
 
-paymentSchema.pre('save', async function (next) {
+paymentSchema.pre("save", async function (next) {
   if (this.isNew && !this.invoiceNumber) {
     const year = new Date().getFullYear();
-    const count = await mongoose.model('Payment').countDocuments();
-    this.invoiceNumber = `PLX/${year}/${String(count + 1).padStart(6, '0')}`;
+    const count = await mongoose.model("Payment").countDocuments();
+    this.invoiceNumber = `PLX/${year}/${String(count + 1).padStart(6, "0")}`;
   }
   next();
 });
 
-module.exports = mongoose.model('Payment', paymentSchema);
+module.exports = mongoose.model("Payment", paymentSchema);

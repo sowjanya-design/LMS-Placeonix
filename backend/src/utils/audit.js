@@ -1,4 +1,4 @@
-const AuditLog = require('../models/AuditLog');
+const AuditLog = require("../models/AuditLog");
 
 /**
  * Records an audit log entry from a request + a domain-specific action.
@@ -14,8 +14,8 @@ function auditLog(req, entry) {
     userId: entry.userId ?? req.user?._id,
     userEmail: entry.userEmail ?? req.user?.email,
     ipAddress: req.ip,
-    userAgent: req.headers?.['user-agent'],
-    status: 'success',
+    userAgent: req.headers?.["user-agent"],
+    status: "success",
     ...entry,
   });
 }

@@ -1,10 +1,14 @@
-const videoRepository = require('./video.repository');
-const cloudflareService = require('./cloudflare.service');
+const videoRepository = require("./video.repository");
+const cloudflareService = require("./cloudflare.service");
 
 class VideoService {
   async getDirectUploadUrl(user, payload) {
-    if (user.role !== 'mentor' && user.role !== 'admin' && user.role !== 'super_admin') {
-      throw new Error('Unauthorized to upload videos');
+    if (
+      user.role !== "mentor" &&
+      user.role !== "admin" &&
+      user.role !== "super_admin"
+    ) {
+      throw new Error("Unauthorized to upload videos");
     }
 
     const { uploadUrl, uid } = await cloudflareService.createDirectUploadUrl();
@@ -13,10 +17,10 @@ class VideoService {
       courseId: payload.courseId,
       lessonId: payload.lessonId,
       title: payload.title,
-      description: payload.description || '',
+      description: payload.description || "",
       videoUID: uid,
       uploadedBy: user._id,
-      status: 'pending',
+      status: "pending",
     };
 
     await videoRepository.createVideo(videoData);
@@ -27,41 +31,51 @@ class VideoService {
   async handleWebhook(payload) {
     // Basic implementation: if video is ready, update status in DB
     if (payload && payload.uid) {
-      const status = payload.status && payload.status.state === 'ready' ? 'ready' : 'processing';
-      const duration = payload.meta && payload.meta.duration ? payload.meta.duration : 0;
-      const thumbnail = payload.thumbnail || '';
-      
+      const status =
+        payload.status && payload.status.state === "ready"
+          ? "ready"
+          : "processing";
+      const duration =
+        payload.meta && payload.meta.duration ? payload.meta.duration : 0;
+      const thumbnail = payload.thumbnail || "";
+
       await videoRepository.updateVideoByUID(payload.uid, {
         status,
         duration,
-        thumbnail
+        thumbnail,
       });
     }
   }
 
-  async finalizeUpload(uid, duration = 0, thumbnail = '') {
+  async finalizeUpload(uid, duration = 0, thumbnail = "") {
     await videoRepository.updateVideoByUID(uid, {
-      status: 'ready',
+      status: "ready",
       duration,
-      thumbnail
+      thumbnail,
     });
   }
 
   async getVideoById(user, id) {
     const video = await videoRepository.findVideoById(id);
-    if (!video) throw new Error('Video not found');
+    if (!video) throw new Error("Video not found");
 
     // Here we can generate a signed playback URL if requested
-    const playbackToken = await cloudflareService.generatePlaybackUrl(video.videoUID);
+    const playbackToken = await cloudflareService.generatePlaybackUrl(
+      video.videoUID,
+    );
     return { video, playbackToken };
   }
 
   async updateVideo(user, id, updateData) {
     const video = await videoRepository.findVideoById(id);
-    if (!video) throw new Error('Video not found');
+    if (!video) throw new Error("Video not found");
 
-    if (user.role !== 'admin' && user.role !== 'super_admin' && String(video.uploadedBy) !== String(user._id)) {
-      throw new Error('Unauthorized to update this video');
+    if (
+      user.role !== "admin" &&
+      user.role !== "super_admin" &&
+      String(video.uploadedBy) !== String(user._id)
+    ) {
+      throw new Error("Unauthorized to update this video");
     }
 
     return await videoRepository.updateVideo(id, updateData);
@@ -69,10 +83,14 @@ class VideoService {
 
   async deleteVideo(user, id) {
     const video = await videoRepository.findVideoById(id);
-    if (!video) throw new Error('Video not found');
+    if (!video) throw new Error("Video not found");
 
-    if (user.role !== 'admin' && user.role !== 'super_admin' && String(video.uploadedBy) !== String(user._id)) {
-      throw new Error('Unauthorized to delete this video');
+    if (
+      user.role !== "admin" &&
+      user.role !== "super_admin" &&
+      String(video.uploadedBy) !== String(user._id)
+    ) {
+      throw new Error("Unauthorized to delete this video");
     }
 
     await cloudflareService.deleteVideo(video.videoUID);

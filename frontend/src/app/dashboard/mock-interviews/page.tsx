@@ -5,7 +5,14 @@ import { useAuth } from "@/lib/auth-context";
 import { api, ApiError } from "@/lib/api";
 import type { MockInterview, User } from "@/lib/types";
 import { Modal } from "@/components/ui/modal";
-import { Field, Input, Textarea, Select, ErrorText, ModalActions } from "@/components/ui/form";
+import {
+  Field,
+  Input,
+  Textarea,
+  Select,
+  ErrorText,
+  ModalActions,
+} from "@/components/ui/form";
 
 const STATUS_STYLE: Record<string, string> = {
   scheduled: "bg-blue-lt text-blue",
@@ -13,7 +20,13 @@ const STATUS_STYLE: Record<string, string> = {
   cancelled: "bg-bg text-muted",
 };
 
-const TYPE_OPTS = ["technical", "hr", "aptitude", "group-discussion", "system-design"] as const;
+const TYPE_OPTS = [
+  "technical",
+  "hr",
+  "aptitude",
+  "group-discussion",
+  "system-design",
+] as const;
 const MODE_OPTS = ["online", "offline"] as const;
 const STATUS_OPTS = ["scheduled", "completed", "cancelled"] as const;
 
@@ -22,7 +35,13 @@ const STATUS_OPTS = ["scheduled", "completed", "cancelled"] as const;
 type MockDetail = MockInterview & { notes?: string };
 
 function fmt(iso: string) {
-  return new Date(iso).toLocaleString(undefined, { weekday: "short", month: "short", day: "numeric", hour: "numeric", minute: "2-digit" });
+  return new Date(iso).toLocaleString(undefined, {
+    weekday: "short",
+    month: "short",
+    day: "numeric",
+    hour: "numeric",
+    minute: "2-digit",
+  });
 }
 
 // ISO → value accepted by <input type="datetime-local"> (local wall-clock, no TZ suffix).
@@ -43,7 +62,13 @@ interface ScheduleForm {
   meetingLink: string;
 }
 
-function ScheduleMockModal({ onClose, onSaved }: { onClose: () => void; onSaved: () => void }) {
+function ScheduleMockModal({
+  onClose,
+  onSaved,
+}: {
+  onClose: () => void;
+  onSaved: () => void;
+}) {
   const [students, setStudents] = useState<User[] | null>(null);
   const [form, setForm] = useState<ScheduleForm>({
     student: "",
@@ -62,7 +87,11 @@ function ScheduleMockModal({ onClose, onSaved }: { onClose: () => void; onSaved:
     api
       .get<User[]>("/users?role=student&limit=100")
       .then(setStudents)
-      .catch((err) => setError(err instanceof ApiError ? err.message : "Failed to load students"));
+      .catch((err) =>
+        setError(
+          err instanceof ApiError ? err.message : "Failed to load students",
+        ),
+      );
   }, []);
 
   async function handleSubmit(e: React.FormEvent) {
@@ -83,12 +112,17 @@ function ScheduleMockModal({ onClose, onSaved }: { onClose: () => void; onSaved:
       };
       if (form.role.trim()) payload.role = form.role.trim();
       if (form.company.trim()) payload.company = form.company.trim();
-      if (form.meetingLink.trim()) payload.meetingLink = form.meetingLink.trim();
+      if (form.meetingLink.trim())
+        payload.meetingLink = form.meetingLink.trim();
       await api.post("/mock-interviews", payload);
       onSaved();
       onClose();
     } catch (err) {
-      setError(err instanceof ApiError ? err.message : "Failed to schedule mock interview");
+      setError(
+        err instanceof ApiError
+          ? err.message
+          : "Failed to schedule mock interview",
+      );
     } finally {
       setSubmitting(false);
     }
@@ -98,8 +132,16 @@ function ScheduleMockModal({ onClose, onSaved }: { onClose: () => void; onSaved:
     <Modal title="Schedule Mock Interview" onClose={onClose} wide>
       <form onSubmit={handleSubmit} className="flex flex-col gap-4">
         <Field label="Student" required>
-          <Select value={form.student} onChange={(e) => setForm((f) => ({ ...f, student: e.target.value }))} disabled={!students}>
-            <option value="">{students ? "Select a student…" : "Loading…"}</option>
+          <Select
+            value={form.student}
+            onChange={(e) =>
+              setForm((f) => ({ ...f, student: e.target.value }))
+            }
+            disabled={!students}
+          >
+            <option value="">
+              {students ? "Select a student…" : "Loading…"}
+            </option>
             {students?.map((s) => (
               <option key={s._id} value={s._id}>
                 {s.firstName} {s.lastName} — {s.email}
@@ -109,16 +151,34 @@ function ScheduleMockModal({ onClose, onSaved }: { onClose: () => void; onSaved:
         </Field>
 
         <Field label="Title" required>
-          <Input value={form.title} onChange={(e) => setForm((f) => ({ ...f, title: e.target.value }))} placeholder="e.g. Technical round — DSA" />
+          <Input
+            value={form.title}
+            onChange={(e) => setForm((f) => ({ ...f, title: e.target.value }))}
+            placeholder="e.g. Technical round — DSA"
+          />
         </Field>
 
         <Field label="Date & time" required>
-          <Input type="datetime-local" value={form.scheduledAt} onChange={(e) => setForm((f) => ({ ...f, scheduledAt: e.target.value }))} />
+          <Input
+            type="datetime-local"
+            value={form.scheduledAt}
+            onChange={(e) =>
+              setForm((f) => ({ ...f, scheduledAt: e.target.value }))
+            }
+          />
         </Field>
 
         <div className="grid grid-cols-2 gap-4">
           <Field label="Type">
-            <Select value={form.type} onChange={(e) => setForm((f) => ({ ...f, type: e.target.value as ScheduleForm["type"] }))}>
+            <Select
+              value={form.type}
+              onChange={(e) =>
+                setForm((f) => ({
+                  ...f,
+                  type: e.target.value as ScheduleForm["type"],
+                }))
+              }
+            >
               {TYPE_OPTS.map((t) => (
                 <option key={t} value={t}>
                   {t}
@@ -127,7 +187,15 @@ function ScheduleMockModal({ onClose, onSaved }: { onClose: () => void; onSaved:
             </Select>
           </Field>
           <Field label="Mode">
-            <Select value={form.mode} onChange={(e) => setForm((f) => ({ ...f, mode: e.target.value as ScheduleForm["mode"] }))}>
+            <Select
+              value={form.mode}
+              onChange={(e) =>
+                setForm((f) => ({
+                  ...f,
+                  mode: e.target.value as ScheduleForm["mode"],
+                }))
+              }
+            >
               {MODE_OPTS.map((m) => (
                 <option key={m} value={m}>
                   {m}
@@ -139,19 +207,42 @@ function ScheduleMockModal({ onClose, onSaved }: { onClose: () => void; onSaved:
 
         <div className="grid grid-cols-2 gap-4">
           <Field label="Target role">
-            <Input value={form.role} onChange={(e) => setForm((f) => ({ ...f, role: e.target.value }))} placeholder="e.g. Full Stack Developer" />
+            <Input
+              value={form.role}
+              onChange={(e) => setForm((f) => ({ ...f, role: e.target.value }))}
+              placeholder="e.g. Full Stack Developer"
+            />
           </Field>
           <Field label="Target company">
-            <Input value={form.company} onChange={(e) => setForm((f) => ({ ...f, company: e.target.value }))} placeholder="Optional" />
+            <Input
+              value={form.company}
+              onChange={(e) =>
+                setForm((f) => ({ ...f, company: e.target.value }))
+              }
+              placeholder="Optional"
+            />
           </Field>
         </div>
 
-        <Field label="Meeting link" hint="Optional — shown as a Join button for online interviews.">
-          <Input value={form.meetingLink} onChange={(e) => setForm((f) => ({ ...f, meetingLink: e.target.value }))} placeholder="https://…" />
+        <Field
+          label="Meeting link"
+          hint="Optional — shown as a Join button for online interviews."
+        >
+          <Input
+            value={form.meetingLink}
+            onChange={(e) =>
+              setForm((f) => ({ ...f, meetingLink: e.target.value }))
+            }
+            placeholder="https://…"
+          />
         </Field>
 
         {error && <ErrorText>{error}</ErrorText>}
-        <ModalActions onCancel={onClose} submitting={submitting} submitLabel="Schedule" />
+        <ModalActions
+          onCancel={onClose}
+          submitting={submitting}
+          submitLabel="Schedule"
+        />
       </form>
     </Modal>
   );
@@ -165,11 +256,21 @@ interface EditForm {
   rating: string;
 }
 
-function EditMockModal({ mock, onClose, onSaved }: { mock: MockDetail; onClose: () => void; onSaved: () => void }) {
+function EditMockModal({
+  mock,
+  onClose,
+  onSaved,
+}: {
+  mock: MockDetail;
+  onClose: () => void;
+  onSaved: () => void;
+}) {
   const [form, setForm] = useState<EditForm>({
     title: mock.title,
     scheduledAt: toLocalInput(mock.scheduledAt),
-    status: (STATUS_OPTS.includes(mock.status as EditForm["status"]) ? mock.status : "scheduled") as EditForm["status"],
+    status: (STATUS_OPTS.includes(mock.status as EditForm["status"])
+      ? mock.status
+      : "scheduled") as EditForm["status"],
     feedback: mock.notes ?? "",
     rating: mock.overallScore != null ? String(mock.overallScore) : "",
   });
@@ -197,7 +298,11 @@ function EditMockModal({ mock, onClose, onSaved }: { mock: MockDetail; onClose: 
       onSaved();
       onClose();
     } catch (err) {
-      setError(err instanceof ApiError ? err.message : "Failed to update mock interview");
+      setError(
+        err instanceof ApiError
+          ? err.message
+          : "Failed to update mock interview",
+      );
     } finally {
       setSubmitting(false);
     }
@@ -207,15 +312,32 @@ function EditMockModal({ mock, onClose, onSaved }: { mock: MockDetail; onClose: 
     <Modal title="Edit Mock Interview" onClose={onClose}>
       <form onSubmit={handleSubmit} className="flex flex-col gap-4">
         <Field label="Title" required>
-          <Input value={form.title} onChange={(e) => setForm((f) => ({ ...f, title: e.target.value }))} />
+          <Input
+            value={form.title}
+            onChange={(e) => setForm((f) => ({ ...f, title: e.target.value }))}
+          />
         </Field>
 
         <Field label="Date & time" required>
-          <Input type="datetime-local" value={form.scheduledAt} onChange={(e) => setForm((f) => ({ ...f, scheduledAt: e.target.value }))} />
+          <Input
+            type="datetime-local"
+            value={form.scheduledAt}
+            onChange={(e) =>
+              setForm((f) => ({ ...f, scheduledAt: e.target.value }))
+            }
+          />
         </Field>
 
         <Field label="Status">
-          <Select value={form.status} onChange={(e) => setForm((f) => ({ ...f, status: e.target.value as EditForm["status"] }))}>
+          <Select
+            value={form.status}
+            onChange={(e) =>
+              setForm((f) => ({
+                ...f,
+                status: e.target.value as EditForm["status"],
+              }))
+            }
+          >
             {STATUS_OPTS.map((s) => (
               <option key={s} value={s}>
                 {s}
@@ -225,15 +347,33 @@ function EditMockModal({ mock, onClose, onSaved }: { mock: MockDetail; onClose: 
         </Field>
 
         <Field label="Rating" hint="Overall score out of 100.">
-          <Input type="number" min={0} max={100} value={form.rating} onChange={(e) => setForm((f) => ({ ...f, rating: e.target.value }))} placeholder="e.g. 78" />
+          <Input
+            type="number"
+            min={0}
+            max={100}
+            value={form.rating}
+            onChange={(e) => setForm((f) => ({ ...f, rating: e.target.value }))}
+            placeholder="e.g. 78"
+          />
         </Field>
 
         <Field label="Feedback">
-          <Textarea rows={4} value={form.feedback} onChange={(e) => setForm((f) => ({ ...f, feedback: e.target.value }))} placeholder="Notes / feedback for the student…" />
+          <Textarea
+            rows={4}
+            value={form.feedback}
+            onChange={(e) =>
+              setForm((f) => ({ ...f, feedback: e.target.value }))
+            }
+            placeholder="Notes / feedback for the student…"
+          />
         </Field>
 
         {error && <ErrorText>{error}</ErrorText>}
-        <ModalActions onCancel={onClose} submitting={submitting} submitLabel="Save changes" />
+        <ModalActions
+          onCancel={onClose}
+          submitting={submitting}
+          submitLabel="Save changes"
+        />
       </form>
     </Modal>
   );
@@ -252,7 +392,13 @@ export default function MockInterviewsPage() {
     api
       .get<MockDetail[]>("/mock-interviews?limit=100")
       .then(setMocks)
-      .catch((err) => setError(err instanceof ApiError ? err.message : "Failed to load mock interviews"));
+      .catch((err) =>
+        setError(
+          err instanceof ApiError
+            ? err.message
+            : "Failed to load mock interviews",
+        ),
+      );
   }, []);
 
   useEffect(load, [load]);
@@ -289,19 +435,37 @@ export default function MockInterviewsPage() {
       {mocks && (
         <div className="flex flex-col gap-3">
           {mocks.map((m) => (
-            <div key={m._id} className="flex flex-wrap items-center gap-4 rounded-[14px] border border-line bg-white p-4">
+            <div
+              key={m._id}
+              className="flex flex-wrap items-center gap-4 rounded-[14px] border border-line bg-white p-4"
+            >
               <div className="min-w-[200px] flex-1">
                 <div className="font-bold text-ink">{m.title}</div>
                 <div className="text-xs text-muted">
-                  {user?.role !== "student" && m.student && `${m.student.firstName} ${m.student.lastName} · `}
+                  {user?.role !== "student" &&
+                    m.student &&
+                    `${m.student.firstName} ${m.student.lastName} · `}
                   {m.role || m.type} {m.company && `· ${m.company}`}
                 </div>
               </div>
               <div className="text-xs text-muted">{fmt(m.scheduledAt)}</div>
-              <span className={`rounded-full px-2.5 py-1 text-xs font-semibold ${STATUS_STYLE[m.status]}`}>{m.status}</span>
-              {m.overallScore != null && <span className="text-xs font-bold text-ink">{m.overallScore}/100</span>}
+              <span
+                className={`rounded-full px-2.5 py-1 text-xs font-semibold ${STATUS_STYLE[m.status]}`}
+              >
+                {m.status}
+              </span>
+              {m.overallScore != null && (
+                <span className="text-xs font-bold text-ink">
+                  {m.overallScore}/100
+                </span>
+              )}
               {m.meetingLink && m.status === "scheduled" && (
-                <a href={m.meetingLink} target="_blank" rel="noreferrer" className="rounded-lg border-[1.5px] border-purple px-3 py-1.5 text-xs font-bold text-purple">
+                <a
+                  href={m.meetingLink}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="rounded-lg border-[1.5px] border-purple px-3 py-1.5 text-xs font-bold text-purple"
+                >
                   Join
                 </a>
               )}
@@ -313,19 +477,37 @@ export default function MockInterviewsPage() {
                   >
                     Edit
                   </button>
-                  <button onClick={() => handleDelete(m)} className="rounded-lg border-[1.5px] border-line px-3 py-1.5 text-xs font-semibold text-red hover:border-red hover:bg-red-lt">
+                  <button
+                    onClick={() => handleDelete(m)}
+                    className="rounded-lg border-[1.5px] border-line px-3 py-1.5 text-xs font-semibold text-red hover:border-red hover:bg-red-lt"
+                  >
                     Delete
                   </button>
                 </>
               )}
             </div>
           ))}
-          {mocks.length === 0 && <p className="py-8 text-center text-sm text-muted">No mock interviews scheduled.</p>}
+          {mocks.length === 0 && (
+            <p className="py-8 text-center text-sm text-muted">
+              No mock interviews scheduled.
+            </p>
+          )}
         </div>
       )}
 
-      {showSchedule && <ScheduleMockModal onClose={() => setShowSchedule(false)} onSaved={load} />}
-      {editing && <EditMockModal mock={editing} onClose={() => setEditing(null)} onSaved={load} />}
+      {showSchedule && (
+        <ScheduleMockModal
+          onClose={() => setShowSchedule(false)}
+          onSaved={load}
+        />
+      )}
+      {editing && (
+        <EditMockModal
+          mock={editing}
+          onClose={() => setEditing(null)}
+          onSaved={load}
+        />
+      )}
     </div>
   );
 }

@@ -1,6 +1,12 @@
 "use client";
 
-import { createContext, useContext, useEffect, useState, useCallback } from "react";
+import {
+  createContext,
+  useContext,
+  useEffect,
+  useState,
+  useCallback,
+} from "react";
 import { api, ApiError, isApiError } from "./api";
 import type { User } from "./types";
 
@@ -30,7 +36,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const login = useCallback(async (email: string, password: string) => {
-    const data = await api.post<{ user: User }>("/auth/login", { email, password });
+    const data = await api.post<{ user: User }>("/auth/login", {
+      email,
+      password,
+    });
     setUser(data.user);
   }, []);
 
@@ -49,7 +58,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   return (
-    <AuthContext.Provider value={{ user, loading, login, loginWithGoogle, logout }}>
+    <AuthContext.Provider
+      value={{ user, loading, login, loginWithGoogle, logout }}
+    >
       {children}
     </AuthContext.Provider>
   );

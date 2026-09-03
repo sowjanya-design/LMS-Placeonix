@@ -47,17 +47,40 @@ const BIRTHDAY_YEAR_WINDOW = 2;
 const DOW = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 
 function fmtTime(iso: string) {
-  return new Date(iso).toLocaleTimeString(undefined, { hour: "numeric", minute: "2-digit" });
+  return new Date(iso).toLocaleTimeString(undefined, {
+    hour: "numeric",
+    minute: "2-digit",
+  });
 }
 
 function fmtDate(d: Date) {
-  return d.toLocaleDateString(undefined, { weekday: "long", month: "long", day: "numeric" });
+  return d.toLocaleDateString(undefined, {
+    weekday: "long",
+    month: "long",
+    day: "numeric",
+  });
 }
 
-interface SessionApi { startTime: string; title?: string; batch?: { name?: string } }
-interface AssignmentApi { dueDate: string; title?: string; course?: { title?: string } }
-interface PlacementApi { applicationDeadline: string; company?: string; role?: string }
-interface AnnouncementApi { publishAt: string; title: string; type: string }
+interface SessionApi {
+  startTime: string;
+  title?: string;
+  batch?: { name?: string };
+}
+interface AssignmentApi {
+  dueDate: string;
+  title?: string;
+  course?: { title?: string };
+}
+interface PlacementApi {
+  applicationDeadline: string;
+  company?: string;
+  role?: string;
+}
+interface AnnouncementApi {
+  publishAt: string;
+  title: string;
+  type: string;
+}
 
 export default function CalendarPage() {
   const [events, setEvents] = useState<CalEvent[] | null>(null);
@@ -65,41 +88,80 @@ export default function CalendarPage() {
     const n = new Date();
     return { y: n.getFullYear(), m: n.getMonth() };
   });
-  const [openDay, setOpenDay] = useState<{ date: Date; evs: CalEvent[] } | null>(null);
+  const [openDay, setOpenDay] = useState<{
+    date: Date;
+    evs: CalEvent[];
+  } | null>(null);
 
   useEffect(() => {
     Promise.all([
       api.get<SessionApi[]>("/sessions?limit=300").catch(() => []),
       api.get<AssignmentApi[]>("/assignments?limit=300").catch(() => []),
       api.get<PlacementApi[]>("/placements?limit=300").catch(() => []),
-      api.get<AnnouncementApi[]>("/announcements?type=holiday&limit=100").catch(() => []),
+      api
+        .get<AnnouncementApi[]>("/announcements?type=holiday&limit=100")
+        .catch(() => []),
       api.get<Birthday[]>("/users/birthdays").catch(() => []),
     ]).then(([sessions, assignments, placements, holidays, birthdays]) => {
       const ev: CalEvent[] = [];
       (sessions || []).forEach((s) => {
         if (s.startTime) {
-          ev.push({ date: new Date(s.startTime), type: "class", title: s.title || "Class", sub: s.batch?.name || "", time: fmtTime(s.startTime) });
+          ev.push({
+            date: new Date(s.startTime),
+            type: "class",
+            title: s.title || "Class",
+            sub: s.batch?.name || "",
+            time: fmtTime(s.startTime),
+          });
         }
       });
       (assignments || []).forEach((a) => {
         if (a.dueDate) {
-          ev.push({ date: new Date(a.dueDate), type: "assignment", title: `${a.title || "Assignment"} due`, sub: a.course?.title || "", time: "" });
+          ev.push({
+            date: new Date(a.dueDate),
+            type: "assignment",
+            title: `${a.title || "Assignment"} due`,
+            sub: a.course?.title || "",
+            time: "",
+          });
         }
       });
       (placements || []).forEach((p) => {
         if (p.applicationDeadline) {
-          ev.push({ date: new Date(p.applicationDeadline), type: "placement", title: `${p.company || "Drive"} deadline`, sub: p.role || "", time: "" });
+          ev.push({
+            date: new Date(p.applicationDeadline),
+            type: "placement",
+            title: `${p.company || "Drive"} deadline`,
+            sub: p.role || "",
+            time: "",
+          });
         }
       });
       (holidays || []).forEach((h) => {
         if (h.publishAt) {
-          ev.push({ date: new Date(h.publishAt), type: "holiday", title: h.title.replace(/^Holiday:\s*/, ""), sub: "Institute closed", time: "" });
+          ev.push({
+            date: new Date(h.publishAt),
+            type: "holiday",
+            title: h.title.replace(/^Holiday:\s*/, ""),
+            sub: "Institute closed",
+            time: "",
+          });
         }
       });
       const thisYear = new Date().getFullYear();
       (birthdays || []).forEach((b) => {
-        for (let y = thisYear - BIRTHDAY_YEAR_WINDOW; y <= thisYear + BIRTHDAY_YEAR_WINDOW; y++) {
-          ev.push({ date: new Date(y, b.month - 1, b.day), type: "birthday", title: `🎂 ${b.name}'s Birthday`, sub: "", time: "" });
+        for (
+          let y = thisYear - BIRTHDAY_YEAR_WINDOW;
+          y <= thisYear + BIRTHDAY_YEAR_WINDOW;
+          y++
+        ) {
+          ev.push({
+            date: new Date(y, b.month - 1, b.day),
+            type: "birthday",
+            title: `🎂 ${b.name}'s Birthday`,
+            sub: "",
+            time: "",
+          });
         }
       });
       setEvents(ev);
@@ -122,7 +184,9 @@ export default function CalendarPage() {
         (map[d] ??= []).push(e);
       }
     });
-    Object.values(map).forEach((list) => list.sort((a, b) => a.date.getTime() - b.date.getTime()));
+    Object.values(map).forEach((list) =>
+      list.sort((a, b) => a.date.getTime() - b.date.getTime()),
+    );
     return map;
   }, [events, y, m]);
 
@@ -143,24 +207,42 @@ export default function CalendarPage() {
     setCursor((prev) => {
       let nm = prev.m + delta;
       let ny = prev.y;
-      if (nm < 0) { nm = 11; ny--; }
-      if (nm > 11) { nm = 0; ny++; }
+      if (nm < 0) {
+        nm = 11;
+        ny--;
+      }
+      if (nm > 11) {
+        nm = 0;
+        ny++;
+      }
       return { y: ny, m: nm };
     });
   }
 
-  const cells: Array<{ day: number | null; evs: CalEvent[]; isWeekend: boolean }> = [];
-  for (let i = 0; i < startDow; i++) cells.push({ day: null, evs: [], isWeekend: i === 0 || i === 6 });
+  const cells: Array<{
+    day: number | null;
+    evs: CalEvent[];
+    isWeekend: boolean;
+  }> = [];
+  for (let i = 0; i < startDow; i++)
+    cells.push({ day: null, evs: [], isWeekend: i === 0 || i === 6 });
   for (let d = 1; d <= daysInMonth; d++) {
     const dow = new Date(y, m, d).getDay();
-    cells.push({ day: d, evs: byDay[d] || [], isWeekend: dow === 0 || dow === 6 });
+    cells.push({
+      day: d,
+      evs: byDay[d] || [],
+      isWeekend: dow === 0 || dow === 6,
+    });
   }
 
   return (
     <div className="flex flex-col gap-6">
       <div>
         <h1 className="text-xl font-bold text-ink">Calendar</h1>
-        <p className="text-sm text-muted">Classes, assignment due dates, placement deadlines, public holidays, and student birthdays.</p>
+        <p className="text-sm text-muted">
+          Classes, assignment due dates, placement deadlines, public holidays,
+          and student birthdays.
+        </p>
       </div>
 
       <div className="flex flex-wrap items-center justify-between gap-2.5">
@@ -168,22 +250,36 @@ export default function CalendarPage() {
           {monthName} {y}
         </div>
         <div className="flex items-center gap-2">
-          <button onClick={() => shift(-1)} className="rounded-[9px] border-[1.5px] border-line bg-white px-3 py-1.5 text-[0.78rem] font-bold text-ink2 transition-colors hover:border-purple hover:text-purple">
+          <button
+            onClick={() => shift(-1)}
+            className="rounded-[9px] border-[1.5px] border-line bg-white px-3 py-1.5 text-[0.78rem] font-bold text-ink2 transition-colors hover:border-purple hover:text-purple"
+          >
             ‹ Prev
           </button>
-          <button onClick={() => shift(0)} className="rounded-[9px] border-[1.5px] border-line bg-white px-3 py-1.5 text-[0.78rem] font-bold text-ink2 transition-colors hover:border-purple hover:text-purple">
+          <button
+            onClick={() => shift(0)}
+            className="rounded-[9px] border-[1.5px] border-line bg-white px-3 py-1.5 text-[0.78rem] font-bold text-ink2 transition-colors hover:border-purple hover:text-purple"
+          >
             Today
           </button>
-          <button onClick={() => shift(1)} className="rounded-[9px] border-[1.5px] border-line bg-white px-3 py-1.5 text-[0.78rem] font-bold text-ink2 transition-colors hover:border-purple hover:text-purple">
+          <button
+            onClick={() => shift(1)}
+            className="rounded-[9px] border-[1.5px] border-line bg-white px-3 py-1.5 text-[0.78rem] font-bold text-ink2 transition-colors hover:border-purple hover:text-purple"
+          >
             Next ›
           </button>
         </div>
       </div>
 
       <div className="flex flex-wrap gap-5 text-[0.74rem] text-ink2">
-        {(["class", "assignment", "placement", "holiday", "birthday"] as const).map((t) => (
+        {(
+          ["class", "assignment", "placement", "holiday", "birthday"] as const
+        ).map((t) => (
           <span key={t} className="flex items-center">
-            <span className="mr-1.5 inline-block h-2.5 w-2.5 rounded-[3px]" style={{ background: TYPE_COLOR[t] }} />
+            <span
+              className="mr-1.5 inline-block h-2.5 w-2.5 rounded-[3px]"
+              style={{ background: TYPE_COLOR[t] }}
+            />
             {TYPE_LABEL[t]}
           </span>
         ))}
@@ -204,7 +300,8 @@ export default function CalendarPage() {
           </div>
         ))}
         {cells.map((cell, i) => {
-          if (cell.day === null) return <div key={i} className="min-h-[96px] rounded-[14px]" />;
+          if (cell.day === null)
+            return <div key={i} className="min-h-[96px] rounded-[14px]" />;
           const isToday = isThisMonth && today.getDate() === cell.day;
           const visible = cell.evs.slice(0, 2);
           const overflow = cell.evs.length - visible.length;
@@ -212,15 +309,28 @@ export default function CalendarPage() {
           return (
             <button
               key={i}
-              onClick={() => cell.evs.length > 0 && setOpenDay({ date: new Date(y, m, cell.day!), evs: cell.evs })}
+              onClick={() =>
+                cell.evs.length > 0 &&
+                setOpenDay({ date: new Date(y, m, cell.day!), evs: cell.evs })
+              }
               className={`flex min-h-[96px] flex-col gap-1 overflow-hidden rounded-[14px] p-2 text-left transition-all ${
-                cell.evs.length > 0 ? "cursor-pointer hover:-translate-y-0.5 hover:shadow-md" : "cursor-default"
+                cell.evs.length > 0
+                  ? "cursor-pointer hover:-translate-y-0.5 hover:shadow-md"
+                  : "cursor-default"
               } ${isToday ? "ring-2 ring-purple" : ""}`}
               style={{
-                background: isToday ? "var(--purple-lt)" : hasHoliday ? "var(--green-lt)" : cell.isWeekend ? "var(--bg)" : "#fcfcfd",
+                background: isToday
+                  ? "var(--purple-lt)"
+                  : hasHoliday
+                    ? "var(--green-lt)"
+                    : cell.isWeekend
+                      ? "var(--bg)"
+                      : "#fcfcfd",
               }}
             >
-              <div className={`flex items-center gap-1 text-[0.78rem] font-bold ${isToday ? "text-purple-dk" : "text-ink2"}`}>
+              <div
+                className={`flex items-center gap-1 text-[0.78rem] font-bold ${isToday ? "text-purple-dk" : "text-ink2"}`}
+              >
                 {cell.day}
                 {hasHoliday && <span title="Holiday">⭐</span>}
               </div>
@@ -228,14 +338,21 @@ export default function CalendarPage() {
                 <div
                   key={idx}
                   className="truncate rounded-[6px] px-1.5 py-0.5 text-[0.62rem] leading-[1.35] font-bold"
-                  style={{ background: `color-mix(in srgb, ${TYPE_COLOR[e.type]} 18%, white)`, color: TYPE_COLOR[e.type] }}
+                  style={{
+                    background: `color-mix(in srgb, ${TYPE_COLOR[e.type]} 18%, white)`,
+                    color: TYPE_COLOR[e.type],
+                  }}
                   title={e.title}
                 >
                   {e.time ? `${e.time} ` : ""}
                   {e.title}
                 </div>
               ))}
-              {overflow > 0 && <div className="text-[0.62rem] font-semibold text-muted">+{overflow} more</div>}
+              {overflow > 0 && (
+                <div className="text-[0.62rem] font-semibold text-muted">
+                  +{overflow} more
+                </div>
+              )}
             </button>
           );
         })}
@@ -246,10 +363,18 @@ export default function CalendarPage() {
           <div className="mb-3 text-base font-bold text-ink">Upcoming</div>
           <div className="flex flex-col gap-2">
             {upcoming.map((e, idx) => (
-              <div key={idx} className="flex items-start gap-2.5 rounded-[14px] border border-line bg-white px-4 py-3">
-                <span className="mt-1.5 h-2 w-2 shrink-0 rounded-[3px]" style={{ background: TYPE_COLOR[e.type] }} />
+              <div
+                key={idx}
+                className="flex items-start gap-2.5 rounded-[14px] border border-line bg-white px-4 py-3"
+              >
+                <span
+                  className="mt-1.5 h-2 w-2 shrink-0 rounded-[3px]"
+                  style={{ background: TYPE_COLOR[e.type] }}
+                />
                 <div>
-                  <div className="text-[0.86rem] font-bold text-ink">{e.title}</div>
+                  <div className="text-[0.86rem] font-bold text-ink">
+                    {e.title}
+                  </div>
                   <div className="text-[0.74rem] text-muted">
                     {fmtDate(e.date)}
                     {e.time && ` · ${e.time}`}
@@ -266,10 +391,20 @@ export default function CalendarPage() {
         <Modal title={fmtDate(openDay.date)} onClose={() => setOpenDay(null)}>
           <div className="flex flex-col gap-3">
             {openDay.evs.map((e, idx) => (
-              <div key={idx} className="flex items-start gap-3 rounded-[14px] p-3" style={{ background: "var(--bg)" }}>
-                <span className="mt-1.5 h-2.5 w-2.5 shrink-0 rounded-[3px]" style={{ background: TYPE_COLOR[e.type] }} />
+              <div
+                key={idx}
+                className="flex items-start gap-3 rounded-[14px] p-3"
+                style={{ background: "var(--bg)" }}
+              >
+                <span
+                  className="mt-1.5 h-2.5 w-2.5 shrink-0 rounded-[3px]"
+                  style={{ background: TYPE_COLOR[e.type] }}
+                />
                 <div>
-                  <div className="text-[0.7rem] font-bold uppercase tracking-wide" style={{ color: TYPE_COLOR[e.type] }}>
+                  <div
+                    className="text-[0.7rem] font-bold uppercase tracking-wide"
+                    style={{ color: TYPE_COLOR[e.type] }}
+                  >
                     {TYPE_LABEL[e.type]}
                   </div>
                   <div className="text-sm font-bold text-ink">{e.title}</div>

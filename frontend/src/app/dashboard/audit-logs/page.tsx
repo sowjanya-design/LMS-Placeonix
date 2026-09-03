@@ -26,7 +26,12 @@ interface AuditLogEntry {
 const MODULES = ["auth", "users", "payments", "roles"];
 
 function fmt(iso: string) {
-  return new Date(iso).toLocaleString(undefined, { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" });
+  return new Date(iso).toLocaleString(undefined, {
+    month: "short",
+    day: "numeric",
+    hour: "numeric",
+    minute: "2-digit",
+  });
 }
 
 export default function AuditLogsPage() {
@@ -44,22 +49,34 @@ export default function AuditLogsPage() {
     api
       .get<AuditLogEntry[]>(`/audit-logs?${params.toString()}`)
       .then(setLogs)
-      .catch((err) => setError(err instanceof ApiError ? err.message : "Failed to load audit logs"));
+      .catch((err) =>
+        setError(
+          err instanceof ApiError ? err.message : "Failed to load audit logs",
+        ),
+      );
   }, [user, moduleFilter, statusFilter]);
 
   if (user?.role !== "admin") {
-    return <EmptyState message="You do not have permission to view this page." />;
+    return (
+      <EmptyState message="You do not have permission to view this page." />
+    );
   }
 
   return (
     <div className="flex flex-col gap-6">
       <div>
         <h1 className="text-xl font-bold text-ink">Audit Logs</h1>
-        <p className="text-sm text-muted">Every sensitive action taken across the platform, most recent first.</p>
+        <p className="text-sm text-muted">
+          Every sensitive action taken across the platform, most recent first.
+        </p>
       </div>
 
       <div className="flex flex-wrap gap-3">
-        <Select value={moduleFilter} onChange={(e) => setModuleFilter(e.target.value)} className="w-44">
+        <Select
+          value={moduleFilter}
+          onChange={(e) => setModuleFilter(e.target.value)}
+          className="w-44"
+        >
           <option value="">All modules</option>
           {MODULES.map((m) => (
             <option key={m} value={m}>
@@ -67,7 +84,11 @@ export default function AuditLogsPage() {
             </option>
           ))}
         </Select>
-        <Select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)} className="w-44">
+        <Select
+          value={statusFilter}
+          onChange={(e) => setStatusFilter(e.target.value)}
+          className="w-44"
+        >
           <option value="">All statuses</option>
           <option value="success">Success</option>
           <option value="failure">Failure</option>
@@ -75,7 +96,9 @@ export default function AuditLogsPage() {
       </div>
 
       {error && <p className="text-sm text-red">{error}</p>}
-      {logs && logs.length === 0 && <EmptyState message="No audit log entries match this filter." />}
+      {logs && logs.length === 0 && (
+        <EmptyState message="No audit log entries match this filter." />
+      )}
 
       {logs && logs.length > 0 && (
         <div className="overflow-x-auto rounded-[14px] border border-line bg-white">
@@ -94,19 +117,32 @@ export default function AuditLogsPage() {
             <tbody className="divide-y divide-line">
               {logs.map((l) => (
                 <tr key={l._id}>
-                  <td className="whitespace-nowrap px-4 py-2.5 text-xs text-muted">{fmt(l.createdAt)}</td>
+                  <td className="whitespace-nowrap px-4 py-2.5 text-xs text-muted">
+                    {fmt(l.createdAt)}
+                  </td>
                   <td className="px-4 py-2.5">
-                    <span className="rounded-full bg-purple-lt px-2 py-0.5 text-xs font-semibold text-purple">{l.module}</span>
+                    <span className="rounded-full bg-purple-lt px-2 py-0.5 text-xs font-semibold text-purple">
+                      {l.module}
+                    </span>
                   </td>
                   <td className="px-4 py-2.5 text-ink2">{l.action}</td>
-                  <td className="px-4 py-2.5 text-ink2">{l.userEmail || "—"}</td>
-                  <td className="px-4 py-2.5 text-xs text-muted">{l.resource || "—"}</td>
+                  <td className="px-4 py-2.5 text-ink2">
+                    {l.userEmail || "—"}
+                  </td>
+                  <td className="px-4 py-2.5 text-xs text-muted">
+                    {l.resource || "—"}
+                  </td>
                   <td className="px-4 py-2.5">
-                    <span className={`rounded-full px-2 py-0.5 text-xs font-semibold ${l.status === "success" ? "bg-green-lt text-green" : "bg-red-lt text-red"}`}>
+                    <span
+                      className={`rounded-full px-2 py-0.5 text-xs font-semibold ${l.status === "success" ? "bg-green-lt text-green" : "bg-red-lt text-red"}`}
+                    >
                       {l.status}
                     </span>
                   </td>
-                  <td className="max-w-xs truncate px-4 py-2.5 text-xs text-muted" title={l.message}>
+                  <td
+                    className="max-w-xs truncate px-4 py-2.5 text-xs text-muted"
+                    title={l.message}
+                  >
                     {l.message || "—"}
                   </td>
                 </tr>

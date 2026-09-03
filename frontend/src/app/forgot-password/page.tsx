@@ -20,13 +20,20 @@ export default function ForgotPasswordPage() {
     setSubmitting(true);
     setError(null);
     try {
-      const res = await api.post<{ emailed: boolean; resetToken?: string }>("/auth/forgot-password", { email });
+      const res = await api.post<{ emailed: boolean; resetToken?: string }>(
+        "/auth/forgot-password",
+        { email },
+      );
       setDone(true);
       if (res.resetToken) {
         setDevResetLink(`/reset-password/${res.resetToken}`);
       }
     } catch (err) {
-      setError(err instanceof ApiError ? err.message : "Something went wrong. Please try again.");
+      setError(
+        err instanceof ApiError
+          ? err.message
+          : "Something went wrong. Please try again.",
+      );
     } finally {
       setSubmitting(false);
     }
@@ -35,32 +42,47 @@ export default function ForgotPasswordPage() {
   return (
     <div className="flex min-h-screen items-center justify-center bg-bg px-4">
       <div className="w-full max-w-[420px] rounded-[28px] bg-white p-8 shadow-[0_10px_40px_rgba(17,24,39,0.08)]">
-        <h1 className="mb-1 text-center text-[1.4rem] font-extrabold text-ink">Reset your password</h1>
+        <h1 className="mb-1 text-center text-[1.4rem] font-extrabold text-ink">
+          Reset your password
+        </h1>
         <p className="mb-6 text-center text-sm text-muted">
-          Enter the email on your account and we&apos;ll send you a link to reset your password.
+          Enter the email on your account and we&apos;ll send you a link to
+          reset your password.
         </p>
 
         {done ? (
           <div className="flex flex-col gap-4 text-center">
             <p className="text-sm text-ink2">
-              If an account exists for <strong>{email}</strong>, a reset link has been sent. It expires in 30 minutes.
+              If an account exists for <strong>{email}</strong>, a reset link
+              has been sent. It expires in 30 minutes.
             </p>
             {devResetLink && (
               <div className="rounded-xl bg-amber-lt p-3 text-xs text-ink2">
-                <p className="mb-1 font-bold text-ink">Dev mode — no SMTP configured</p>
-                <Link href={devResetLink} className="font-bold text-purple underline">
+                <p className="mb-1 font-bold text-ink">
+                  Dev mode — no SMTP configured
+                </p>
+                <Link
+                  href={devResetLink}
+                  className="font-bold text-purple underline"
+                >
                   Use this reset link
                 </Link>
               </div>
             )}
-            <Link href="/login" className="text-sm font-bold text-purple hover:text-purple-dk">
+            <Link
+              href="/login"
+              className="text-sm font-bold text-purple hover:text-purple-dk"
+            >
               ← Back to login
             </Link>
           </div>
         ) : (
           <form onSubmit={handleSubmit} className="flex flex-col gap-4">
             <div className="flex flex-col gap-1.5">
-              <label htmlFor="email" className="text-[0.78rem] font-bold text-ink">
+              <label
+                htmlFor="email"
+                className="text-[0.78rem] font-bold text-ink"
+              >
                 Email
               </label>
               <input
@@ -86,7 +108,10 @@ export default function ForgotPasswordPage() {
             >
               {submitting ? "Sending…" : "Send reset link"}
             </button>
-            <Link href="/login" className="text-center text-sm font-bold text-purple hover:text-purple-dk">
+            <Link
+              href="/login"
+              className="text-center text-sm font-bold text-purple hover:text-purple-dk"
+            >
               ← Back to login
             </Link>
           </form>

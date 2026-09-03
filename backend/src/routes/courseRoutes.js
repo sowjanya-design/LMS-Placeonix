@@ -1,68 +1,84 @@
-const express = require('express');
+const express = require("express");
 const router = express.Router();
-const { body } = require('express-validator');
+const { body } = require("express-validator");
 
-const courseCtrl = require('../controllers/courseController');
-const { protect, authorize } = require('../middleware/auth');
-const validate = require('../middleware/validate');
+const courseCtrl = require("../controllers/courseController");
+const { protect, authorize } = require("../middleware/auth");
+const validate = require("../middleware/validate");
 
 // Optional auth on list/get — public can view published courses
 const optionalAuth = (req, res, next) => {
-  if (req.headers.authorization || req.cookies?.accessToken) return protect(req, res, next);
+  if (req.headers.authorization || req.cookies?.accessToken)
+    return protect(req, res, next);
   next();
 };
 
-router.get('/', optionalAuth, courseCtrl.listCourses);
-router.get('/:id', optionalAuth, courseCtrl.getCourse);
+router.get("/", optionalAuth, courseCtrl.listCourses);
+router.get("/:id", optionalAuth, courseCtrl.getCourse);
 
 // Admin-only writes
-router.use(protect, authorize('admin'));
+router.use(protect, authorize("admin"));
 
 router.post(
-  '/',
+  "/",
   [
-    body('title').notEmpty(),
-    body('category').notEmpty(),
-    body('description').notEmpty(),
-    body('duration').notEmpty(),
-    body('fee.amount').isNumeric(),
+    body("title").notEmpty(),
+    body("category").notEmpty(),
+    body("description").notEmpty(),
+    body("duration").notEmpty(),
+    body("fee.amount").isNumeric(),
   ],
   validate,
-  courseCtrl.createCourse
+  courseCtrl.createCourse,
 );
 
 router.patch(
-  '/:id',
+  "/:id",
   [
-    body('title').optional().notEmpty(),
-    body('description').optional().notEmpty(),
-    body('fee.amount').optional().isNumeric(),
+    body("title").optional().notEmpty(),
+    body("description").optional().notEmpty(),
+    body("fee.amount").optional().isNumeric(),
   ],
   validate,
-  courseCtrl.updateCourse
+  courseCtrl.updateCourse,
 );
-router.delete('/:id', courseCtrl.deleteCourse);
-router.patch('/:id/publish', courseCtrl.togglePublish);
+router.delete("/:id", courseCtrl.deleteCourse);
+router.patch("/:id/publish", courseCtrl.togglePublish);
 
 // Modules
 router.post(
-  '/:id/modules',
-  [body('title').notEmpty(), body('description').optional()],
+  "/:id/modules",
+  [body("title").notEmpty(), body("description").optional()],
   validate,
-  courseCtrl.addModule
+  courseCtrl.addModule,
 );
-router.patch('/:id/modules/reorder', [body('order').isArray({ min: 1 })], validate, courseCtrl.reorderModules);
-router.patch('/:id/modules/:moduleId', [body('title').optional().notEmpty()], validate, courseCtrl.updateModule);
-router.delete('/:id/modules/:moduleId', courseCtrl.deleteModule);
+router.patch(
+  "/:id/modules/reorder",
+  [body("order").isArray({ min: 1 })],
+  validate,
+  courseCtrl.reorderModules,
+);
+router.patch(
+  "/:id/modules/:moduleId",
+  [body("title").optional().notEmpty()],
+  validate,
+  courseCtrl.updateModule,
+);
+router.delete("/:id/modules/:moduleId", courseCtrl.deleteModule);
 
 // Topics
 router.post(
-  '/:id/modules/:moduleId/topics',
-  [body('title').notEmpty()],
+  "/:id/modules/:moduleId/topics",
+  [body("title").notEmpty()],
   validate,
-  courseCtrl.addTopic
+  courseCtrl.addTopic,
 );
-router.patch('/:id/modules/:moduleId/topics/:topicId', [body('title').optional().notEmpty()], validate, courseCtrl.updateTopic);
-router.delete('/:id/modules/:moduleId/topics/:topicId', courseCtrl.deleteTopic);
+router.patch(
+  "/:id/modules/:moduleId/topics/:topicId",
+  [body("title").optional().notEmpty()],
+  validate,
+  courseCtrl.updateTopic,
+);
+router.delete("/:id/modules/:moduleId/topics/:topicId", courseCtrl.deleteTopic);
 
 module.exports = router;

@@ -1,10 +1,10 @@
-const Resource = require('../models/Resource');
-const Enrollment = require('../models/Enrollment');
-const AppError = require('../utils/AppError');
-const ApiResponse = require('../utils/ApiResponse');
-const asyncHandler = require('../utils/asyncHandler');
-const { deleteFile, buildFileUrl } = require('../services/uploadService');
-const path = require('path');
+const Resource = require("../models/Resource");
+const Enrollment = require("../models/Enrollment");
+const AppError = require("../utils/AppError");
+const ApiResponse = require("../utils/ApiResponse");
+const asyncHandler = require("../utils/asyncHandler");
+const { deleteFile, buildFileUrl } = require("../services/uploadService");
+const path = require("path");
 
 // @desc   List resources (filtered by access)
 // @route  GET /api/v1/resources
@@ -18,30 +18,40 @@ exports.listResources = asyncHandler(async (req, res) => {
   if (search) filter.$text = { $search: search };
 
   // Filter by access level for non-admin
-  if (req.user.role === 'student') {
-    const enrollments = await Enrollment.find({ student: req.user._id, status: { $ne: 'dropped' } }).select('course batch');
+  if (req.user.role === "student") {
+    const enrollments = await Enrollment.find({
+      student: req.user._id,
+      status: { $ne: "dropped" },
+    }).select("course batch");
     const courseIds = enrollments.map((e) => e.course);
 
     filter.$or = [
-      { accessLevel: 'public' },
+      { accessLevel: "public" },
       {
-        accessLevel: 'enrolled',
+        accessLevel: "enrolled",
         $or: [{ course: { $in: courseIds } }, { course: null }],
       },
     ];
-  } else if (req.user.role === 'mentor') {
-    filter.accessLevel = { $in: ['public', 'enrolled', 'mentor-only'] };
+  } else if (req.user.role === "mentor") {
+    filter.accessLevel = { $in: ["public", "enrolled", "mentor-only"] };
   }
 
   const total = await Resource.countDocuments(filter);
   const resources = await Resource.find(filter)
-    .populate('course', 'title')
-    .populate('uploadedBy', 'firstName lastName')
-    .sort('-createdAt')
+    .populate("course", "title")
+    .populate("uploadedBy", "firstName lastName")
+    .sort("-createdAt")
     .skip((page - 1) * limit)
     .limit(limit);
 
-  return ApiResponse.paginated(res, 'Resources fetched', resources, page, limit, total);
+  return ApiResponse.paginated(
+    res,
+    "Resources fetched",
+    resources,
+    page,
+    limit,
+    total,
+  );
 });
 
 // @desc   Get single resource
@@ -50,11 +60,11 @@ exports.getResource = asyncHandler(async (req, res, next) => {
   const resource = await Resource.findByIdAndUpdate(
     req.params.id,
     { $inc: { views: 1 } },
-    { new: true }
-  ).populate('course uploadedBy', 'title firstName lastName');
+    { new: true },
+  ).populate("course uploadedBy", "title firstName lastName");
 
-  if (!resource) return next(new AppError('Resource not found', 404));
-  return ApiResponse.success(res, 200, 'Resource fetched', { resource });
+  if (!resource) return next(new AppError("Resource not found", 404));
+  return ApiResponse.success(res, 200, "Resource fetched", { resource });
 });
 
 // @desc   Upload resource (mentor / admin)
@@ -63,7 +73,7 @@ exports.createResource = asyncHandler(async (req, res, next) => {
   let fileData = {};
   if (req.file) {
     fileData = {
-      fileUrl: buildFileUrl(req, req.file, 'documents'),
+      fileUrl: buildFileUrl(req, req.file, "documents"),
       fileName: req.file.originalname,
       fileSize: req.file.size,
       mimeType: req.file.mimetype,
@@ -71,15 +81,17 @@ exports.createResource = asyncHandler(async (req, res, next) => {
 
     // Auto-detect type
     const ext = path.extname(req.file.originalname).toLowerCase().slice(1);
-    if (['pdf'].includes(ext)) req.body.type = 'pdf';
-    else if (['mp4', 'mov', 'avi'].includes(ext)) req.body.type = 'video';
-    else if (['zip', 'rar', '7z'].includes(ext)) req.body.type = 'archive';
-    else if (['doc', 'docx', 'ppt', 'pptx', 'xlsx'].includes(ext)) req.body.type = 'document';
-    else if (['jpg', 'jpeg', 'png', 'gif'].includes(ext)) req.body.type = 'image';
+    if (["pdf"].includes(ext)) req.body.type = "pdf";
+    else if (["mp4", "mov", "avi"].includes(ext)) req.body.type = "video";
+    else if (["zip", "rar", "7z"].includes(ext)) req.body.type = "archive";
+    else if (["doc", "docx", "ppt", "pptx", "xlsx"].includes(ext))
+      req.body.type = "document";
+    else if (["jpg", "jpeg", "png", "gif"].includes(ext))
+      req.body.type = "image";
   }
 
   if (!req.file && !req.body.externalUrl) {
-    return next(new AppError('Either file or external URL is required', 400));
+    return next(new AppError("Either file or external URL is required", 400));
   }
 
   const resource = await Resource.create({
@@ -88,7 +100,7 @@ exports.createResource = asyncHandler(async (req, res, next) => {
     uploadedBy: req.user._id,
   });
 
-  return ApiResponse.created(res, 'Resource uploaded', { resource });
+  return ApiResponse.created(res, "Resource uploaded", { resource });
 });
 
 // @desc   Update resource
@@ -97,33 +109,61 @@ exports.updateResource = asyncHandler(async (req, res, next) => {
   // uploadedBy/downloads/views/fileUrl/fileSize/mimeType are system-managed
   // (set at upload time or incremented by trackDownload/getResource) — not
   // client-settable through the general update route.
-  const { title, description, type, externalUrl, course, batch, module, topic, tags, accessLevel } = req.body;
-  const updates = { title, description, type, externalUrl, course, batch, module, topic, tags, accessLevel };
-  Object.keys(updates).forEach((k) => updates[k] === undefined && delete updates[k]);
+  const {
+    title,
+    description,
+    type,
+    externalUrl,
+    course,
+    batch,
+    module,
+    topic,
+    tags,
+    accessLevel,
+  } = req.body;
+  const updates = {
+    title,
+    description,
+    type,
+    externalUrl,
+    course,
+    batch,
+    module,
+    topic,
+    tags,
+    accessLevel,
+  };
+  Object.keys(updates).forEach(
+    (k) => updates[k] === undefined && delete updates[k],
+  );
 
   const resource = await Resource.findByIdAndUpdate(req.params.id, updates, {
     new: true,
     runValidators: true,
   });
-  if (!resource) return next(new AppError('Resource not found', 404));
-  return ApiResponse.success(res, 200, 'Resource updated', { resource });
+  if (!resource) return next(new AppError("Resource not found", 404));
+  return ApiResponse.success(res, 200, "Resource updated", { resource });
 });
 
 // @desc   Delete resource
 // @route  DELETE /api/v1/resources/:id
 exports.deleteResource = asyncHandler(async (req, res, next) => {
   const resource = await Resource.findById(req.params.id);
-  if (!resource) return next(new AppError('Resource not found', 404));
+  if (!resource) return next(new AppError("Resource not found", 404));
 
   // Delete file from disk if exists
   if (resource.fileUrl) {
-    const filename = resource.fileUrl.split('/').pop();
-    const filepath = path.join(process.env.FILE_UPLOAD_PATH || './uploads', 'documents', filename);
+    const filename = resource.fileUrl.split("/").pop();
+    const filepath = path.join(
+      process.env.FILE_UPLOAD_PATH || "./uploads",
+      "documents",
+      filename,
+    );
     deleteFile(filepath);
   }
 
   await resource.deleteOne();
-  return ApiResponse.success(res, 200, 'Resource deleted');
+  return ApiResponse.success(res, 200, "Resource deleted");
 });
 
 // @desc   Track download
@@ -132,10 +172,10 @@ exports.trackDownload = asyncHandler(async (req, res, next) => {
   const resource = await Resource.findByIdAndUpdate(
     req.params.id,
     { $inc: { downloads: 1 } },
-    { new: true }
+    { new: true },
   );
-  if (!resource) return next(new AppError('Resource not found', 404));
-  return ApiResponse.success(res, 200, 'Download tracked', {
+  if (!resource) return next(new AppError("Resource not found", 404));
+  return ApiResponse.success(res, 200, "Download tracked", {
     downloadUrl: resource.fileUrl || resource.externalUrl,
   });
 });

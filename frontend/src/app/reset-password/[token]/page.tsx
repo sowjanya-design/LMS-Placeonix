@@ -35,7 +35,11 @@ export default function ResetPasswordPage() {
       setDone(true);
       setTimeout(() => router.push("/dashboard"), 1500);
     } catch (err) {
-      setError(err instanceof ApiError ? err.message : "This reset link is invalid or has expired.");
+      setError(
+        err instanceof ApiError
+          ? err.message
+          : "This reset link is invalid or has expired.",
+      );
     } finally {
       setSubmitting(false);
     }
@@ -44,15 +48,24 @@ export default function ResetPasswordPage() {
   return (
     <div className="flex min-h-screen items-center justify-center bg-bg px-4">
       <div className="w-full max-w-[420px] rounded-[28px] bg-white p-8 shadow-[0_10px_40px_rgba(17,24,39,0.08)]">
-        <h1 className="mb-1 text-center text-[1.4rem] font-extrabold text-ink">Set a new password</h1>
-        <p className="mb-6 text-center text-sm text-muted">Choose a new password for your account.</p>
+        <h1 className="mb-1 text-center text-[1.4rem] font-extrabold text-ink">
+          Set a new password
+        </h1>
+        <p className="mb-6 text-center text-sm text-muted">
+          Choose a new password for your account.
+        </p>
 
         {done ? (
-          <p className="text-center text-sm text-ink2">Password updated — taking you to your dashboard…</p>
+          <p className="text-center text-sm text-ink2">
+            Password updated — taking you to your dashboard…
+          </p>
         ) : (
           <form onSubmit={handleSubmit} className="flex flex-col gap-4">
             <div className="flex flex-col gap-1.5">
-              <label htmlFor="password" className="text-[0.78rem] font-bold text-ink">
+              <label
+                htmlFor="password"
+                className="text-[0.78rem] font-bold text-ink"
+              >
                 New password
               </label>
               <input
@@ -67,7 +80,10 @@ export default function ResetPasswordPage() {
               />
             </div>
             <div className="flex flex-col gap-1.5">
-              <label htmlFor="confirm" className="text-[0.78rem] font-bold text-ink">
+              <label
+                htmlFor="confirm"
+                className="text-[0.78rem] font-bold text-ink"
+              >
                 Confirm password
               </label>
               <input
@@ -92,7 +108,10 @@ export default function ResetPasswordPage() {
             >
               {submitting ? "Saving…" : "Reset password"}
             </button>
-            <Link href="/login" className="text-center text-sm font-bold text-purple hover:text-purple-dk">
+            <Link
+              href="/login"
+              className="text-center text-sm font-bold text-purple hover:text-purple-dk"
+            >
               ← Back to login
             </Link>
           </form>

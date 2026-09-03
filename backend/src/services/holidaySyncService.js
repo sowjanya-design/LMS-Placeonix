@@ -1,7 +1,7 @@
-const Announcement = require('../models/Announcement');
-const User = require('../models/User');
-const logger = require('../utils/logger');
-const { getIndiaHolidays } = require('../data/indiaHolidays');
+const Announcement = require("../models/Announcement");
+const User = require("../models/User");
+const logger = require("../utils/logger");
+const { getIndiaHolidays } = require("../data/indiaHolidays");
 
 /**
  * Auto-populates public holidays as 'holiday'-type Announcements, so nobody
@@ -17,16 +17,23 @@ const { getIndiaHolidays } = require('../data/indiaHolidays');
  */
 async function syncHolidayAnnouncements() {
   const currentYear = new Date().getFullYear();
-  const holidays = [...getIndiaHolidays(currentYear), ...getIndiaHolidays(currentYear + 1)];
+  const holidays = [
+    ...getIndiaHolidays(currentYear),
+    ...getIndiaHolidays(currentYear + 1),
+  ];
   if (holidays.length === 0) return { created: 0 };
 
   // Announcements require a createdBy user. Use any admin as the system
   // author — on a totally fresh DB (before seeding) there won't be one yet,
   // in which case skip for now; the next server restart (after seeding)
   // will pick it up.
-  const systemAuthor = await User.findOne({ role: 'admin' }).select('_id').lean();
+  const systemAuthor = await User.findOne({ role: "admin" })
+    .select("_id")
+    .lean();
   if (!systemAuthor) {
-    logger.warn('[holidaySync] No admin user found yet — skipping holiday auto-population until one exists');
+    logger.warn(
+      "[holidaySync] No admin user found yet — skipping holiday auto-population until one exists",
+    );
     return { created: 0 };
   }
 
@@ -35,18 +42,20 @@ async function syncHolidayAnnouncements() {
     isSystemHoliday: true,
     publishAt: { $in: dates },
   })
-    .select('publishAt')
+    .select("publishAt")
     .lean();
-  const existingDates = new Set(existing.map((a) => a.publishAt.toISOString().slice(0, 10)));
+  const existingDates = new Set(
+    existing.map((a) => a.publishAt.toISOString().slice(0, 10)),
+  );
 
   const toCreate = holidays
     .filter((h) => !existingDates.has(h.date))
     .map((h) => ({
       title: `Holiday: ${h.name}`,
       body: `${h.name} — the institute will be closed. This entry was added automatically; no action needed.`,
-      type: 'holiday',
-      priority: 'normal',
-      audience: { roles: ['admin', 'mentor', 'student'], isPublic: false },
+      type: "holiday",
+      priority: "normal",
+      audience: { roles: ["admin", "mentor", "student"], isPublic: false },
       publishAt: new Date(`${h.date}T00:00:00.000Z`),
       isSystemHoliday: true,
       createdBy: systemAuthor._id,
@@ -54,7 +63,9 @@ async function syncHolidayAnnouncements() {
 
   if (toCreate.length === 0) return { created: 0 };
   await Announcement.insertMany(toCreate);
-  logger.info(`[holidaySync] Auto-created ${toCreate.length} holiday announcement(s)`);
+  logger.info(
+    `[holidaySync] Auto-created ${toCreate.length} holiday announcement(s)`,
+  );
   return { created: toCreate.length };
 }
 

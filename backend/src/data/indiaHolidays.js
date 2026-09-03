@@ -18,12 +18,12 @@
 
 const FIXED_HOLIDAYS = [
   { month: 1, day: 1, name: "New Year's Day" },
-  { month: 1, day: 26, name: 'Republic Day' },
-  { month: 4, day: 14, name: 'Ambedkar Jayanti' },
-  { month: 5, day: 1, name: 'Labour Day' },
-  { month: 8, day: 15, name: 'Independence Day' },
-  { month: 10, day: 2, name: 'Gandhi Jayanti' },
-  { month: 12, day: 25, name: 'Christmas' },
+  { month: 1, day: 26, name: "Republic Day" },
+  { month: 4, day: 14, name: "Ambedkar Jayanti" },
+  { month: 5, day: 1, name: "Labour Day" },
+  { month: 8, day: 15, name: "Independence Day" },
+  { month: 10, day: 2, name: "Gandhi Jayanti" },
+  { month: 12, day: 25, name: "Christmas" },
 ];
 
 // prettier-ignore
@@ -68,7 +68,7 @@ const MOVABLE_HOLIDAYS_BY_YEAR = {
 };
 
 function pad(n) {
-  return String(n).padStart(2, '0');
+  return String(n).padStart(2, "0");
 }
 
 /**

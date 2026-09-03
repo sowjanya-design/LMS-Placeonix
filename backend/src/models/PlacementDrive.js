@@ -1,5 +1,5 @@
-const mongoose = require('mongoose');
-const { PLACEMENT_STATUS } = require('../config/constants');
+const mongoose = require("mongoose");
+const { PLACEMENT_STATUS } = require("../config/constants");
 
 const placementDriveSchema = new mongoose.Schema(
   {
@@ -15,15 +15,19 @@ const placementDriveSchema = new mongoose.Schema(
     package: {
       min: { type: Number, required: true },
       max: { type: Number, required: true },
-      currency: { type: String, default: 'INR' },
+      currency: { type: String, default: "INR" },
     },
 
     location: [String],
-    workMode: { type: String, enum: ['onsite', 'remote', 'hybrid'], default: 'onsite' },
+    workMode: {
+      type: String,
+      enum: ["onsite", "remote", "hybrid"],
+      default: "onsite",
+    },
 
     vacancies: { type: Number, default: 1 },
-    eligibleCourses: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Course' }],
-    eligibleBatches: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Batch' }],
+    eligibleCourses: [{ type: mongoose.Schema.Types.ObjectId, ref: "Course" }],
+    eligibleBatches: [{ type: mongoose.Schema.Types.ObjectId, ref: "Batch" }],
     minCgpa: Number,
 
     applicationDeadline: { type: Date, required: true },
@@ -31,14 +35,18 @@ const placementDriveSchema = new mongoose.Schema(
 
     status: {
       type: String,
-      enum: ['draft', 'open', 'closed', 'completed', 'cancelled'],
-      default: 'open',
+      enum: ["draft", "open", "closed", "completed", "cancelled"],
+      default: "open",
       index: true,
     },
 
     applications: [
       {
-        student: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
+        student: {
+          type: mongoose.Schema.Types.ObjectId,
+          ref: "User",
+          required: true,
+        },
         appliedAt: { type: Date, default: Date.now },
         status: {
           type: String,
@@ -49,7 +57,7 @@ const placementDriveSchema = new mongoose.Schema(
           {
             name: String,
             date: Date,
-            result: { type: String, enum: ['pass', 'fail', 'pending'] },
+            result: { type: String, enum: ["pass", "fail", "pending"] },
             feedback: String,
           },
         ],
@@ -65,26 +73,34 @@ const placementDriveSchema = new mongoose.Schema(
           {
             stage: String,
             at: { type: Date, default: Date.now },
-            by: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
+            by: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
             note: String,
           },
         ],
       },
     ],
 
-    createdBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
+    createdBy: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
+      required: true,
+    },
   },
-  { timestamps: true, toJSON: { virtuals: true }, toObject: { virtuals: true } }
+  {
+    timestamps: true,
+    toJSON: { virtuals: true },
+    toObject: { virtuals: true },
+  },
 );
 
 placementDriveSchema.index({ status: 1, applicationDeadline: 1 });
 
-placementDriveSchema.virtual('applicantCount').get(function () {
+placementDriveSchema.virtual("applicantCount").get(function () {
   return this.applications?.length || 0;
 });
 
-placementDriveSchema.virtual('placedCount').get(function () {
-  return this.applications?.filter((a) => a.status === 'placed').length || 0;
+placementDriveSchema.virtual("placedCount").get(function () {
+  return this.applications?.filter((a) => a.status === "placed").length || 0;
 });
 
-module.exports = mongoose.model('PlacementDrive', placementDriveSchema);
+module.exports = mongoose.model("PlacementDrive", placementDriveSchema);

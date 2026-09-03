@@ -30,7 +30,11 @@ export default function AttendanceMarkPage() {
         setBatches(res);
         if (res[0]) setBatchId(res[0]._id);
       })
-      .catch((err) => setError(err instanceof ApiError ? err.message : "Failed to load batches"));
+      .catch((err) =>
+        setError(
+          err instanceof ApiError ? err.message : "Failed to load batches",
+        ),
+      );
   }, []);
 
   useEffect(() => {
@@ -46,7 +50,11 @@ export default function AttendanceMarkPage() {
         rows.forEach((s) => (initial[s.student._id] = "present"));
         setMarks(initial);
       })
-      .catch((err) => setError(err instanceof ApiError ? err.message : "Failed to load students"));
+      .catch((err) =>
+        setError(
+          err instanceof ApiError ? err.message : "Failed to load students",
+        ),
+      );
   }, [batchId]);
 
   async function handleSubmit() {
@@ -58,11 +66,16 @@ export default function AttendanceMarkPage() {
         batchId,
         date,
         sessionTitle,
-        records: students.map((s) => ({ studentId: s.student._id, status: marks[s.student._id] || "present" })),
+        records: students.map((s) => ({
+          studentId: s.student._id,
+          status: marks[s.student._id] || "present",
+        })),
       });
       setMessage(`Attendance saved for ${students.length} students.`);
     } catch (err) {
-      setMessage(err instanceof ApiError ? err.message : "Failed to save attendance");
+      setMessage(
+        err instanceof ApiError ? err.message : "Failed to save attendance",
+      );
     } finally {
       setSaving(false);
     }
@@ -94,7 +107,12 @@ export default function AttendanceMarkPage() {
         </div>
         <div className="flex flex-col gap-1.5">
           <label className="text-xs font-semibold text-ink">Date</label>
-          <input type="date" value={date} onChange={(e) => setDate(e.target.value)} className="rounded-lg border-[1.5px] border-line bg-[#fbfbfd] px-3 py-2 text-sm" />
+          <input
+            type="date"
+            value={date}
+            onChange={(e) => setDate(e.target.value)}
+            className="rounded-lg border-[1.5px] border-line bg-[#fbfbfd] px-3 py-2 text-sm"
+          />
         </div>
         <div className="flex flex-col gap-1.5">
           <label className="text-xs font-semibold text-ink">Session</label>
@@ -109,17 +127,25 @@ export default function AttendanceMarkPage() {
       {students && (
         <div className="rounded-[14px] border border-line bg-white p-2">
           {students.map((s) => (
-            <div key={s._id} className="flex items-center justify-between gap-4 border-b border-line px-3 py-2.5 last:border-0">
+            <div
+              key={s._id}
+              className="flex items-center justify-between gap-4 border-b border-line px-3 py-2.5 last:border-0"
+            >
               <span className="font-semibold text-ink">
-                {s.student?.firstName || "Unknown"} {s.student?.lastName || "Student"}
+                {s.student?.firstName || "Unknown"}{" "}
+                {s.student?.lastName || "Student"}
               </span>
               <div className="flex gap-1.5">
                 {STATUSES.map((st) => (
                   <button
                     key={st}
-                    onClick={() => setMarks((prev) => ({ ...prev, [s.student._id]: st }))}
+                    onClick={() =>
+                      setMarks((prev) => ({ ...prev, [s.student._id]: st }))
+                    }
                     className={`rounded-md px-2.5 py-1 text-xs font-semibold capitalize transition-colors ${
-                      marks[s.student._id] === st ? "bg-purple text-white" : "bg-bg text-muted hover:bg-purple-lt"
+                      marks[s.student._id] === st
+                        ? "bg-purple text-white"
+                        : "bg-bg text-muted hover:bg-purple-lt"
                     }`}
                   >
                     {st}
@@ -128,7 +154,11 @@ export default function AttendanceMarkPage() {
               </div>
             </div>
           ))}
-          {students.length === 0 && <p className="py-8 text-center text-sm text-muted">No students in this batch.</p>}
+          {students.length === 0 && (
+            <p className="py-8 text-center text-sm text-muted">
+              No students in this batch.
+            </p>
+          )}
         </div>
       )}
 
@@ -138,7 +168,10 @@ export default function AttendanceMarkPage() {
           onClick={handleSubmit}
           disabled={saving}
           className="self-start rounded-lg px-5 py-2.5 text-sm font-bold text-white disabled:opacity-50"
-          style={{ background: "linear-gradient(135deg, var(--purple), var(--purple-dk))" }}
+          style={{
+            background:
+              "linear-gradient(135deg, var(--purple), var(--purple-dk))",
+          }}
         >
           {saving ? "Saving…" : "Save Attendance"}
         </button>

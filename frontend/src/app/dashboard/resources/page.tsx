@@ -6,7 +6,13 @@ import { api, ApiError } from "@/lib/api";
 import type { Resource } from "@/lib/types";
 import { Modal } from "@/components/ui/modal";
 import { EmptyState } from "@/components/ui/empty-state";
-import { Field, Input, Textarea, ErrorText, ModalActions } from "@/components/ui/form";
+import {
+  Field,
+  Input,
+  Textarea,
+  ErrorText,
+  ModalActions,
+} from "@/components/ui/form";
 
 const TYPE_ICON: Record<string, string> = {
   pdf: "📄",
@@ -32,8 +38,18 @@ interface AddResourceForm {
   description: string;
 }
 
-function AddResourceModal({ onClose, onAdded }: { onClose: () => void; onAdded: (r: Resource) => void }) {
-  const [form, setForm] = useState<AddResourceForm>({ title: "", externalUrl: "", description: "" });
+function AddResourceModal({
+  onClose,
+  onAdded,
+}: {
+  onClose: () => void;
+  onAdded: (r: Resource) => void;
+}) {
+  const [form, setForm] = useState<AddResourceForm>({
+    title: "",
+    externalUrl: "",
+    description: "",
+  });
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
 
@@ -52,7 +68,9 @@ function AddResourceModal({ onClose, onAdded }: { onClose: () => void; onAdded: 
       onAdded(res.resource);
       onClose();
     } catch (err) {
-      setError(err instanceof ApiError ? err.message : "Failed to add resource");
+      setError(
+        err instanceof ApiError ? err.message : "Failed to add resource",
+      );
     } finally {
       setSubmitting(false);
     }
@@ -122,14 +140,19 @@ function EditResourceModal({
     setSubmitting(true);
     setError(null);
     try {
-      const res = await api.patch<{ resource: Resource }>(`/resources/${resource._id}`, {
-        title: form.title.trim(),
-        description: form.description.trim(),
-      });
+      const res = await api.patch<{ resource: Resource }>(
+        `/resources/${resource._id}`,
+        {
+          title: form.title.trim(),
+          description: form.description.trim(),
+        },
+      );
       onSaved(res.resource);
       onClose();
     } catch (err) {
-      setError(err instanceof ApiError ? err.message : "Failed to update resource");
+      setError(
+        err instanceof ApiError ? err.message : "Failed to update resource",
+      );
     } finally {
       setSubmitting(false);
     }
@@ -176,7 +199,11 @@ export default function ResourcesPage() {
     api
       .get<Resource[]>("/resources?limit=100")
       .then(setResources)
-      .catch((err) => setError(err instanceof ApiError ? err.message : "Failed to load resources"));
+      .catch((err) =>
+        setError(
+          err instanceof ApiError ? err.message : "Failed to load resources",
+        ),
+      );
   }, []);
 
   async function handleDelete(r: Resource) {
@@ -200,7 +227,10 @@ export default function ResourcesPage() {
           <button
             onClick={() => setShowAdd(true)}
             className="rounded-[10px] px-4 py-2.5 text-sm font-bold text-white shadow-[0_4px_14px_rgba(108,63,245,0.28)]"
-            style={{ background: "linear-gradient(135deg, var(--purple), var(--purple-dk))" }}
+            style={{
+              background:
+                "linear-gradient(135deg, var(--purple), var(--purple-dk))",
+            }}
           >
             + Add Resource
           </button>
@@ -212,20 +242,31 @@ export default function ResourcesPage() {
       {resources && (
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {resources.map((r) => (
-            <div key={r._id} className="flex flex-col gap-2 rounded-[14px] border border-line bg-white p-5">
+            <div
+              key={r._id}
+              className="flex flex-col gap-2 rounded-[14px] border border-line bg-white p-5"
+            >
               <div className="flex items-start justify-between gap-2">
                 <div className="flex h-10 w-10 items-center justify-center rounded-[10px] bg-purple-lt text-lg">
                   {TYPE_ICON[r.type] || "📁"}
                 </div>
                 {canManage && (
-                  <button onClick={() => handleDelete(r)} className="text-muted hover:text-red" aria-label="Delete resource">
+                  <button
+                    onClick={() => handleDelete(r)}
+                    className="text-muted hover:text-red"
+                    aria-label="Delete resource"
+                  >
                     ✕
                   </button>
                 )}
               </div>
               <div className="font-bold text-ink">{r.title}</div>
-              {r.course && <div className="text-xs text-muted">{r.course.title}</div>}
-              {r.description && <div className="text-xs text-ink2">{r.description}</div>}
+              {r.course && (
+                <div className="text-xs text-muted">{r.course.title}</div>
+              )}
+              {r.description && (
+                <div className="text-xs text-ink2">{r.description}</div>
+              )}
               <div className="mt-auto flex gap-2">
                 {(() => {
                   let url = r.externalUrl || r.fileUrl || "#";
@@ -258,7 +299,9 @@ export default function ResourcesPage() {
               </div>
             </div>
           ))}
-          {resources.length === 0 && <EmptyState message="No resources yet." className="col-span-full" />}
+          {resources.length === 0 && (
+            <EmptyState message="No resources yet." className="col-span-full" />
+          )}
         </div>
       )}
 
@@ -273,7 +316,11 @@ export default function ResourcesPage() {
         <EditResourceModal
           resource={editing}
           onClose={() => setEditing(null)}
-          onSaved={(r) => setResources((prev) => prev?.map((x) => (x._id === r._id ? r : x)) ?? prev)}
+          onSaved={(r) =>
+            setResources(
+              (prev) => prev?.map((x) => (x._id === r._id ? r : x)) ?? prev,
+            )
+          }
         />
       )}
     </div>

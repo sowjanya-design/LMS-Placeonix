@@ -1,4 +1,4 @@
-const axios = require('axios');
+const axios = require("axios");
 
 class CloudflareService {
   constructor() {
@@ -9,8 +9,8 @@ class CloudflareService {
 
   getHeaders() {
     return {
-      'Authorization': `Bearer ${this.apiToken}`,
-      'Content-Type': 'application/json',
+      Authorization: `Bearer ${this.apiToken}`,
+      "Content-Type": "application/json",
     };
   }
 
@@ -21,7 +21,9 @@ class CloudflareService {
   async createDirectUploadUrl(maxDurationSeconds = 3600) {
     // Graceful fallback for local development without Cloudflare keys
     if (!this.accountId || !this.apiToken) {
-      console.warn('Missing Cloudflare credentials. Using mock direct upload URL.');
+      console.warn(
+        "Missing Cloudflare credentials. Using mock direct upload URL.",
+      );
       const uid = `mock-cf-video-${Date.now()}`;
       return {
         uploadUrl: `http://localhost:5000/api/v1/videos/mock-cloudflare-upload`,
@@ -36,7 +38,7 @@ class CloudflareService {
           maxDurationSeconds,
           requireSignedURLs: true,
         },
-        { headers: this.getHeaders() }
+        { headers: this.getHeaders() },
       );
 
       return {
@@ -44,8 +46,11 @@ class CloudflareService {
         uid: response.data.result.uid,
       };
     } catch (error) {
-      console.error('Error creating direct upload URL:', error.response?.data || error.message);
-      throw new Error('Failed to create direct upload URL');
+      console.error(
+        "Error creating direct upload URL:",
+        error.response?.data || error.message,
+      );
+      throw new Error("Failed to create direct upload URL");
     }
   }
 
@@ -54,11 +59,16 @@ class CloudflareService {
    */
   async deleteVideo(uid) {
     try {
-      await axios.delete(`${this.baseUrl}/${uid}`, { headers: this.getHeaders() });
+      await axios.delete(`${this.baseUrl}/${uid}`, {
+        headers: this.getHeaders(),
+      });
       return true;
     } catch (error) {
-      console.error('Error deleting video:', error.response?.data || error.message);
-      throw new Error('Failed to delete video');
+      console.error(
+        "Error deleting video:",
+        error.response?.data || error.message,
+      );
+      throw new Error("Failed to delete video");
     }
   }
 
@@ -67,11 +77,16 @@ class CloudflareService {
    */
   async getVideoDetails(uid) {
     try {
-      const response = await axios.get(`${this.baseUrl}/${uid}`, { headers: this.getHeaders() });
+      const response = await axios.get(`${this.baseUrl}/${uid}`, {
+        headers: this.getHeaders(),
+      });
       return response.data.result;
     } catch (error) {
-      console.error('Error getting video details:', error.response?.data || error.message);
-      throw new Error('Failed to get video details');
+      console.error(
+        "Error getting video details:",
+        error.response?.data || error.message,
+      );
+      throw new Error("Failed to get video details");
     }
   }
 
@@ -86,16 +101,19 @@ class CloudflareService {
         {
           exp: Math.floor(Date.now() / 1000) + 3600, // Token valid for 1 hour
         },
-        { headers: this.getHeaders() }
+        { headers: this.getHeaders() },
       );
-      
+
       const token = response.data.result.token;
       return `https://customer-<YOUR_SUBDOMAIN>.cloudflarestream.com/${token}/iframe`;
       // Alternatively, return just the token if the frontend uses the Stream React component
       // return token;
     } catch (error) {
-      console.error('Error generating playback URL:', error.response?.data || error.message);
-      throw new Error('Failed to generate signed playback URL');
+      console.error(
+        "Error generating playback URL:",
+        error.response?.data || error.message,
+      );
+      throw new Error("Failed to generate signed playback URL");
     }
   }
 

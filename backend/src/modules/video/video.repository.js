@@ -1,4 +1,4 @@
-const Video = require('./video.model');
+const Video = require("./video.model");
 
 class VideoRepository {
   async createVideo(data) {
@@ -19,7 +19,9 @@ class VideoRepository {
   }
 
   async updateVideoByUID(uid, updateData) {
-    return await Video.findOneAndUpdate({ videoUID: uid }, updateData, { new: true });
+    return await Video.findOneAndUpdate({ videoUID: uid }, updateData, {
+      new: true,
+    });
   }
 
   async deleteVideo(id) {
