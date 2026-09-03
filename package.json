@@ -2,10 +2,17 @@
   "name": "placeonix-hub",
   "version": "1.0.0",
   "private": true,
+  "workspaces": [
+    "backend",
+    "frontend"
+  ],
   "description": "Placeonix Hub — convenience scripts that delegate to the backend + frontend",
   "scripts": {
+    "build": "npm --prefix frontend run build",
     "dev": "npm --prefix backend run dev",
-    "start": "npm --prefix backend start",
+    "start": "node run.js",
+    "start:backend": "npm --prefix backend start",
+    "start:frontend": "npm --prefix frontend start",
     "seed": "npm --prefix backend run seed",
     "install:backend": "npm --prefix backend install",
     "portal": "npm --prefix frontend run dev",

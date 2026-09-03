@@ -1,8 +1,8 @@
-const { verifyToken } = require('../utils/jwt');
-const User = require('../models/User');
-const Role = require('../models/Role');
-const AppError = require('../utils/AppError');
-const asyncHandler = require('../utils/asyncHandler');
+const { verifyToken } = require("../utils/jwt");
+const User = require("../models/User");
+const Role = require("../models/Role");
+const AppError = require("../utils/AppError");
+const asyncHandler = require("../utils/asyncHandler");
 
 /**
  * Verifies JWT and attaches user to request.
@@ -11,32 +11,42 @@ const asyncHandler = require('../utils/asyncHandler');
 const protect = asyncHandler(async (req, res, next) => {
   let token;
 
-  if (req.headers.authorization?.startsWith('Bearer ')) {
-    token = req.headers.authorization.split(' ')[1];
+  if (req.headers.authorization?.startsWith("Bearer ")) {
+    token = req.headers.authorization.split(" ")[1];
   } else if (req.cookies?.accessToken) {
     token = req.cookies.accessToken;
   }
 
   if (!token) {
-    return next(new AppError('Not authorized — please log in', 401));
+    return next(new AppError("Not authorized — please log in", 401));
   }
 
   let decoded;
   try {
     decoded = verifyToken(token);
   } catch (err) {
-    if (err.name === 'TokenExpiredError') {
-      return next(new AppError('Session expired — please log in again', 401));
+    if (err.name === "TokenExpiredError") {
+      return next(new AppError("Session expired — please log in again", 401));
     }
-    return next(new AppError('Invalid token', 401));
+    return next(new AppError("Invalid token", 401));
   }
 
-  const user = await User.findById(decoded.id).select('-password');
+  const user = await User.findById(decoded.id).select("-password");
   if (!user) {
-    return next(new AppError('User no longer exists', 401));
+    return next(new AppError("User no longer exists", 401));
   }
-  if (user.status !== 'active') {
+  if (user.status !== "active") {
     return next(new AppError(`Account is ${user.status}`, 403));
+  }
+
+  // Reject access tokens issued before the user's last logout — see
+  // authController.logout, which stamps tokenBlacklistedAt precisely because
+  // a stateless JWT otherwise stays valid past logout until it expires.
+  if (user.tokenBlacklistedAt) {
+    const tokenIssuedAt = decoded.iat * 1000; // iat is in seconds
+    if (tokenIssuedAt < user.tokenBlacklistedAt.getTime()) {
+      return next(new AppError("Session expired — please log in again", 401));
+    }
   }
 
   req.user = user;
@@ -47,26 +57,36 @@ const protect = asyncHandler(async (req, res, next) => {
  * Role-based access control.
  * Usage: router.get('/', protect, authorize('admin', 'mentor'), handler)
  */
-const authorize = (...roles) => (req, res, next) => {
-  if (!req.user) return next(new AppError('Not authenticated', 401));
-  if (req.user.role === 'super_admin' || roles.includes(req.user.role)) {
-    return next();
-  }
-  return next(
-    new AppError(`Forbidden — role '${req.user.role}' cannot access this resource`, 403)
-  );
-};
+const authorize =
+  (...roles) =>
+  (req, res, next) => {
+    if (!req.user) return next(new AppError("Not authenticated", 401));
+    if (req.user.role === "super_admin" || roles.includes(req.user.role)) {
+      return next();
+    }
+    return next(
+      new AppError(
+        `Forbidden — role '${req.user.role}' cannot access this resource`,
+        403,
+      ),
+    );
+  };
 
 /**
  * Allow only the resource owner OR admin.
  * Expects req.params.userId or req.params.id to match req.user._id
  */
-const ownerOrAdmin = (paramKey = 'id') => (req, res, next) => {
-  const targetId = req.params[paramKey];
-  if (req.user.role === 'super_admin' || req.user.role === 'admin') return next();
-  if (String(req.user._id) === String(targetId)) return next();
-  return next(new AppError('Forbidden — you can only access your own resources', 403));
-};
+const ownerOrAdmin =
+  (paramKey = "id") =>
+  (req, res, next) => {
+    const targetId = req.params[paramKey];
+    if (req.user.role === "super_admin" || req.user.role === "admin")
+      return next();
+    if (String(req.user._id) === String(targetId)) return next();
+    return next(
+      new AppError("Forbidden — you can only access your own resources", 403),
+    );
+  };
 
 /**
  * Fine-grained, permission-code based access control — a second layer on top
@@ -78,20 +98,28 @@ const ownerOrAdmin = (paramKey = 'id') => (req, res, next) => {
  *
  * Usage: router.patch('/:id/role', protect, can('users.manage_role'), handler)
  */
-const can = (...permissionCodes) => async (req, res, next) => {
-  if (!req.user) return next(new AppError('Not authenticated', 401));
-  if (req.user.role === 'super_admin' || req.user.role === 'admin') return next();
+const can =
+  (...permissionCodes) =>
+  async (req, res, next) => {
+    if (!req.user) return next(new AppError("Not authenticated", 401));
+    if (req.user.role === "super_admin" || req.user.role === "admin")
+      return next();
 
-  const role = await Role.findOne({ code: req.user.role });
-  const granted = role?.permissions || [];
-  const hasPermission = permissionCodes.some((code) => granted.includes(code));
-
-  if (!hasPermission) {
-    return next(
-      new AppError(`Forbidden — role '${req.user.role}' lacks permission: ${permissionCodes.join(', ')}`, 403)
+    const role = await Role.findOne({ code: req.user.role });
+    const granted = role?.permissions || [];
+    const hasPermission = permissionCodes.some((code) =>
+      granted.includes(code),
     );
-  }
-  next();
-};
+
+    if (!hasPermission) {
+      return next(
+        new AppError(
+          `Forbidden — role '${req.user.role}' lacks permission: ${permissionCodes.join(", ")}`,
+          403,
+        ),
+      );
+    }
+    next();
+  };
 
 module.exports = { protect, authorize, ownerOrAdmin, can };

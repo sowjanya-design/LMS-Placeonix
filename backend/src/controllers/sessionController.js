@@ -1,9 +1,9 @@
-const Session = require('../models/Session');
-const Batch = require('../models/Batch');
-const Enrollment = require('../models/Enrollment');
-const AppError = require('../utils/AppError');
-const ApiResponse = require('../utils/ApiResponse');
-const asyncHandler = require('../utils/asyncHandler');
+const Session = require("../models/Session");
+const Batch = require("../models/Batch");
+const Enrollment = require("../models/Enrollment");
+const AppError = require("../utils/AppError");
+const ApiResponse = require("../utils/ApiResponse");
+const asyncHandler = require("../utils/asyncHandler");
 
 // @desc   List sessions (filtered by user role)
 // @route  GET /api/v1/sessions?from=&to=&batch=&status=
@@ -19,23 +19,33 @@ exports.listSessions = asyncHandler(async (req, res) => {
   }
 
   // Role-based scoping
-  if (req.user.role === 'mentor') {
+  if (req.user.role === "mentor") {
     filter.instructor = req.user._id;
-  } else if (req.user.role === 'student') {
-    const enrollments = await Enrollment.find({ student: req.user._id, status: { $ne: 'dropped' } }).select('batch');
+  } else if (req.user.role === "student") {
+    const enrollments = await Enrollment.find({
+      student: req.user._id,
+      status: { $ne: "dropped" },
+    }).select("batch");
     filter.batch = { $in: enrollments.map((e) => e.batch) };
   }
 
   const total = await Session.countDocuments(filter);
   const sessions = await Session.find(filter)
-    .populate('batch', 'name code')
-    .populate('course', 'title color')
-    .populate('instructor', 'firstName lastName avatar')
-    .sort('startTime')
+    .populate("batch", "name code")
+    .populate("course", "title color")
+    .populate("instructor", "firstName lastName avatar")
+    .sort("startTime")
     .skip((page - 1) * limit)
     .limit(Number(limit));
 
-  return ApiResponse.paginated(res, 'Sessions fetched', sessions, page, limit, total);
+  return ApiResponse.paginated(
+    res,
+    "Sessions fetched",
+    sessions,
+    page,
+    limit,
+    total,
+  );
 });
 
 // @desc   Today's sessions
@@ -48,15 +58,18 @@ exports.todaySessions = asyncHandler(async (req, res) => {
 
   const filter = { startTime: { $gte: start, $lte: end } };
 
-  if (req.user.role === 'mentor') filter.instructor = req.user._id;
-  else if (req.user.role === 'student') {
-    const enrollments = await Enrollment.find({ student: req.user._id, status: { $ne: 'dropped' } }).select('batch');
+  if (req.user.role === "mentor") filter.instructor = req.user._id;
+  else if (req.user.role === "student") {
+    const enrollments = await Enrollment.find({
+      student: req.user._id,
+      status: { $ne: "dropped" },
+    }).select("batch");
     filter.batch = { $in: enrollments.map((e) => e.batch) };
   }
 
   const sessions = await Session.find(filter)
-    .populate('batch course instructor', 'name title color firstName lastName')
-    .sort('startTime');
+    .populate("batch course instructor", "name title color firstName lastName")
+    .sort("startTime");
 
   return ApiResponse.success(res, 200, "Today's sessions", {
     sessions,
@@ -67,17 +80,18 @@ exports.todaySessions = asyncHandler(async (req, res) => {
 // @desc   Get session
 // @route  GET /api/v1/sessions/:id
 exports.getSession = asyncHandler(async (req, res, next) => {
-  const session = await Session.findById(req.params.id)
-    .populate('batch course instructor materials');
-  if (!session) return next(new AppError('Session not found', 404));
-  return ApiResponse.success(res, 200, 'Session fetched', { session });
+  const session = await Session.findById(req.params.id).populate(
+    "batch course instructor materials",
+  );
+  if (!session) return next(new AppError("Session not found", 404));
+  return ApiResponse.success(res, 200, "Session fetched", { session });
 });
 
 // @desc   Create session
 // @route  POST /api/v1/sessions
 exports.createSession = asyncHandler(async (req, res, next) => {
   const batch = await Batch.findById(req.body.batch);
-  if (!batch) return next(new AppError('Batch not found', 404));
+  if (!batch) return next(new AppError("Batch not found", 404));
 
   // Inherit course from batch
   if (!req.body.course) req.body.course = batch.course;
@@ -89,13 +103,18 @@ exports.createSession = asyncHandler(async (req, res, next) => {
     createdBy: req.user._id,
   });
 
-  return ApiResponse.created(res, 'Session created', { session });
+  return ApiResponse.created(res, "Session created", { session });
 });
 
 // A mentor may only mutate sessions they personally instruct; admins bypass.
 const assertOwnsSession = (session, req, next) => {
-  if (req.user.role === 'mentor' && String(session.instructor) !== String(req.user._id)) {
-    next(new AppError('Forbidden — you can only manage your own sessions', 403));
+  if (
+    req.user.role === "mentor" &&
+    String(session.instructor) !== String(req.user._id)
+  ) {
+    next(
+      new AppError("Forbidden — you can only manage your own sessions", 403),
+    );
     return false;
   }
   return true;
@@ -105,54 +124,74 @@ const assertOwnsSession = (session, req, next) => {
 // @route  PATCH /api/v1/sessions/:id
 exports.updateSession = asyncHandler(async (req, res, next) => {
   const session = await Session.findById(req.params.id);
-  if (!session) return next(new AppError('Session not found', 404));
+  if (!session) return next(new AppError("Session not found", 404));
   if (!assertOwnsSession(session, req, next)) return;
 
   // instructor/batch/createdBy are ownership-defining — not client-settable via PATCH.
-  const { title, description, startTime, endTime, meetingLink, notes, homework, recordingUrl } = req.body;
-  const updates = { title, description, startTime, endTime, meetingLink, notes, homework, recordingUrl };
-  Object.keys(updates).forEach((k) => updates[k] === undefined && delete updates[k]);
+  const {
+    title,
+    description,
+    startTime,
+    endTime,
+    meetingLink,
+    notes,
+    homework,
+    recordingUrl,
+  } = req.body;
+  const updates = {
+    title,
+    description,
+    startTime,
+    endTime,
+    meetingLink,
+    notes,
+    homework,
+    recordingUrl,
+  };
+  Object.keys(updates).forEach(
+    (k) => updates[k] === undefined && delete updates[k],
+  );
   Object.assign(session, updates);
   await session.save();
 
-  return ApiResponse.success(res, 200, 'Session updated', { session });
+  return ApiResponse.success(res, 200, "Session updated", { session });
 });
 
 // @desc   Delete / cancel session
 // @route  DELETE /api/v1/sessions/:id
 exports.deleteSession = asyncHandler(async (req, res, next) => {
   const session = await Session.findById(req.params.id);
-  if (!session) return next(new AppError('Session not found', 404));
+  if (!session) return next(new AppError("Session not found", 404));
   if (!assertOwnsSession(session, req, next)) return;
 
-  session.status = 'cancelled';
+  session.status = "cancelled";
   await session.save();
-  return ApiResponse.success(res, 200, 'Session cancelled', { session });
+  return ApiResponse.success(res, 200, "Session cancelled", { session });
 });
 
 // @desc   Mark session as live
 // @route  PATCH /api/v1/sessions/:id/start
 exports.startSession = asyncHandler(async (req, res, next) => {
   const session = await Session.findById(req.params.id);
-  if (!session) return next(new AppError('Session not found', 404));
+  if (!session) return next(new AppError("Session not found", 404));
   if (!assertOwnsSession(session, req, next)) return;
 
-  session.status = 'live';
+  session.status = "live";
   await session.save();
-  return ApiResponse.success(res, 200, 'Session started', { session });
+  return ApiResponse.success(res, 200, "Session started", { session });
 });
 
 // @desc   Complete session
 // @route  PATCH /api/v1/sessions/:id/complete
 exports.completeSession = asyncHandler(async (req, res, next) => {
   const session = await Session.findById(req.params.id);
-  if (!session) return next(new AppError('Session not found', 404));
+  if (!session) return next(new AppError("Session not found", 404));
   if (!assertOwnsSession(session, req, next)) return;
 
-  session.status = 'completed';
+  session.status = "completed";
   session.notes = req.body.notes;
   session.homework = req.body.homework;
   session.recordingUrl = req.body.recordingUrl;
   await session.save();
-  return ApiResponse.success(res, 200, 'Session completed', { session });
+  return ApiResponse.success(res, 200, "Session completed", { session });
 });

@@ -34,7 +34,9 @@ export function NotificationBell() {
 
   async function loadCount() {
     try {
-      const { count } = await api.get<{ count: number }>("/notifications/unread-count");
+      const { count } = await api.get<{ count: number }>(
+        "/notifications/unread-count",
+      );
       setCount(count ?? 0);
     } catch {
       // silent — a missing count shouldn't break the header
@@ -50,7 +52,8 @@ export function NotificationBell() {
   // Close on outside click.
   useEffect(() => {
     function onDown(e: MouseEvent) {
-      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+      if (ref.current && !ref.current.contains(e.target as Node))
+        setOpen(false);
     }
     if (open) document.addEventListener("mousedown", onDown);
     return () => document.removeEventListener("mousedown", onDown);
@@ -72,7 +75,11 @@ export function NotificationBell() {
 
   async function markOne(n: Notification) {
     if (n.isRead) return;
-    setItems((prev) => prev?.map((x) => (x._id === n._id ? { ...x, isRead: true } : x)) ?? prev);
+    setItems(
+      (prev) =>
+        prev?.map((x) => (x._id === n._id ? { ...x, isRead: true } : x)) ??
+        prev,
+    );
     setCount((c) => Math.max(0, c - 1));
     try {
       await api.patch(`/notifications/${n._id}/read`);
@@ -121,15 +128,24 @@ export function NotificationBell() {
           <div className="flex items-center justify-between border-b border-line px-4 py-2.5">
             <span className="text-sm font-bold text-ink">Notifications</span>
             {items && items.some((n) => !n.isRead) && (
-              <button onClick={markAll} className="text-xs font-semibold text-purple hover:underline">
+              <button
+                onClick={markAll}
+                className="text-xs font-semibold text-purple hover:underline"
+              >
                 Mark all read
               </button>
             )}
           </div>
           <div className="max-h-96 overflow-y-auto">
-            {!items && <div className="px-4 py-6 text-center text-sm text-muted">Loading…</div>}
+            {!items && (
+              <div className="px-4 py-6 text-center text-sm text-muted">
+                Loading…
+              </div>
+            )}
             {items && items.length === 0 && (
-              <div className="px-4 py-8 text-center text-sm text-muted">You&apos;re all caught up.</div>
+              <div className="px-4 py-8 text-center text-sm text-muted">
+                You&apos;re all caught up.
+              </div>
             )}
             {items?.map((n) => (
               <div
@@ -142,11 +158,17 @@ export function NotificationBell() {
                 <div className="mt-0.5 text-base">{n.icon || "🔔"}</div>
                 <div className="min-w-0 flex-1">
                   <div className="flex items-center gap-1.5">
-                    {!n.isRead && <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-purple" />}
-                    <span className="truncate text-sm font-semibold text-ink">{n.title}</span>
+                    {!n.isRead && (
+                      <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-purple" />
+                    )}
+                    <span className="truncate text-sm font-semibold text-ink">
+                      {n.title}
+                    </span>
                   </div>
                   <p className="text-xs text-ink2">{n.message}</p>
-                  <span className="text-[10px] text-muted">{timeAgo(n.createdAt)}</span>
+                  <span className="text-[10px] text-muted">
+                    {timeAgo(n.createdAt)}
+                  </span>
                 </div>
                 <button
                   onClick={(e) => {

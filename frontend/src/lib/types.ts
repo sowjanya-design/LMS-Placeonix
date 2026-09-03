@@ -1,4 +1,14 @@
-export type Role = "super_admin" | "admin" | "mentor" | "student" | "hr" | "recruiter";
+export type Role =
+  "super_admin" | "admin" | "mentor" | "student" | "hr" | "recruiter";
+
+// Enrollment.course / Certificate.course come back populated on most endpoints, but a
+// few return the raw ObjectId string instead. Narrow with these rather than `as`-casting
+// past the union at each call site.
+export function populatedCourse<T extends { title: string }>(
+  course: T | string | undefined | null,
+): T | null {
+  return course && typeof course === "object" ? course : null;
+}
 
 export interface User {
   _id: string;
@@ -10,10 +20,31 @@ export interface User {
   status: string;
   avatar?: string | null;
   createdAt: string;
-  studentProfile?: { enrollmentId?: string; resume?: string; skills?: string[]; college?: string; degree?: string; graduationYear?: number; linkedIn?: string; github?: string; portfolio?: string; experience?: string; expectedSalary?: string; preferredLocation?: string; }; bio?: string;
+  studentProfile?: {
+    enrollmentId?: string;
+    resume?: string;
+    skills?: string[];
+    college?: string;
+    degree?: string;
+    graduationYear?: number;
+    linkedIn?: string;
+    github?: string;
+    portfolio?: string;
+    experience?: string;
+    expectedSalary?: string;
+    preferredLocation?: string;
+  };
+  bio?: string;
   mentorProfile?: { studentCount?: number };
+  dateOfBirth?: string;
 }
 
+export interface Birthday {
+  userId: string;
+  name: string;
+  month: number; // 1-12
+  day: number;
+}
 
 export interface AnalyticsOverview {
   students: { total: number; active: number };
@@ -30,11 +61,13 @@ export interface Course {
   _id: string;
   title: string;
   category: string;
+  level?: string;
   color?: string;
   shortDescription?: string;
   description?: string;
   duration: string;
   fee?: { amount: number; currency?: string };
+  isPublished?: boolean;
 }
 
 export interface Batch {
@@ -50,11 +83,14 @@ export interface Batch {
   status?: "upcoming" | "enrolling" | "active" | "completed" | "cancelled";
 }
 
-export type EnrollmentStatus = "enrolled" | "in_progress" | "completed" | "dropped" | "at_risk";
+export type EnrollmentStatus =
+  "enrolled" | "in_progress" | "completed" | "dropped" | "at_risk";
 
 export interface Enrollment {
   _id: string;
-  course: Course;
+  // Populated by most endpoints, but a few return it unpopulated (raw ObjectId string) —
+  // callers that render course details should narrow with typeof before use.
+  course: Course | string;
   batch: Batch;
   status: EnrollmentStatus;
   progress: { overall: number };
@@ -74,6 +110,133 @@ export interface Submission {
   score?: number;
   grade?: string;
   mentorFeedback?: string;
+  files?: { url: string; filename: string; size: number }[];
+}
+
+// ── Quizzes ──────────────────────────────────────────────────────────────
+export type QuestionType = "single" | "multi";
+export type QuizStatus = "draft" | "published" | "closed";
+
+export interface QuizOption {
+  _id: string;
+  text: string;
+  isCorrect?: boolean; // stripped server-side for a student taking (not reviewing) a quiz
+}
+
+export interface QuizQuestion {
+  _id: string;
+  text: string;
+  type: QuestionType;
+  options: QuizOption[];
+  points: number;
+  order?: number;
+}
+
+export interface Quiz {
+  _id: string;
+  title: string;
+  description?: string;
+  course: { _id: string; title: string };
+  batch: { _id: string; name: string; code: string };
+  questions: QuizQuestion[];
+  timeLimitMinutes: number;
+  maxAttempts: number;
+  passingScorePercent: number;
+  availableFrom?: string;
+  availableUntil?: string;
+  status: QuizStatus;
+  maxScore: number;
+  isOpen: boolean;
+  createdBy?: { _id: string; firstName: string; lastName: string };
+}
+
+export interface QuizAnswer {
+  question: string;
+  selectedOptions: string[];
+  isCorrect?: boolean;
+  pointsAwarded?: number;
+}
+
+export interface QuizResult {
+  _id: string;
+  quiz: string;
+  student:
+    | { _id: string; firstName: string; lastName: string; email?: string }
+    | string;
+  batch: string;
+  attemptNumber: number;
+  answers: QuizAnswer[];
+  score: number;
+  maxScore: number;
+  percentage: number;
+  passed: boolean;
+  status: "in_progress" | "submitted";
+  startedAt: string;
+  submittedAt?: string;
+}
+
+// ── Coding Challenges ────────────────────────────────────────────────────
+export interface CodeLanguage {
+  code: string;
+  label: string;
+}
+
+export interface TestCase {
+  _id: string;
+  input: string;
+  expectedOutput?: string; // stripped for hidden cases in a student's view
+  isHidden: boolean;
+  points: number;
+}
+
+export interface CodingChallenge {
+  _id: string;
+  title: string;
+  description: string;
+  course: { _id: string; title: string };
+  batch: { _id: string; name: string; code: string };
+  allowedLanguages: string[];
+  starterCode?: Record<string, string>;
+  testCases: TestCase[];
+  maxAttempts: number;
+  status: QuizStatus;
+  maxScore: number;
+  createdBy?: { _id: string; firstName: string; lastName: string };
+}
+
+export interface CodeRunResult {
+  stdout: string;
+  stderr: string;
+  exitCode: number;
+  timedOut: boolean;
+}
+
+export interface TestCaseResult {
+  testCase: string;
+  isHidden: boolean;
+  passed: boolean;
+  pointsAwarded: number;
+  stdout?: string;
+  stderr?: string;
+}
+
+export interface CodingSubmission {
+  _id: string;
+  challenge: string;
+  student:
+    | { _id: string; firstName: string; lastName: string; email?: string }
+    | string;
+  batch: string;
+  language: string;
+  code: string;
+  attemptNumber: number;
+  results: TestCaseResult[];
+  score: number;
+  maxScore: number;
+  percentage: number;
+  passed: boolean;
+  status: "grading" | "graded" | "error";
+  submittedAt: string;
 }
 
 export type AttendanceStatus = "present" | "absent" | "late" | "excused";
@@ -109,10 +272,23 @@ export interface Assignment {
   submissions: Submission[];
 }
 
+
+export interface QuizAttempt {
+  _id: string;
+  quiz: string | Quiz;
+  student: string;
+  status: "in_progress" | "submitted" | "abandoned";
+  score?: number;
+  passed?: boolean;
+  startedAt: string;
+  submittedAt?: string;
+}
+
 export interface Session {
   _id: string;
   title: string;
   batch?: { _id: string; name: string };
+  course?: { _id: string; title: string; color?: string };
   instructor?: { firstName: string; lastName: string };
   mode: "online" | "offline";
   venue?: string;
@@ -165,7 +341,13 @@ export interface Payment {
   enrollment?: { _id: string };
   amount: number;
   method: string;
-  status: "pending" | "processing" | "completed" | "failed" | "refunded" | "partial-refund";
+  status:
+    | "pending"
+    | "processing"
+    | "completed"
+    | "failed"
+    | "refunded"
+    | "partial-refund";
   paidOn?: string;
   transactionId?: string;
 }
@@ -173,12 +355,14 @@ export interface Payment {
 export interface Certificate {
   _id: string;
   student: { _id: string; firstName: string; lastName: string };
-  course: { _id: string; title: string };
+  // Same populate-or-raw-id caveat as Enrollment.course above.
+  course: { _id: string; title: string } | string;
   certificateNumber: string;
   type: string;
   status: "active" | "revoked";
   issuedDate: string;
   grade?: string;
+  score?: number;
 }
 
 export interface Resource {
@@ -221,6 +405,9 @@ export interface Announcement {
   priority: "low" | "normal" | "high";
   publishAt: string;
   createdBy?: { firstName: string; lastName: string };
+  // Set on holiday announcements created automatically by the backend's
+  // yearly holiday sync — see backend/src/services/holidaySyncService.js.
+  isSystemHoliday?: boolean;
 }
 
 export interface MockInterview {

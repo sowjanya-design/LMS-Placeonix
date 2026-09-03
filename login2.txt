@@ -1,0 +1,8 @@
+
+  → Sign in with one click:
+    https://railway.com/activate?user_code=ZQSH-CTMW
+
+  → Or go to https://railway.com/activate and enter this code:
+    ZQSH-CTMW
+
+  ✓ Signed in as AVINASH MURARI (support@placeonix.com)

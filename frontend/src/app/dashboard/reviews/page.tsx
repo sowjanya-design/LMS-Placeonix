@@ -4,7 +4,15 @@ import { useEffect, useMemo, useState } from "react";
 import { useAuth } from "@/lib/auth-context";
 import { api, ApiError } from "@/lib/api";
 import { Modal } from "@/components/ui/modal";
-import { Field, Textarea, Select, DangerButton, SecondaryButton, ErrorText, ModalActions } from "@/components/ui/form";
+import {
+  Field,
+  Textarea,
+  Select,
+  DangerButton,
+  SecondaryButton,
+  ErrorText,
+  ModalActions,
+} from "@/components/ui/form";
 import { EmptyState } from "@/components/ui/empty-state";
 
 // The list endpoint returns raw Review docs, so `response` is the embedded
@@ -27,7 +35,11 @@ interface ReviewRow {
 interface EnrollmentLite {
   _id: string;
   course?: { _id: string; title?: string };
-  batch?: { _id: string; name?: string; mentor?: { _id: string; firstName?: string; lastName?: string } };
+  batch?: {
+    _id: string;
+    name?: string;
+    mentor?: { _id: string; firstName?: string; lastName?: string };
+  };
 }
 
 interface TargetOption {
@@ -44,11 +56,20 @@ const TYPE_LABEL: Record<TargetType, string> = {
 };
 
 function Stars({ n }: { n: number }) {
-  return <span className="text-amber">{"★".repeat(n)}{"☆".repeat(5 - n)}</span>;
+  return (
+    <span className="text-amber">
+      {"★".repeat(n)}
+      {"☆".repeat(5 - n)}
+    </span>
+  );
 }
 
 function fmt(iso: string) {
-  return new Date(iso).toLocaleDateString(undefined, { day: "numeric", month: "short", year: "numeric" });
+  return new Date(iso).toLocaleDateString(undefined, {
+    day: "numeric",
+    month: "short",
+    year: "numeric",
+  });
 }
 
 // Turn the student's enrollments into a de-duplicated list of review targets.
@@ -58,10 +79,18 @@ function buildTargetOptions(enrollments: EnrollmentLite[]): TargetOption[] {
   const map = new Map<string, TargetOption>();
   for (const e of enrollments) {
     if (e.course?._id) {
-      map.set(`course:${e.course._id}`, { targetType: "course", id: e.course._id, label: e.course.title ?? "Course" });
+      map.set(`course:${e.course._id}`, {
+        targetType: "course",
+        id: e.course._id,
+        label: e.course.title ?? "Course",
+      });
     }
     if (e.batch?._id) {
-      map.set(`batch:${e.batch?._id}`, { targetType: "batch", id: e.batch?._id, label: e.batch?.name ?? "Batch" });
+      map.set(`batch:${e.batch?._id}`, {
+        targetType: "batch",
+        id: e.batch?._id,
+        label: e.batch?.name ?? "Batch",
+      });
     }
     const m = e.batch?.mentor;
     if (m?._id) {
@@ -75,19 +104,35 @@ function buildTargetOptions(enrollments: EnrollmentLite[]): TargetOption[] {
   return [...map.values()];
 }
 
-function FeedbackModal({ options, onClose, onDone }: { options: TargetOption[]; onClose: () => void; onDone: () => void }) {
+function FeedbackModal({
+  options,
+  onClose,
+  onDone,
+}: {
+  options: TargetOption[];
+  onClose: () => void;
+  onDone: () => void;
+}) {
   const types = useMemo(
-    () => (["mentor", "course", "batch", "institute"] as TargetType[]).filter((t) => options.some((o) => o.targetType === t)),
-    [options]
+    () =>
+      (["mentor", "course", "batch", "institute"] as TargetType[]).filter((t) =>
+        options.some((o) => o.targetType === t),
+      ),
+    [options],
   );
-  const [targetType, setTargetType] = useState<TargetType>(types[0] ?? "course");
+  const [targetType, setTargetType] = useState<TargetType>(
+    types[0] ?? "course",
+  );
   const [target, setTarget] = useState("");
   const [rating, setRating] = useState(5);
   const [comment, setComment] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
 
-  const typeOptions = useMemo(() => options.filter((o) => o.targetType === targetType), [options, targetType]);
+  const typeOptions = useMemo(
+    () => options.filter((o) => o.targetType === targetType),
+    [options, targetType],
+  );
 
   // Keep `target` valid whenever the chosen type (and thus its options) changes.
   useEffect(() => {
@@ -103,11 +148,18 @@ function FeedbackModal({ options, onClose, onDone }: { options: TargetOption[]; 
     setSubmitting(true);
     setError(null);
     try {
-      await api.post("/reviews", { targetType, target, rating, comment: comment.trim() || undefined });
+      await api.post("/reviews", {
+        targetType,
+        target,
+        rating,
+        comment: comment.trim() || undefined,
+      });
       onDone();
       onClose();
     } catch (err) {
-      setError(err instanceof ApiError ? err.message : "Failed to submit feedback");
+      setError(
+        err instanceof ApiError ? err.message : "Failed to submit feedback",
+      );
       setSubmitting(false);
     }
   }
@@ -116,7 +168,10 @@ function FeedbackModal({ options, onClose, onDone }: { options: TargetOption[]; 
     <Modal title="Leave feedback" onClose={onClose}>
       <form onSubmit={handleSubmit} className="flex flex-col gap-4">
         <Field label="What are you reviewing?" required>
-          <Select value={targetType} onChange={(e) => setTargetType(e.target.value as TargetType)}>
+          <Select
+            value={targetType}
+            onChange={(e) => setTargetType(e.target.value as TargetType)}
+          >
             {types.map((t) => (
               <option key={t} value={t}>
                 {TYPE_LABEL[t]}
@@ -136,27 +191,49 @@ function FeedbackModal({ options, onClose, onDone }: { options: TargetOption[]; 
         </Field>
 
         <Field label="Rating" required>
-          <Select value={rating} onChange={(e) => setRating(Number(e.target.value))}>
+          <Select
+            value={rating}
+            onChange={(e) => setRating(Number(e.target.value))}
+          >
             {[5, 4, 3, 2, 1].map((n) => (
               <option key={n} value={n}>
-                {"★".repeat(n)}{"☆".repeat(5 - n)} — {n}
+                {"★".repeat(n)}
+                {"☆".repeat(5 - n)} — {n}
               </option>
             ))}
           </Select>
         </Field>
 
         <Field label="Comment" hint="Optional">
-          <Textarea rows={4} value={comment} onChange={(e) => setComment(e.target.value)} placeholder="Share your experience…" />
+          <Textarea
+            rows={4}
+            value={comment}
+            onChange={(e) => setComment(e.target.value)}
+            placeholder="Share your experience…"
+          />
         </Field>
 
         <ErrorText>{error}</ErrorText>
-        <ModalActions onCancel={onClose} submitting={submitting} submitLabel="Submit feedback" disabled={!target} />
+        <ModalActions
+          onCancel={onClose}
+          submitting={submitting}
+          submitLabel="Submit feedback"
+          disabled={!target}
+        />
       </form>
     </Modal>
   );
 }
 
-function RespondModal({ review, onClose, onDone }: { review: ReviewRow; onClose: () => void; onDone: () => void }) {
+function RespondModal({
+  review,
+  onClose,
+  onDone,
+}: {
+  review: ReviewRow;
+  onClose: () => void;
+  onDone: () => void;
+}) {
   const [text, setText] = useState(review.response?.text ?? "");
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
@@ -174,7 +251,9 @@ function RespondModal({ review, onClose, onDone }: { review: ReviewRow; onClose:
       onDone();
       onClose();
     } catch (err) {
-      setError(err instanceof ApiError ? err.message : "Failed to save response");
+      setError(
+        err instanceof ApiError ? err.message : "Failed to save response",
+      );
       setSubmitting(false);
     }
   }
@@ -184,13 +263,25 @@ function RespondModal({ review, onClose, onDone }: { review: ReviewRow; onClose:
       <form onSubmit={handleSubmit} className="flex flex-col gap-4">
         <div className="rounded-lg bg-bg p-3 text-sm text-ink2">
           <Stars n={review.rating} />
-          {review.comment && <p className="mt-1 text-muted">{review.comment}</p>}
+          {review.comment && (
+            <p className="mt-1 text-muted">{review.comment}</p>
+          )}
         </div>
         <Field label="Your response" required>
-          <Textarea rows={4} value={text} onChange={(e) => setText(e.target.value)} placeholder="Reply to this review…" />
+          <Textarea
+            rows={4}
+            value={text}
+            onChange={(e) => setText(e.target.value)}
+            placeholder="Reply to this review…"
+          />
         </Field>
         <ErrorText>{error}</ErrorText>
-        <ModalActions onCancel={onClose} submitting={submitting} submitLabel="Post response" disabled={!text.trim()} />
+        <ModalActions
+          onCancel={onClose}
+          submitting={submitting}
+          submitLabel="Post response"
+          disabled={!text.trim()}
+        />
       </form>
     </Modal>
   );
@@ -209,7 +300,11 @@ export default function ReviewsPage() {
     api
       .get<ReviewRow[]>("/reviews?limit=100")
       .then(setReviews)
-      .catch((err) => setError(err instanceof ApiError ? err.message : "Failed to load reviews"));
+      .catch((err) =>
+        setError(
+          err instanceof ApiError ? err.message : "Failed to load reviews",
+        ),
+      );
   }
 
   useEffect(load, []);
@@ -230,29 +325,41 @@ export default function ReviewsPage() {
       await api.delete(`/reviews/${r._id}`);
       setReviews((prev) => (prev ? prev.filter((x) => x._id !== r._id) : prev));
     } catch (err) {
-      setError(err instanceof ApiError ? err.message : "Failed to delete review");
+      setError(
+        err instanceof ApiError ? err.message : "Failed to delete review",
+      );
     } finally {
       setDeletingId(null);
     }
   }
 
-  const avg = reviews && reviews.length ? (reviews.reduce((s, r) => s + r.rating, 0) / reviews.length).toFixed(1) : null;
+  const avg =
+    reviews && reviews.length
+      ? (reviews.reduce((s, r) => s + r.rating, 0) / reviews.length).toFixed(1)
+      : null;
   const canLeaveFeedback = user?.role === "student" && options.length > 0;
 
   return (
     <div className="flex flex-col gap-6">
       <div className="flex items-start justify-between gap-4">
         <div>
-          <h1 className="text-xl font-bold text-ink">{user?.role === "student" ? "Feedback" : "Reviews"}</h1>
+          <h1 className="text-xl font-bold text-ink">
+            {user?.role === "student" ? "Feedback" : "Reviews"}
+          </h1>
           <p className="text-sm text-muted">
-            {avg ? `Average rating ${avg} from ${reviews?.length} reviews` : "Student feedback."}
+            {avg
+              ? `Average rating ${avg} from ${reviews?.length} reviews`
+              : "Student feedback."}
           </p>
         </div>
         {canLeaveFeedback && (
           <button
             onClick={() => setShowFeedback(true)}
             className="rounded-[10px] px-4 py-2.5 text-sm font-bold text-white shadow-[0_4px_14px_rgba(108,63,245,0.28)]"
-            style={{ background: "linear-gradient(135deg, var(--purple), var(--purple-dk))" }}
+            style={{
+              background:
+                "linear-gradient(135deg, var(--purple), var(--purple-dk))",
+            }}
           >
             Leave feedback
           </button>
@@ -266,19 +373,31 @@ export default function ReviewsPage() {
           {reviews.map((r) => {
             const canRespond =
               user?.role === "admin" ||
-              (user?.role === "mentor" && r.targetType === "mentor" && r.target === user?._id);
+              (user?.role === "mentor" &&
+                r.targetType === "mentor" &&
+                r.target === user?._id);
             const canDelete =
-              user?.role === "admin" || (user?.role === "student" && r.student?._id === user?._id);
+              user?.role === "admin" ||
+              (user?.role === "student" && r.student?._id === user?._id);
             return (
-              <div key={r._id} className="rounded-[14px] border border-line bg-white p-5">
+              <div
+                key={r._id}
+                className="rounded-[14px] border border-line bg-white p-5"
+              >
                 <div className="flex items-center justify-between">
                   <div className="font-bold text-ink">
                     {r.student?.firstName} {r.student?.lastName}
                   </div>
                   <Stars n={r.rating} />
                 </div>
-                {r.title && <div className="mt-1 text-sm font-semibold text-ink2">{r.title}</div>}
-                {r.comment && <p className="mt-1 text-sm text-muted">{r.comment}</p>}
+                {r.title && (
+                  <div className="mt-1 text-sm font-semibold text-ink2">
+                    {r.title}
+                  </div>
+                )}
+                {r.comment && (
+                  <p className="mt-1 text-sm text-muted">{r.comment}</p>
+                )}
                 <div className="mt-2 text-xs text-muted">
                   {r.targetType} · {fmt(r.createdAt)}
                 </div>
@@ -291,12 +410,19 @@ export default function ReviewsPage() {
                 {(canRespond || canDelete) && (
                   <div className="mt-3 flex justify-end gap-2">
                     {canRespond && (
-                      <SecondaryButton type="button" onClick={() => setRespondTo(r)}>
+                      <SecondaryButton
+                        type="button"
+                        onClick={() => setRespondTo(r)}
+                      >
                         {r.response?.text ? "Edit response" : "Respond"}
                       </SecondaryButton>
                     )}
                     {canDelete && (
-                      <DangerButton type="button" disabled={deletingId === r._id} onClick={() => handleDelete(r)}>
+                      <DangerButton
+                        type="button"
+                        disabled={deletingId === r._id}
+                        onClick={() => handleDelete(r)}
+                      >
                         {deletingId === r._id ? "Deleting…" : "Delete"}
                       </DangerButton>
                     )}
@@ -309,8 +435,20 @@ export default function ReviewsPage() {
         </div>
       )}
 
-      {showFeedback && <FeedbackModal options={options} onClose={() => setShowFeedback(false)} onDone={load} />}
-      {respondTo && <RespondModal review={respondTo} onClose={() => setRespondTo(null)} onDone={load} />}
+      {showFeedback && (
+        <FeedbackModal
+          options={options}
+          onClose={() => setShowFeedback(false)}
+          onDone={load}
+        />
+      )}
+      {respondTo && (
+        <RespondModal
+          review={respondTo}
+          onClose={() => setRespondTo(null)}
+          onDone={load}
+        />
+      )}
     </div>
   );
 }

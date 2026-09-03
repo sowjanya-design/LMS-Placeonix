@@ -1,37 +1,50 @@
-const Course = require('../models/Course');
-const AppError = require('../utils/AppError');
-const ApiResponse = require('../utils/ApiResponse');
-const { auditLog } = require('../utils/audit');
-const asyncHandler = require('../utils/asyncHandler');
+const Course = require("../models/Course");
+const AppError = require("../utils/AppError");
+const ApiResponse = require("../utils/ApiResponse");
+const { auditLog } = require("../utils/audit");
+const asyncHandler = require("../utils/asyncHandler");
 
 // @desc   List courses (public)
 // @route  GET /api/v1/courses
 exports.listCourses = asyncHandler(async (req, res) => {
   const {
-    category, level, isPublished, isFeatured, search,
-    page = 1, limit = 20, sort = '-createdAt',
+    category,
+    level,
+    isPublished,
+    isFeatured,
+    search,
+    page = 1,
+    limit = 20,
+    sort = "-createdAt",
   } = req.query;
 
   const filter = {};
   if (category) filter.category = category;
   if (level) filter.level = level;
-  if (isPublished !== undefined) filter.isPublished = isPublished === 'true';
-  if (isFeatured !== undefined) filter.isFeatured = isFeatured === 'true';
+  if (isPublished !== undefined) filter.isPublished = isPublished === "true";
+  if (isFeatured !== undefined) filter.isFeatured = isFeatured === "true";
   if (search) filter.$text = { $search: search };
 
   // Public: only show published courses
-  if (!req.user || req.user.role === 'student') {
+  if (!req.user || req.user.role === "student") {
     filter.isPublished = true;
   }
 
   const total = await Course.countDocuments(filter);
   const courses = await Course.find(filter)
-    .populate('instructor', 'firstName lastName avatar')
+    .populate("instructor", "firstName lastName avatar")
     .sort(sort)
     .skip((page - 1) * limit)
     .limit(Number(limit));
 
-  return ApiResponse.paginated(res, 'Courses fetched', courses, page, limit, total);
+  return ApiResponse.paginated(
+    res,
+    "Courses fetched",
+    courses,
+    page,
+    limit,
+    total,
+  );
 });
 
 // @desc   Get course by id or slug
@@ -42,11 +55,11 @@ exports.getCourse = asyncHandler(async (req, res, next) => {
 
   const query = isObjectId ? { _id: id } : { slug: id };
   const course = await Course.findOne(query)
-    .populate('instructor', 'firstName lastName avatar mentorProfile')
-    .populate('coInstructors', 'firstName lastName avatar');
+    .populate("instructor", "firstName lastName avatar mentorProfile")
+    .populate("coInstructors", "firstName lastName avatar");
 
-  if (!course) return next(new AppError('Course not found', 404));
-  return ApiResponse.success(res, 200, 'Course fetched', { course });
+  if (!course) return next(new AppError("Course not found", 404));
+  return ApiResponse.success(res, 200, "Course fetched", { course });
 });
 
 // @desc   Create course (admin)
@@ -56,8 +69,14 @@ exports.createCourse = asyncHandler(async (req, res) => {
     ...req.body,
     createdBy: req.user._id,
   });
-  auditLog(req, { module: 'courses', action: 'create_course', resource: 'Course', resourceId: course._id, newValue: { title: course.title } });
-  return ApiResponse.created(res, 'Course created', { course });
+  auditLog(req, {
+    module: "courses",
+    action: "create_course",
+    resource: "Course",
+    resourceId: course._id,
+    newValue: { title: course.title },
+  });
+  return ApiResponse.created(res, "Course created", { course });
 });
 
 // @desc   Update course (admin)
@@ -67,29 +86,66 @@ exports.updateCourse = asyncHandler(async (req, res, next) => {
   // elsewhere (module endpoints, enrollment/review side effects) — never
   // client-settable through the general update route.
   const {
-    title, description, shortDescription, category, level, duration, durationWeeks,
-    fee, color, thumbnail, coverImage, tags, prerequisites, targetAudience,
-    instructor, coInstructors, isPublished, isFeatured, seoMeta,
+    title,
+    description,
+    shortDescription,
+    category,
+    level,
+    duration,
+    durationWeeks,
+    fee,
+    color,
+    thumbnail,
+    coverImage,
+    tags,
+    prerequisites,
+    targetAudience,
+    instructor,
+    coInstructors,
+    isPublished,
+    isFeatured,
+    seoMeta,
   } = req.body;
   const updates = {
-    title, description, shortDescription, category, level, duration, durationWeeks,
-    fee, color, thumbnail, coverImage, tags, prerequisites, targetAudience,
-    instructor, coInstructors, isPublished, isFeatured, seoMeta,
+    title,
+    description,
+    shortDescription,
+    category,
+    level,
+    duration,
+    durationWeeks,
+    fee,
+    color,
+    thumbnail,
+    coverImage,
+    tags,
+    prerequisites,
+    targetAudience,
+    instructor,
+    coInstructors,
+    isPublished,
+    isFeatured,
+    seoMeta,
     updatedBy: req.user._id,
   };
-  Object.keys(updates).forEach((k) => updates[k] === undefined && delete updates[k]);
+  Object.keys(updates).forEach(
+    (k) => updates[k] === undefined && delete updates[k],
+  );
 
-  const course = await Course.findByIdAndUpdate(req.params.id, updates, { new: true, runValidators: true });
-  if (!course) return next(new AppError('Course not found', 404));
-  return ApiResponse.success(res, 200, 'Course updated', { course });
+  const course = await Course.findByIdAndUpdate(req.params.id, updates, {
+    new: true,
+    runValidators: true,
+  });
+  if (!course) return next(new AppError("Course not found", 404));
+  return ApiResponse.success(res, 200, "Course updated", { course });
 });
 
 // @desc   Delete course (admin)
 // @route  DELETE /api/v1/courses/:id
 exports.deleteCourse = asyncHandler(async (req, res, next) => {
   const course = await Course.findByIdAndDelete(req.params.id);
-  if (!course) return next(new AppError('Course not found', 404));
-  return ApiResponse.success(res, 200, 'Course deleted');
+  if (!course) return next(new AppError("Course not found", 404));
+  return ApiResponse.success(res, 200, "Course deleted");
 });
 
 // ─── MODULE management ───
@@ -98,7 +154,7 @@ exports.deleteCourse = asyncHandler(async (req, res, next) => {
 // @route  POST /api/v1/courses/:id/modules
 exports.addModule = asyncHandler(async (req, res, next) => {
   const course = await Course.findById(req.params.id);
-  if (!course) return next(new AppError('Course not found', 404));
+  if (!course) return next(new AppError("Course not found", 404));
 
   const { title, description, duration } = req.body;
   const newModule = {
@@ -112,39 +168,41 @@ exports.addModule = asyncHandler(async (req, res, next) => {
   course.updatedBy = req.user._id;
   await course.save();
 
-  return ApiResponse.created(res, 'Module added', { course });
+  return ApiResponse.created(res, "Module added", { course });
 });
 
 // @desc   Update module
 // @route  PATCH /api/v1/courses/:id/modules/:moduleId
 exports.updateModule = asyncHandler(async (req, res, next) => {
   const course = await Course.findById(req.params.id);
-  if (!course) return next(new AppError('Course not found', 404));
+  if (!course) return next(new AppError("Course not found", 404));
 
   const mod = course.modules.id(req.params.moduleId);
-  if (!mod) return next(new AppError('Module not found', 404));
+  if (!mod) return next(new AppError("Module not found", 404));
 
   const { title, description, duration, order } = req.body;
   const updates = { title, description, duration, order };
-  Object.keys(updates).forEach((k) => updates[k] === undefined && delete updates[k]);
+  Object.keys(updates).forEach(
+    (k) => updates[k] === undefined && delete updates[k],
+  );
   Object.assign(mod, updates);
   course.updatedBy = req.user._id;
   await course.save();
 
-  return ApiResponse.success(res, 200, 'Module updated', { course });
+  return ApiResponse.success(res, 200, "Module updated", { course });
 });
 
 // @desc   Delete module
 // @route  DELETE /api/v1/courses/:id/modules/:moduleId
 exports.deleteModule = asyncHandler(async (req, res, next) => {
   const course = await Course.findById(req.params.id);
-  if (!course) return next(new AppError('Course not found', 404));
+  if (!course) return next(new AppError("Course not found", 404));
 
   course.modules.pull({ _id: req.params.moduleId });
   course.updatedBy = req.user._id;
   await course.save();
 
-  return ApiResponse.success(res, 200, 'Module deleted', { course });
+  return ApiResponse.success(res, 200, "Module deleted", { course });
 });
 
 // @desc   Reorder modules
@@ -152,10 +210,12 @@ exports.deleteModule = asyncHandler(async (req, res, next) => {
 exports.reorderModules = asyncHandler(async (req, res, next) => {
   const { order } = req.body; // array of moduleIds in new order
   if (!Array.isArray(order) || order.length === 0) {
-    return next(new AppError('order must be a non-empty array of module ids', 400));
+    return next(
+      new AppError("order must be a non-empty array of module ids", 400),
+    );
   }
   const course = await Course.findById(req.params.id);
-  if (!course) return next(new AppError('Course not found', 404));
+  if (!course) return next(new AppError("Course not found", 404));
 
   order.forEach((modId, idx) => {
     const m = course.modules.id(modId);
@@ -164,7 +224,7 @@ exports.reorderModules = asyncHandler(async (req, res, next) => {
   course.modules.sort((a, b) => a.order - b.order);
   await course.save();
 
-  return ApiResponse.success(res, 200, 'Modules reordered', { course });
+  return ApiResponse.success(res, 200, "Modules reordered", { course });
 });
 
 // ─── TOPIC management ───
@@ -173,68 +233,71 @@ exports.reorderModules = asyncHandler(async (req, res, next) => {
 // @route  POST /api/v1/courses/:id/modules/:moduleId/topics
 exports.addTopic = asyncHandler(async (req, res, next) => {
   const course = await Course.findById(req.params.id);
-  if (!course) return next(new AppError('Course not found', 404));
+  if (!course) return next(new AppError("Course not found", 404));
 
   const mod = course.modules.id(req.params.moduleId);
-  if (!mod) return next(new AppError('Module not found', 404));
+  if (!mod) return next(new AppError("Module not found", 404));
 
   const { title, description, duration, resources } = req.body;
   mod.topics.push({ title, description, duration, resources });
   course.updatedBy = req.user._id;
   await course.save();
 
-  return ApiResponse.created(res, 'Topic added', { course });
+  return ApiResponse.created(res, "Topic added", { course });
 });
 
 // @desc   Update topic
 // @route  PATCH /api/v1/courses/:id/modules/:moduleId/topics/:topicId
 exports.updateTopic = asyncHandler(async (req, res, next) => {
   const course = await Course.findById(req.params.id);
-  if (!course) return next(new AppError('Course not found', 404));
+  if (!course) return next(new AppError("Course not found", 404));
 
   const mod = course.modules.id(req.params.moduleId);
-  if (!mod) return next(new AppError('Module not found', 404));
+  if (!mod) return next(new AppError("Module not found", 404));
 
   const topic = mod.topics.id(req.params.topicId);
-  if (!topic) return next(new AppError('Topic not found', 404));
+  if (!topic) return next(new AppError("Topic not found", 404));
 
   const { title, description, duration, resources } = req.body;
   const updates = { title, description, duration, resources };
-  Object.keys(updates).forEach((k) => updates[k] === undefined && delete updates[k]);
+  Object.keys(updates).forEach(
+    (k) => updates[k] === undefined && delete updates[k],
+  );
   Object.assign(topic, updates);
   await course.save();
 
-  return ApiResponse.success(res, 200, 'Topic updated', { course });
+  return ApiResponse.success(res, 200, "Topic updated", { course });
 });
 
 // @desc   Delete topic
 // @route  DELETE /api/v1/courses/:id/modules/:moduleId/topics/:topicId
 exports.deleteTopic = asyncHandler(async (req, res, next) => {
   const course = await Course.findById(req.params.id);
-  if (!course) return next(new AppError('Course not found', 404));
+  if (!course) return next(new AppError("Course not found", 404));
 
   const mod = course.modules.id(req.params.moduleId);
-  if (!mod) return next(new AppError('Module not found', 404));
+  if (!mod) return next(new AppError("Module not found", 404));
 
   mod.topics.pull({ _id: req.params.topicId });
   await course.save();
 
-  return ApiResponse.success(res, 200, 'Topic deleted', { course });
+  return ApiResponse.success(res, 200, "Topic deleted", { course });
 });
 
 // @desc   Toggle publish status
 // @route  PATCH /api/v1/courses/:id/publish
 exports.togglePublish = asyncHandler(async (req, res, next) => {
   const course = await Course.findById(req.params.id);
-  if (!course) return next(new AppError('Course not found', 404));
+  if (!course) return next(new AppError("Course not found", 404));
 
   course.isPublished = !course.isPublished;
   course.updatedBy = req.user._id;
   await course.save();
 
   return ApiResponse.success(
-    res, 200,
-    `Course ${course.isPublished ? 'published' : 'unpublished'}`,
-    { course }
+    res,
+    200,
+    `Course ${course.isPublished ? "published" : "unpublished"}`,
+    { course },
   );
 });

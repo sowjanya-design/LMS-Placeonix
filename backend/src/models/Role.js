@@ -1,4 +1,4 @@
-const mongoose = require('mongoose');
+const mongoose = require("mongoose");
 
 // Roles map 1:1 to the existing User.role string (admin/mentor/student) so this
 // is purely additive — no change to User or to the existing authorize(...roles)
@@ -6,13 +6,19 @@ const mongoose = require('mongoose');
 // grants, resolved via the can() middleware in middleware/auth.js.
 const roleSchema = new mongoose.Schema(
   {
-    code: { type: String, required: true, unique: true, trim: true, lowercase: true },
+    code: {
+      type: String,
+      required: true,
+      unique: true,
+      trim: true,
+      lowercase: true,
+    },
     name: { type: String, required: true },
     description: String,
     permissions: [{ type: String }], // Permission.code values
     isSystem: { type: Boolean, default: false }, // seeded default role — code can't be deleted
   },
-  { timestamps: true }
+  { timestamps: true },
 );
 
-module.exports = mongoose.model('Role', roleSchema);
+module.exports = mongoose.model("Role", roleSchema);

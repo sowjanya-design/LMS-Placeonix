@@ -1,6 +1,12 @@
 "use client";
 
-import { createContext, useContext, useEffect, useState, useCallback } from "react";
+import {
+  createContext,
+  useContext,
+  useEffect,
+  useState,
+  useCallback,
+} from "react";
 import { api, ApiError, isApiError } from "./api";
 import type { User } from "./types";
 
@@ -8,6 +14,7 @@ interface AuthContextValue {
   user: User | null;
   loading: boolean;
   login: (email: string, password: string) => Promise<void>;
+  loginWithGoogle: (credential: string) => Promise<void>;
   logout: () => Promise<void>;
 }
 
@@ -29,7 +36,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const login = useCallback(async (email: string, password: string) => {
-    const data = await api.post<{ user: User }>("/auth/login", { email, password });
+    const data = await api.post<{ user: User }>("/auth/login", {
+      email,
+      password,
+    });
+    setUser(data.user);
+  }, []);
+
+  const loginWithGoogle = useCallback(async (credential: string) => {
+    const data = await api.post<{ user: User }>("/auth/google", { credential });
     setUser(data.user);
   }, []);
 
@@ -43,7 +58,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   return (
-    <AuthContext.Provider value={{ user, loading, login, logout }}>
+    <AuthContext.Provider
+      value={{ user, loading, login, loginWithGoogle, logout }}
+    >
       {children}
     </AuthContext.Provider>
   );

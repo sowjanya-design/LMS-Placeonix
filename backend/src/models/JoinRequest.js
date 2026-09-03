@@ -1,28 +1,38 @@
-const mongoose = require('mongoose');
+const mongoose = require("mongoose");
 
 // An offline-batch student requesting to join a class online (occasionally).
 const joinRequestSchema = new mongoose.Schema(
   {
-    student: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true, index: true },
-    batch: { type: mongoose.Schema.Types.ObjectId, ref: 'Batch', required: true, index: true },
-    course: { type: mongoose.Schema.Types.ObjectId, ref: 'Course' },
-    mentor: { type: mongoose.Schema.Types.ObjectId, ref: 'User', index: true },
+    student: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
+      required: true,
+      index: true,
+    },
+    batch: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Batch",
+      required: true,
+      index: true,
+    },
+    course: { type: mongoose.Schema.Types.ObjectId, ref: "Course" },
+    mentor: { type: mongoose.Schema.Types.ObjectId, ref: "User", index: true },
 
     requestedDate: Date,
     reason: String,
 
     status: {
       type: String,
-      enum: ['pending', 'approved', 'rejected'],
-      default: 'pending',
+      enum: ["pending", "approved", "rejected"],
+      default: "pending",
       index: true,
     },
     meetingLink: String, // filled by mentor on approval
 
-    respondedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
+    respondedBy: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
     respondedAt: Date,
   },
-  { timestamps: true }
+  { timestamps: true },
 );
 
-module.exports = mongoose.model('JoinRequest', joinRequestSchema);
+module.exports = mongoose.model("JoinRequest", joinRequestSchema);

@@ -1,38 +1,60 @@
-const User = require('../models/User');
-const Course = require('../models/Course');
-const Batch = require('../models/Batch');
-const Enrollment = require('../models/Enrollment');
-const PlacementDrive = require('../models/PlacementDrive');
-const Lead = require('../models/Lead');
-const Session = require('../models/Session');
-const ApiResponse = require('../utils/ApiResponse');
-const asyncHandler = require('../utils/asyncHandler');
-const { getPlacementStats } = require('../utils/placementStats');
+const User = require("../models/User");
+const Course = require("../models/Course");
+const Batch = require("../models/Batch");
+const Enrollment = require("../models/Enrollment");
+const PlacementDrive = require("../models/PlacementDrive");
+const Lead = require("../models/Lead");
+const Session = require("../models/Session");
+const ApiResponse = require("../utils/ApiResponse");
+const asyncHandler = require("../utils/asyncHandler");
+const { getPlacementStats } = require("../utils/placementStats");
+const { PLACEMENT_STATUS } = require("../config/constants");
+
+// Funnel order — deliberately excludes 'rejected' (a side-exit, not a stage
+// further along than wherever a candidate was rejected from). A candidate's
+// current status is used as a proxy for "reached this stage or later" —
+// there's no separate append-only stage log to count from instead, and this
+// is the same simplification most placement funnels make.
+const FUNNEL_STAGES = [
+  { stage: PLACEMENT_STATUS.APPLIED, label: "Applied" },
+  { stage: PLACEMENT_STATUS.SHORTLISTED, label: "Shortlisted" },
+  { stage: PLACEMENT_STATUS.INTERVIEW, label: "Interview" },
+  { stage: PLACEMENT_STATUS.OFFERED, label: "Offered" },
+  { stage: PLACEMENT_STATUS.PLACED, label: "Placed" },
+];
 
 // @desc   Admin dashboard overview
 // @route  GET /api/v1/analytics/overview
 exports.overview = asyncHandler(async (req, res) => {
   const [
-    totalStudents, activeStudents, totalMentors,
-    totalCourses, publishedCourses,
-    activeBatches, totalEnrollments, completedEnrollments,
-    openDrives, newLeads, placement, activeSessions
+    totalStudents,
+    activeStudents,
+    totalMentors,
+    totalCourses,
+    publishedCourses,
+    activeBatches,
+    totalEnrollments,
+    completedEnrollments,
+    openDrives,
+    newLeads,
+    placement,
+    activeSessions,
   ] = await Promise.all([
-    User.countDocuments({ role: 'student' }),
-    User.countDocuments({ role: 'student', status: 'active' }),
-    User.countDocuments({ role: 'mentor' }),
+    User.countDocuments({ role: "student" }),
+    User.countDocuments({ role: "student", status: "active" }),
+    User.countDocuments({ role: "mentor" }),
     Course.countDocuments(),
     Course.countDocuments({ isPublished: true }),
-    Batch.countDocuments({ status: 'active' }),
+    Batch.countDocuments({ status: "active" }),
     Enrollment.countDocuments(),
-    Enrollment.countDocuments({ status: 'completed' }),
-    PlacementDrive.countDocuments({ status: 'open' }),
-    Lead.countDocuments({ status: 'new' }),
+    Enrollment.countDocuments({ status: "completed" }),
+    PlacementDrive.countDocuments({ status: "open" }),
+    Lead.countDocuments({ status: "new" }),
     getPlacementStats(),
-    Session.countDocuments({ status: 'live' }),
+    Session.countDocuments({ status: "live" }),
   ]);
 
-  return ApiResponse.success(res, 200, 'Overview fetched', {
+  return ApiResponse.success(res, 200, "Overview fetched", {
     students: { total: totalStudents, active: activeStudents },
     mentors: { total: totalMentors },
     courses: { total: totalCourses, published: publishedCourses },
@@ -51,12 +73,15 @@ exports.monthlyEnrollments = asyncHandler(async (req, res) => {
   const data = await Enrollment.aggregate([
     {
       $match: {
-        enrollmentDate: { $gte: new Date(`${year}-01-01`), $lt: new Date(`${year + 1}-01-01`) },
+        enrollmentDate: {
+          $gte: new Date(`${year}-01-01`),
+          $lt: new Date(`${year + 1}-01-01`),
+        },
       },
     },
     {
       $group: {
-        _id: { $month: '$enrollmentDate' },
+        _id: { $month: "$enrollmentDate" },
         count: { $sum: 1 },
       },
     },
@@ -69,29 +94,32 @@ exports.monthlyEnrollments = asyncHandler(async (req, res) => {
     return { month: i + 1, count: found ? found.count : 0 };
   });
 
-  return ApiResponse.success(res, 200, 'Monthly enrollments', { year, data: result });
+  return ApiResponse.success(res, 200, "Monthly enrollments", {
+    year,
+    data: result,
+  });
 });
 
 // @desc   Course distribution
 // @route  GET /api/v1/analytics/courses/distribution
 exports.courseDistribution = asyncHandler(async (req, res) => {
   const data = await Enrollment.aggregate([
-    { $group: { _id: '$course', count: { $sum: 1 } } },
+    { $group: { _id: "$course", count: { $sum: 1 } } },
     {
       $lookup: {
-        from: 'courses',
-        localField: '_id',
-        foreignField: '_id',
-        as: 'course',
+        from: "courses",
+        localField: "_id",
+        foreignField: "_id",
+        as: "course",
       },
     },
-    { $unwind: '$course' },
+    { $unwind: "$course" },
     {
       $project: {
-        courseId: '$_id',
-        title: '$course.title',
-        category: '$course.category',
-        color: '$course.color',
+        courseId: "$_id",
+        title: "$course.title",
+        category: "$course.category",
+        color: "$course.color",
         count: 1,
       },
     },
@@ -104,8 +132,9 @@ exports.courseDistribution = asyncHandler(async (req, res) => {
     percentage: total > 0 ? Math.round((d.count / total) * 100) : 0,
   }));
 
-  return ApiResponse.success(res, 200, 'Distribution fetched', {
-    total, distribution: withPercentage,
+  return ApiResponse.success(res, 200, "Distribution fetched", {
+    total,
+    distribution: withPercentage,
   });
 });
 
@@ -119,30 +148,59 @@ exports.placementStats = asyncHandler(async (req, res) => {
   // three "placement rate" widgets in the app ended up disagreeing with
   // each other. Package/company breakdowns still need per-application detail,
   // so those stay as an aggregation here.
-  const [headline, byCompanyAgg, packageAgg] = await Promise.all([
+  const [headline, byCompanyAgg, packageAgg, statusCounts] = await Promise.all([
     getPlacementStats(),
     PlacementDrive.aggregate([
-      { $unwind: '$applications' },
-      { $match: { 'applications.status': 'placed' } },
-      { $group: { _id: '$company', count: { $sum: 1 } } },
+      { $unwind: "$applications" },
+      { $match: { "applications.status": "placed" } },
+      { $group: { _id: "$company", count: { $sum: 1 } } },
       { $sort: { count: -1 } },
     ]),
     PlacementDrive.aggregate([
-      { $unwind: '$applications' },
-      { $match: { 'applications.status': 'placed' } },
+      { $unwind: "$applications" },
+      { $match: { "applications.status": "placed" } },
       {
         $project: {
-          ctc: { $ifNull: ['$applications.finalOffer.ctc', { $ifNull: ['$package.max', 0] } ] },
+          ctc: {
+            $ifNull: [
+              "$applications.finalOffer.ctc",
+              { $ifNull: ["$package.max", 0] },
+            ],
+          },
         },
       },
       { $match: { ctc: { $gt: 0 } } },
-      { $group: { _id: null, avg: { $avg: '$ctc' }, max: { $max: '$ctc' }, min: { $min: '$ctc' } } },
+      {
+        $group: {
+          _id: null,
+          avg: { $avg: "$ctc" },
+          max: { $max: "$ctc" },
+          min: { $min: "$ctc" },
+        },
+      },
+    ]),
+    PlacementDrive.aggregate([
+      { $unwind: "$applications" },
+      { $group: { _id: "$applications.status", count: { $sum: 1 } } },
     ]),
   ]);
 
   const pkg = packageAgg[0] || { avg: 0, max: 0, min: 0 };
 
-  return ApiResponse.success(res, 200, 'Placement stats', {
+  // Cumulative funnel: each stage's count includes every application currently
+  // at that stage or any stage further along (an "offered" candidate already
+  // cleared "shortlisted", so it counts there too) — otherwise the bars
+  // wouldn't actually narrow monotonically, which is the whole point of a funnel.
+  const countByStatus = new Map(statusCounts.map((s) => [s._id, s.count]));
+  const funnel = FUNNEL_STAGES.map(({ stage, label }, i) => {
+    const count = FUNNEL_STAGES.slice(i).reduce(
+      (sum, s) => sum + (countByStatus.get(s.stage) || 0),
+      0,
+    );
+    return { stage, label, count };
+  });
+
+  return ApiResponse.success(res, 200, "Placement stats", {
     totalApplications: headline.applied,
     placed: headline.placed,
     placementRate: headline.rate,
@@ -150,6 +208,7 @@ exports.placementStats = asyncHandler(async (req, res) => {
     highestPackage: pkg.max || 0,
     lowestPackage: pkg.min || 0,
     byCompany: byCompanyAgg.map((r) => ({ company: r._id, count: r.count })),
+    funnel,
   });
 });
 
@@ -160,29 +219,29 @@ exports.revenue = asyncHandler(async (req, res) => {
     {
       $group: {
         _id: null,
-        totalRevenue: { $sum: '$fee.paid' },
-        totalDue: { $sum: '$fee.due' },
-        totalCommitted: { $sum: '$fee.total' },
+        totalRevenue: { $sum: "$fee.paid" },
+        totalDue: { $sum: "$fee.due" },
+        totalCommitted: { $sum: "$fee.total" },
       },
     },
   ]);
 
   const monthly = await Enrollment.aggregate([
-    { $unwind: '$fee.payments' },
+    { $unwind: "$fee.payments" },
     {
       $group: {
         _id: {
-          year: { $year: '$fee.payments.paidOn' },
-          month: { $month: '$fee.payments.paidOn' },
+          year: { $year: "$fee.payments.paidOn" },
+          month: { $month: "$fee.payments.paidOn" },
         },
-        amount: { $sum: '$fee.payments.amount' },
+        amount: { $sum: "$fee.payments.amount" },
       },
     },
-    { $sort: { '_id.year': -1, '_id.month': -1 } },
+    { $sort: { "_id.year": -1, "_id.month": -1 } },
     { $limit: 12 },
   ]);
 
-  return ApiResponse.success(res, 200, 'Revenue stats', {
+  return ApiResponse.success(res, 200, "Revenue stats", {
     summary: data[0] || { totalRevenue: 0, totalDue: 0, totalCommitted: 0 },
     monthly,
   });

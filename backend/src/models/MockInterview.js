@@ -1,17 +1,37 @@
-const mongoose = require('mongoose');
+const mongoose = require("mongoose");
 
 const mockInterviewSchema = new mongoose.Schema(
   {
-    student: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true, index: true },
-    interviewer: { type: mongoose.Schema.Types.ObjectId, ref: 'User' }, // mentor/admin
+    student: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
+      required: true,
+      index: true,
+    },
+    interviewer: { type: mongoose.Schema.Types.ObjectId, ref: "User" }, // mentor/admin
     title: { type: String, required: true, trim: true },
     role: String, // target role, e.g. "Full Stack Developer"
     company: String, // optional target company
-    type: { type: String, enum: ['technical', 'hr', 'aptitude', 'group-discussion', 'system-design'], default: 'technical' },
+    type: {
+      type: String,
+      enum: [
+        "technical",
+        "hr",
+        "aptitude",
+        "group-discussion",
+        "system-design",
+      ],
+      default: "technical",
+    },
     scheduledAt: { type: Date, required: true },
-    mode: { type: String, enum: ['online', 'offline'], default: 'online' },
+    mode: { type: String, enum: ["online", "offline"], default: "online" },
     meetingLink: String,
-    status: { type: String, enum: ['scheduled', 'completed', 'cancelled'], default: 'scheduled', index: true },
+    status: {
+      type: String,
+      enum: ["scheduled", "completed", "cancelled"],
+      default: "scheduled",
+      index: true,
+    },
     rounds: [
       {
         name: String, // e.g. "DSA", "Project deep-dive"
@@ -23,11 +43,11 @@ const mockInterviewSchema = new mongoose.Schema(
     strengths: String,
     improvements: String,
     notes: String,
-    createdBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
+    createdBy: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
   },
-  { timestamps: true }
+  { timestamps: true },
 );
 
 mockInterviewSchema.index({ student: 1, scheduledAt: -1 });
 
-module.exports = mongoose.model('MockInterview', mockInterviewSchema);
+module.exports = mongoose.model("MockInterview", mockInterviewSchema);

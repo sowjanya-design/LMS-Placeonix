@@ -1,47 +1,50 @@
-const express = require('express');
-const helmet = require('helmet');
-const cors = require('cors');
-const compression = require('compression');
-const morgan = require('morgan');
-const rateLimit = require('express-rate-limit');
-const mongoSanitize = require('express-mongo-sanitize');
-const hpp = require('hpp');
-const cookieParser = require('cookie-parser');
-const path = require('path');
+const express = require("express");
+const helmet = require("helmet");
+const cors = require("cors");
+const compression = require("compression");
+const morgan = require("morgan");
+const rateLimit = require("express-rate-limit");
+const mongoSanitize = require("express-mongo-sanitize");
+const hpp = require("hpp");
+const cookieParser = require("cookie-parser");
+const path = require("path");
 
-const routes = require('./routes');
-const { errorHandler, notFound } = require('./middleware/errorHandler');
+const routes = require("./routes");
+const { errorHandler, notFound } = require("./middleware/errorHandler");
 
 const app = express();
 
-app.set('trust proxy', 1);
+app.set("trust proxy", 1);
 
 // ─── Security ───
 app.use(
   helmet({
-    crossOriginResourcePolicy: { policy: 'cross-origin' },
-  })
+    crossOriginResourcePolicy: { policy: "cross-origin" },
+  }),
 );
 
-
-if (process.env.NODE_ENV === 'production' && (process.env.CLIENT_URL || '*').split(',').includes('*')) {
+if (
+  process.env.NODE_ENV === "production" &&
+  (process.env.CLIENT_URL || "*").split(",").includes("*")
+) {
   throw new Error(
-    'CLIENT_URL is unset or "*" in production. Set it to an explicit, comma-separated list of allowed origins before starting the server.'
+    'CLIENT_URL is unset or "*" in production. Set it to an explicit, comma-separated list of allowed origins before starting the server.',
   );
 }
 
 app.use(
   cors({
     origin: (origin, cb) => {
-      const whitelist = (process.env.CLIENT_URL || '*').split(',');
-      const allowWildcard = process.env.NODE_ENV !== 'production' && whitelist.includes('*');
+      const whitelist = (process.env.CLIENT_URL || "*").split(",");
+      const allowWildcard =
+        process.env.NODE_ENV !== "production" && whitelist.includes("*");
       if (!origin || allowWildcard || whitelist.includes(origin)) {
         return cb(null, true);
       }
-      cb(new Error('Not allowed by CORS'));
+      cb(new Error("Not allowed by CORS"));
     },
     credentials: true,
-  })
+  }),
 );
 
 // Rate limiting
@@ -50,9 +53,12 @@ const limiter = rateLimit({
   max: Number(process.env.RATE_LIMIT_MAX) || 1000, // Limit each IP to 1000 requests per windowMs
   standardHeaders: true,
   legacyHeaders: false,
-  message: { success: false, message: 'Too many requests, please try again later' },
+  message: {
+    success: false,
+    message: "Too many requests, please try again later",
+  },
 });
-app.use('/api', limiter);
+app.use("/api", limiter);
 
 const authLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
@@ -60,41 +66,48 @@ const authLimiter = rateLimit({
   // is the real brute-force defense; this is the per-IP backstop and should
   // stay low enough to matter. Override via env for load-testing if needed.
   max: Number(process.env.AUTH_RATE_LIMIT_MAX) || 30,
-  message: { success: false, message: 'Too many authentication attempts' },
+  message: { success: false, message: "Too many authentication attempts" },
   handler: (req, res, next, options) => {
-    require('./utils/logger').warn(`Rate limit exceeded for auth: ${req.ip} - ${req.originalUrl}`);
+    require("./utils/logger").warn(
+      `Rate limit exceeded for auth: ${req.ip} - ${req.originalUrl}`,
+    );
     res.status(options.statusCode).send(options.message);
   },
 });
-app.use('/api/v1/auth/login', authLimiter);
-app.use('/api/v1/auth/register', authLimiter);
-app.use('/api/v1/auth/forgot-password', authLimiter);
+app.use("/api/v1/auth/login", authLimiter);
+app.use("/api/v1/auth/register", authLimiter);
+app.use("/api/v1/auth/forgot-password", authLimiter);
+app.use("/api/v1/auth/google", authLimiter);
 
 // Body parsing
-app.use(express.json({ limit: '10mb' }));
-app.use(express.urlencoded({ extended: true, limit: '10mb' }));
+app.use(express.json({ limit: "10mb" }));
+app.use(express.urlencoded({ extended: true, limit: "10mb" }));
 app.use(cookieParser());
 
 app.use(mongoSanitize());
 app.use(hpp());
 app.use(compression());
 
-if (process.env.NODE_ENV !== 'production') {
-  app.use(morgan('dev'));
+if (process.env.NODE_ENV !== "production") {
+  app.use(morgan("dev"));
 }
 
 // Static — uploaded files
-const uploadDir = process.env.FILE_UPLOAD_PATH || path.join(__dirname, '../uploads');
-const { protect } = require('./middleware/auth');
+const uploadDir =
+  process.env.FILE_UPLOAD_PATH || path.join(__dirname, "../uploads");
+const { protect } = require("./middleware/auth");
 
-app.use('/uploads/avatars', express.static(path.join(uploadDir, 'avatars'))); // avatars can be public
-app.use('/uploads', protect, express.static(uploadDir));
+app.use("/uploads/avatars", express.static(path.join(uploadDir, "avatars"))); // avatars can be public
+app.use("/uploads", protect, express.static(uploadDir));
 
 // ─── Friendly Landing Page at / ───
-app.get('/', (req, res) => {
+app.get("/", (req, res) => {
   // Demo credentials are only for local/dev convenience — never advertise
   // real seeded account passwords on a publicly reachable production URL.
-  const quickLoginBlock = process.env.NODE_ENV === 'production' ? '' : `
+  const quickLoginBlock =
+    process.env.NODE_ENV === "production"
+      ? ""
+      : `
   <div class="info">
     <strong style="color:#fff">Quick Login (dev only)</strong>
     <p style="margin-top:.4rem">Use <code>POST /api/v1/auth/login</code> with one of these demo accounts (password: <code>Password123</code>):</p>
@@ -175,7 +188,7 @@ app.get('/', (req, res) => {
   </div>
 
   <div class="footer">
-    Placeonix Backend v1.0 &nbsp;·&nbsp; Environment: ${process.env.NODE_ENV || 'development'}
+    Placeonix Backend v1.0 &nbsp;·&nbsp; Environment: ${process.env.NODE_ENV || "development"}
   </div>
 </div>
 </body>
@@ -183,25 +196,25 @@ app.get('/', (req, res) => {
   `);
 });
 
-app.get('/health', (req, res) => {
+app.get("/health", (req, res) => {
   res.json({
     success: true,
-    status: 'healthy',
+    status: "healthy",
     uptime: process.uptime(),
     timestamp: new Date().toISOString(),
-    environment: process.env.NODE_ENV || 'development',
+    environment: process.env.NODE_ENV || "development",
     memory: {
-      used: Math.round(process.memoryUsage().heapUsed / 1024 / 1024) + ' MB',
-      total: Math.round(process.memoryUsage().heapTotal / 1024 / 1024) + ' MB',
+      used: Math.round(process.memoryUsage().heapUsed / 1024 / 1024) + " MB",
+      total: Math.round(process.memoryUsage().heapTotal / 1024 / 1024) + " MB",
     },
   });
 });
 
 // API
-const apiVersion = process.env.API_VERSION || 'v1';
+const apiVersion = process.env.API_VERSION || "v1";
 app.use(`/api/${apiVersion}`, routes);
 
-// 404 + error handler
+
 app.use(notFound);
 app.use(errorHandler);
 

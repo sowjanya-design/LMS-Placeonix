@@ -33,18 +33,20 @@
         },
         {
           "name": "Login",
-          "event": [{
-            "listen": "test",
-            "script": {
-              "exec": [
-                "const json = pm.response.json();",
-                "if (json.success) {",
-                "  pm.collectionVariables.set('accessToken', json.data.accessToken);",
-                "  pm.collectionVariables.set('userId', json.data.user._id);",
-                "}"
-              ]
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "const json = pm.response.json();",
+                  "if (json.success) {",
+                  "  pm.collectionVariables.set('accessToken', json.data.accessToken);",
+                  "  pm.collectionVariables.set('userId', json.data.user._id);",
+                  "}"
+                ]
+              }
             }
-          }],
+          ],
           "request": {
             "method": "POST",
             "header": [{ "key": "Content-Type", "value": "application/json" }],
@@ -103,15 +105,24 @@
       "item": [
         {
           "name": "Overview",
-          "request": { "method": "GET", "url": "{{baseUrl}}/analytics/overview" }
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/analytics/overview"
+          }
         },
         {
           "name": "Monthly Enrollments",
-          "request": { "method": "GET", "url": "{{baseUrl}}/analytics/enrollments/monthly?year=2025" }
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/analytics/enrollments/monthly?year=2025"
+          }
         },
         {
           "name": "Placement Stats",
-          "request": { "method": "GET", "url": "{{baseUrl}}/analytics/placements" }
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/analytics/placements"
+          }
         }
       ]
     },

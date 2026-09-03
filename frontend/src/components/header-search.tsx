@@ -41,7 +41,7 @@ export function HeaderSearch() {
     const t = setTimeout(async () => {
       try {
         const data = await api.get<{ results: SearchResult[] }>(
-          `/search?q=${encodeURIComponent(term)}`
+          `/search?q=${encodeURIComponent(term)}`,
         );
         setResults(data?.results ?? []);
       } catch {
@@ -55,7 +55,8 @@ export function HeaderSearch() {
 
   useEffect(() => {
     function onDown(e: MouseEvent) {
-      if (ref.current && !ref.current.contains(e.target as Node)) setResults(null);
+      if (ref.current && !ref.current.contains(e.target as Node))
+        setResults(null);
     }
     document.addEventListener("mousedown", onDown);
     return () => document.removeEventListener("mousedown", onDown);
@@ -81,7 +82,11 @@ export function HeaderSearch() {
 
       {(results !== null || loading) && q.trim().length >= 2 && (
         <div className="absolute top-full left-0 z-50 mt-2 w-80 overflow-hidden rounded-xl border border-line bg-white shadow-xl origin-top-left animate-in fade-in zoom-in-95 duration-200">
-          {loading && <div className="px-4 py-4 text-center text-sm text-muted">Searching…</div>}
+          {loading && (
+            <div className="px-4 py-4 text-center text-sm text-muted">
+              Searching…
+            </div>
+          )}
           {!loading && results && results.length === 0 && (
             <EmptyState message="No matches." mascot="search" size="sm" />
           )}
@@ -96,8 +101,14 @@ export function HeaderSearch() {
                   {TYPE_LABEL[r.type] ?? r.type}
                 </span>
                 <span className="min-w-0 flex-1">
-                  <span className="block truncate text-sm font-semibold text-ink">{r.label}</span>
-                  {r.sub && <span className="block truncate text-xs text-muted">{r.sub}</span>}
+                  <span className="block truncate text-sm font-semibold text-ink">
+                    {r.label}
+                  </span>
+                  {r.sub && (
+                    <span className="block truncate text-xs text-muted">
+                      {r.sub}
+                    </span>
+                  )}
                 </span>
               </button>
             ))}

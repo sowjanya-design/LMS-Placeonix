@@ -15,7 +15,11 @@ const STATUS_STYLE: Record<string, string> = {
 };
 
 function fmt(iso: string) {
-  return new Date(iso).toLocaleDateString(undefined, { day: "numeric", month: "short", year: "numeric" });
+  return new Date(iso).toLocaleDateString(undefined, {
+    day: "numeric",
+    month: "short",
+    year: "numeric",
+  });
 }
 
 function toDateInput(iso?: string) {
@@ -36,9 +40,12 @@ function DriveModal({
   const editing = Boolean(drive);
   const [company, setCompany] = useState(drive?.company ?? "");
   const [role, setRole] = useState(drive?.role ?? "");
-  const [deadline, setDeadline] = useState(toDateInput(drive?.applicationDeadline));
+  const [deadline, setDeadline] = useState(
+    toDateInput(drive?.applicationDeadline),
+  );
   const [pkgMin, setPkgMin] = useState(drive ? String(drive.package.min) : "");
   const [pkgMax, setPkgMax] = useState(drive ? String(drive.package.max) : "");
+  const [applicationUrl, setApplicationUrl] = useState((drive as (PlacementDrive & { applicationUrl?: string }) | undefined)?.applicationUrl ?? "");
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
 
@@ -52,9 +59,13 @@ function DriveModal({
         role: role.trim(),
         applicationDeadline: new Date(deadline).toISOString(),
         package: { min: Number(pkgMin) || 0, max: Number(pkgMax) || 0 },
+        ...(applicationUrl.trim() ? { applicationUrl: applicationUrl.trim() } : {}),
       };
       const res = editing
-        ? await api.patch<{ drive: PlacementDrive }>(`/placements/${drive!._id}`, payload)
+        ? await api.patch<{ drive: PlacementDrive }>(
+            `/placements/${drive!._id}`,
+            payload,
+          )
         : await api.post<{ drive: PlacementDrive }>("/placements", payload);
       onSaved(res.drive);
       onClose();
@@ -69,24 +80,58 @@ function DriveModal({
     <Modal title={editing ? "Edit Drive" : "New Drive"} onClose={onClose}>
       <form onSubmit={handleSubmit} className="flex flex-col gap-4">
         <Field label="Company" required>
-          <Input value={company} onChange={(e) => setCompany(e.target.value)} required />
+          <Input
+            value={company}
+            onChange={(e) => setCompany(e.target.value)}
+            required
+          />
         </Field>
         <Field label="Role" required>
-          <Input value={role} onChange={(e) => setRole(e.target.value)} required />
+          <Input
+            value={role}
+            onChange={(e) => setRole(e.target.value)}
+            required
+          />
         </Field>
         <Field label="Application deadline" required>
-          <Input type="date" value={deadline} onChange={(e) => setDeadline(e.target.value)} required />
+          <Input
+            type="date"
+            value={deadline}
+            onChange={(e) => setDeadline(e.target.value)}
+            required
+          />
         </Field>
         <div className="grid grid-cols-2 gap-4">
           <Field label="Package min" hint="LPA" required>
-            <Input type="number" step="0.1" min="0" value={pkgMin} onChange={(e) => setPkgMin(e.target.value)} required />
+            <Input
+              type="number"
+              step="0.1"
+              min="0"
+              value={pkgMin}
+              onChange={(e) => setPkgMin(e.target.value)}
+              required
+            />
           </Field>
           <Field label="Package max" hint="LPA" required>
-            <Input type="number" step="0.1" min="0" value={pkgMax} onChange={(e) => setPkgMax(e.target.value)} required />
+            <Input
+              type="number"
+              step="0.1"
+              min="0"
+              value={pkgMax}
+              onChange={(e) => setPkgMax(e.target.value)}
+              required
+            />
           </Field>
         </div>
+        <Field label="Job Application URL" hint="Optional — students will see an external Apply link">
+          <Input type="url" value={applicationUrl} onChange={(e) => setApplicationUrl(e.target.value)} placeholder="https://company.com/careers/apply" />
+        </Field>
         <ErrorText>{error}</ErrorText>
-        <ModalActions onCancel={onClose} submitting={submitting} submitLabel={editing ? "Save" : "Create"} />
+        <ModalActions
+          onCancel={onClose}
+          submitting={submitting}
+          submitLabel={editing ? "Save" : "Create"}
+        />
       </form>
     </Modal>
   );
@@ -105,11 +150,21 @@ export default function PlacementsPage() {
     api
       .get<PlacementDrive[]>("/placements?limit=100")
       .then(setDrives)
-      .catch((err) => setError(err instanceof ApiError ? err.message : "Failed to load placement drives"));
+      .catch((err) =>
+        setError(
+          err instanceof ApiError
+            ? err.message
+            : "Failed to load placement drives",
+        ),
+      );
     if (user?.role === "student") {
       api
-        .get<{ applications: Array<{ drive: { _id: string } }> }>("/placements/my/applications")
-        .then((res) => setApplied(new Set((res.applications || []).map((a) => a.drive._id))))
+        .get<{ applications: Array<{ drive: { _id: string } }> }>(
+          "/placements/my/applications",
+        )
+        .then((res) =>
+          setApplied(new Set((res.applications || []).map((a) => a.drive._id))),
+        )
         .catch(() => {});
     }
   }, [user]);
@@ -161,7 +216,10 @@ export default function PlacementsPage() {
           <button
             onClick={() => setShowNew(true)}
             className="shrink-0 rounded-[10px] px-4 py-2.5 text-sm font-bold text-white shadow-[0_4px_14px_rgba(108,63,245,0.28)]"
-            style={{ background: "linear-gradient(135deg, var(--purple), var(--purple-dk))" }}
+            style={{
+              background:
+                "linear-gradient(135deg, var(--purple), var(--purple-dk))",
+            }}
           >
             + New Drive
           </button>
@@ -173,27 +231,44 @@ export default function PlacementsPage() {
       {drives && (
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {drives.map((d) => (
-            <div key={d._id} className="flex flex-col gap-3 rounded-[14px] border border-line bg-white p-5">
+            <div
+              key={d._id}
+              className="flex flex-col gap-3 rounded-[14px] border border-line bg-white p-5"
+            >
               <div className="flex items-start justify-between gap-2">
                 <div>
                   <div className="font-bold text-ink">{d.company}</div>
                   <div className="text-xs text-muted">{d.role}</div>
                 </div>
-                <span className={`shrink-0 rounded-full px-2.5 py-1 text-xs font-semibold ${STATUS_STYLE[d.status]}`}>{d.status}</span>
+                <span
+                  className={`shrink-0 rounded-full px-2.5 py-1 text-xs font-semibold ${STATUS_STYLE[d.status]}`}
+                >
+                  {d.status}
+                </span>
               </div>
               <div className="text-xs text-muted">
                 ₹{d.package.min}L – ₹{d.package.max}L · {d.workMode}
               </div>
-              <div className="text-xs text-muted">Apply by {fmt(d.applicationDeadline)}</div>
+              <div className="text-xs text-muted">
+                Apply by {fmt(d.applicationDeadline)}
+              </div>
               <div className="mt-auto flex gap-2 border-t border-line pt-3">
                 {user?.role === "student" && d.status === "open" && (
                   <button
                     onClick={() => handleApply(d)}
                     disabled={busyId === d._id || applied.has(d._id)}
                     className="flex-1 rounded-lg px-3 py-2 text-xs font-bold text-white disabled:opacity-60"
-                    style={{ background: applied.has(d._id) ? "var(--muted)" : "linear-gradient(135deg, var(--purple), var(--purple-dk))" }}
+                    style={{
+                      background: applied.has(d._id)
+                        ? "var(--muted)"
+                        : "linear-gradient(135deg, var(--purple), var(--purple-dk))",
+                    }}
                   >
-                    {applied.has(d._id) ? "Applied" : busyId === d._id ? "Applying…" : "Apply"}
+                    {applied.has(d._id)
+                      ? "Applied"
+                      : busyId === d._id
+                        ? "Applying…"
+                        : "Apply"}
                   </button>
                 )}
                 {user?.role === "admin" && (
@@ -216,12 +291,25 @@ export default function PlacementsPage() {
               </div>
             </div>
           ))}
-          {drives.length === 0 && <EmptyState message="No placement drives yet." className="col-span-full" />}
+          {drives.length === 0 && (
+            <EmptyState
+              message="No placement drives yet."
+              className="col-span-full"
+            />
+          )}
         </div>
       )}
 
-      {showNew && <DriveModal onClose={() => setShowNew(false)} onSaved={handleSaved} />}
-      {editDrive && <DriveModal drive={editDrive} onClose={() => setEditDrive(null)} onSaved={handleSaved} />}
+      {showNew && (
+        <DriveModal onClose={() => setShowNew(false)} onSaved={handleSaved} />
+      )}
+      {editDrive && (
+        <DriveModal
+          drive={editDrive}
+          onClose={() => setEditDrive(null)}
+          onSaved={handleSaved}
+        />
+      )}
     </div>
   );
 }

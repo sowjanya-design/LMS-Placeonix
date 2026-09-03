@@ -39,19 +39,19 @@ Built with Node.js, Express, and MongoDB. Full role-based access control for **A
 
 ## Tech Stack
 
-| Layer       | Technology                                  |
-|-------------|---------------------------------------------|
-| Runtime     | Node.js 18+                                 |
-| Framework   | Express.js 4                                |
-| Database    | MongoDB 7 with Mongoose 8                   |
-| Auth        | JWT (jsonwebtoken) + bcrypt (12 rounds)     |
-| Validation  | express-validator                           |
-| Email       | Nodemailer                                  |
-| File Upload | Multer with disk storage                    |
-| Scheduling  | node-cron                                   |
-| Logging     | Winston with daily rotation                 |
-| Security    | Helmet, CORS, rate-limit, mongo-sanitize    |
-| Testing     | Jest + Supertest + mongodb-memory-server    |
+| Layer       | Technology                               |
+| ----------- | ---------------------------------------- |
+| Runtime     | Node.js 18+                              |
+| Framework   | Express.js 4                             |
+| Database    | MongoDB 7 with Mongoose 8                |
+| Auth        | JWT (jsonwebtoken) + bcrypt (12 rounds)  |
+| Validation  | express-validator                        |
+| Email       | Nodemailer                               |
+| File Upload | Multer with disk storage                 |
+| Scheduling  | node-cron                                |
+| Logging     | Winston with daily rotation              |
+| Security    | Helmet, CORS, rate-limit, mongo-sanitize |
+| Testing     | Jest + Supertest + mongodb-memory-server |
 
 ---
 
@@ -119,23 +119,25 @@ docker-compose down
 ```
 
 This spins up:
+
 - API on port 5000
 - MongoDB on port 27017
 - (Optional) Mongo Express UI on port 8081 with `--profile tools`
 
 ### Default Login Credentials (after `npm run seed`)
 
-| Role    | Email                  | Password    |
-|---------|------------------------|-------------|
-| Admin   | admin@placeonix.in     | Password123 |
-| Mentor  | mentor@placeonix.in    | Password123 |
-| Student | student@placeonix.in   | Password123 |
+| Role    | Email                | Password    |
+| ------- | -------------------- | ----------- |
+| Admin   | admin@placeonix.in   | Password123 |
+| Mentor  | mentor@placeonix.in  | Password123 |
+| Student | student@placeonix.in | Password123 |
 
 ---
 
 ## API Endpoints (17 modules, 100+ endpoints)
 
 ### `/api/v1/auth` — Authentication
+
 - `POST /register` — Public student signup
 - `POST /login` — Returns access + refresh tokens
 - `POST /refresh` — Refresh access token
@@ -146,6 +148,7 @@ This spins up:
 - `POST /reset-password/:token` — Reset password
 
 ### `/api/v1/users` — User management
+
 - `GET /` — List users (admin) — supports filter, pagination, search
 - `POST /` — Create user (admin)
 - `GET /:id` — User details
@@ -156,6 +159,7 @@ This spins up:
 - `GET /my-students` — Mentor's students
 
 ### `/api/v1/courses` — Course catalog
+
 - `GET /` — List (public reads published only)
 - `GET /:id` — By ID or slug
 - `POST /` — Create (admin)
@@ -171,6 +175,7 @@ This spins up:
 - `DELETE /:id/modules/:moduleId/topics/:topicId` — Delete topic
 
 ### `/api/v1/batches` — Batches (max 30 students)
+
 - `GET /` — List (mentors see only theirs)
 - `GET /:id` — Batch + enrolled students
 - `POST /` — Create (admin)
@@ -180,6 +185,7 @@ This spins up:
 - `DELETE /:id/enroll/:studentId` — Unenroll (admin)
 
 ### `/api/v1/sessions` — Class scheduling
+
 - `GET /` — List sessions
 - `GET /today` — Today's sessions
 - `GET /:id` — Session details
@@ -190,6 +196,7 @@ This spins up:
 - `PATCH /:id/complete` — Complete with notes/recording
 
 ### `/api/v1/assignments` — Tasks & submissions
+
 - `GET /` — List (filtered by user's batches)
 - `GET /:id` — Details (students see only own submission)
 - `POST /` — Create (mentor/admin)
@@ -199,12 +206,14 @@ This spins up:
 - `POST /:id/submissions/:submissionId/review` — Review & score
 
 ### `/api/v1/attendance` — Attendance tracking
+
 - `POST /mark` — Bulk mark for batch (mentor/admin)
 - `GET /me` — My attendance with summary (student)
 - `GET /batch/:batchId` — Batch attendance
 - `GET /student/:studentId` — Specific student
 
 ### `/api/v1/placements` — Placement drives
+
 - `GET /` — List drives
 - `GET /my/applications` — Student's applications
 - `GET /:id` — Drive details
@@ -215,6 +224,7 @@ This spins up:
 - `PATCH /:id/applications/:appId` — Update application status
 
 ### `/api/v1/announcements` — Notices
+
 - `GET /` — List for current user (audience-scoped)
 - `POST /` — Create (mentor/admin)
 - `PATCH /:id` — Update
@@ -222,6 +232,7 @@ This spins up:
 - `POST /:id/read` — Mark read
 
 ### `/api/v1/notifications` — In-app notifications
+
 - `GET /` — List with unread count
 - `GET /unread-count` — Badge count only
 - `PATCH /read-all` — Mark all read
@@ -230,6 +241,7 @@ This spins up:
 - `DELETE /clear` — Clear all
 
 ### `/api/v1/reviews` — Mentor & course reviews
+
 - `GET /` — Public list (filterable)
 - `POST /` — Create (student)
 - `PATCH /:id` — Update own
@@ -238,6 +250,7 @@ This spins up:
 - `POST /:id/respond` — Mentor/admin response
 
 ### `/api/v1/resources` — Study materials
+
 - `GET /` — List with access control
 - `GET /:id` — Resource details (auto-tracks views)
 - `POST /` — Upload (mentor/admin) — multipart form
@@ -246,6 +259,7 @@ This spins up:
 - `POST /:id/download` — Track download
 
 ### `/api/v1/payments` — Fee management
+
 - `GET /` — List payments
 - `GET /:id` — Payment details / invoice
 - `GET /me/summary` — Student's fee summary
@@ -254,6 +268,7 @@ This spins up:
 - `POST /:id/refund` — Process refund
 
 ### `/api/v1/certificates` — Course completion certificates
+
 - `GET /` — List (admin) / mine (student)
 - `GET /me` — My certificates
 - `POST /issue` — Issue certificate (admin)
@@ -261,11 +276,13 @@ This spins up:
 - `GET /verify/:number` — **Public** verification
 
 ### `/api/v1/uploads` — File uploads
+
 - `POST /avatar` — Upload my avatar (auto-replaces old)
 - `POST /document` — Upload single document
 - `POST /submission` — Upload up to 5 submission files
 
 ### `/api/v1/leads` — Website inquiries
+
 - `POST /` — **Public** inquiry submission
 - `GET /` — List (admin)
 - `GET /:id` — Lead details
@@ -274,6 +291,7 @@ This spins up:
 - `DELETE /:id` — Delete
 
 ### `/api/v1/analytics` — Admin dashboard metrics
+
 - `GET /overview` — Top-line summary stats
 - `GET /enrollments/monthly?year=` — Monthly trend
 - `GET /courses/distribution` — By course
@@ -294,6 +312,7 @@ This spins up:
 5. On logout, server invalidates refresh token
 
 ### Account Security
+
 - Bcrypt (12 rounds) password hashing
 - 5 failed logins → 30 minute lockout
 - JWT secrets validated at startup
@@ -331,35 +350,35 @@ Error responses include detailed validation errors:
 
 ## Role-Based Access Matrix
 
-| Resource          | Admin | Mentor               | Student              |
-|-------------------|-------|----------------------|----------------------|
-| Users             | Full  | Read self/students   | Read self            |
-| Courses           | Full  | Read all             | Read published       |
-| Batches           | Full  | Read own             | Read enrolled        |
-| Sessions          | Full  | Manage own           | View enrolled        |
-| Assignments       | Full  | Manage own batch     | Submit + view own    |
-| Attendance        | Full  | Mark own batch       | View own             |
-| Placements        | Full  | View                 | Apply + view own     |
-| Announcements     | Full  | Create + view        | View targeted        |
-| Notifications     | Self  | Self                 | Self                 |
-| Reviews           | Full  | Respond to own       | Create + edit own    |
-| Resources         | Full  | Upload + manage      | View enrolled        |
-| Payments          | Full  | None                 | View own + summary   |
-| Certificates      | Full  | None                 | View own + verify    |
-| Analytics         | Full  | None                 | None                 |
+| Resource      | Admin | Mentor             | Student            |
+| ------------- | ----- | ------------------ | ------------------ |
+| Users         | Full  | Read self/students | Read self          |
+| Courses       | Full  | Read all           | Read published     |
+| Batches       | Full  | Read own           | Read enrolled      |
+| Sessions      | Full  | Manage own         | View enrolled      |
+| Assignments   | Full  | Manage own batch   | Submit + view own  |
+| Attendance    | Full  | Mark own batch     | View own           |
+| Placements    | Full  | View               | Apply + view own   |
+| Announcements | Full  | Create + view      | View targeted      |
+| Notifications | Self  | Self               | Self               |
+| Reviews       | Full  | Respond to own     | Create + edit own  |
+| Resources     | Full  | Upload + manage    | View enrolled      |
+| Payments      | Full  | None               | View own + summary |
+| Certificates  | Full  | None               | View own + verify  |
+| Analytics     | Full  | None               | None               |
 
 ---
 
 ## Cron Jobs (auto-running)
 
-| Schedule           | Job                       | Action                                       |
-|--------------------|---------------------------|----------------------------------------------|
-| Daily 10:00 AM     | Fee reminders             | Notify students with outstanding dues        |
-| Daily 6:00 PM      | Assignment reminders      | Notify students with assignments due tomorrow|
-| Daily 8:00 PM      | Attendance warnings       | Notify students below 75% attendance         |
-| Hourly             | Overdue assignments       | Auto-close past-deadline assignments         |
-| Every 5 minutes    | Session status            | Mark sessions live/completed                 |
-| Sundays 3:00 AM    | Notification cleanup      | Delete read notifications older than 60 days |
+| Schedule        | Job                  | Action                                        |
+| --------------- | -------------------- | --------------------------------------------- |
+| Daily 10:00 AM  | Fee reminders        | Notify students with outstanding dues         |
+| Daily 6:00 PM   | Assignment reminders | Notify students with assignments due tomorrow |
+| Daily 8:00 PM   | Attendance warnings  | Notify students below 75% attendance          |
+| Hourly          | Overdue assignments  | Auto-close past-deadline assignments          |
+| Every 5 minutes | Session status       | Mark sessions live/completed                  |
+| Sundays 3:00 AM | Notification cleanup | Delete read notifications older than 60 days  |
 
 Disable cron with `DISABLE_CRON=true`.
 
@@ -376,6 +395,7 @@ npm run test:watch
 ```
 
 Tests use **mongodb-memory-server** — no real DB needed. Currently includes:
+
 - `auth.test.js` — registration, login, JWT, validation
 - `course.test.js` — CRUD, role-based access, modules
 
@@ -385,26 +405,26 @@ Add more in `src/__tests__/*.test.js`.
 
 ## Environment Variables
 
-| Variable              | Required | Default             | Description                          |
-|-----------------------|----------|---------------------|--------------------------------------|
-| `NODE_ENV`            | No       | development         | `development` / `production` / `test`|
-| `PORT`                | No       | 5000                | API port                             |
-| `MONGO_URI`           | Yes      |                     | MongoDB connection string            |
-| `JWT_SECRET`          | Yes      |                     | 32+ chars                            |
-| `JWT_EXPIRE`          | No       | 7d                  | Access token TTL                     |
-| `JWT_REFRESH_SECRET`  | Yes      |                     | 32+ chars, different from JWT_SECRET |
-| `JWT_REFRESH_EXPIRE`  | No       | 30d                 | Refresh token TTL                    |
-| `CLIENT_URL`          | No       | *                   | Allowed CORS origins (comma-sep)     |
-| `SMTP_HOST`           | No       |                     | If unset, emails are logged          |
-| `SMTP_PORT`           | No       | 587                 |                                      |
-| `SMTP_USER`           | No       |                     |                                      |
-| `SMTP_PASS`           | No       |                     |                                      |
-| `EMAIL_FROM`          | No       | Placeonix <no-reply>|                                      |
-| `RATE_LIMIT_WINDOW`   | No       | 15                  | Window in minutes                    |
-| `RATE_LIMIT_MAX`      | No       | 100                 | Max requests per window              |
-| `MAX_FILE_UPLOAD`     | No       | 10                  | Max file size in MB                  |
-| `FILE_UPLOAD_PATH`    | No       | ./uploads           |                                      |
-| `DISABLE_CRON`        | No       | false               | Disable scheduled jobs               |
+| Variable             | Required | Default              | Description                           |
+| -------------------- | -------- | -------------------- | ------------------------------------- |
+| `NODE_ENV`           | No       | development          | `development` / `production` / `test` |
+| `PORT`               | No       | 5000                 | API port                              |
+| `MONGO_URI`          | Yes      |                      | MongoDB connection string             |
+| `JWT_SECRET`         | Yes      |                      | 32+ chars                             |
+| `JWT_EXPIRE`         | No       | 7d                   | Access token TTL                      |
+| `JWT_REFRESH_SECRET` | Yes      |                      | 32+ chars, different from JWT_SECRET  |
+| `JWT_REFRESH_EXPIRE` | No       | 30d                  | Refresh token TTL                     |
+| `CLIENT_URL`         | No       | *                    | Allowed CORS origins (comma-sep)      |
+| `SMTP_HOST`          | No       |                      | If unset, emails are logged           |
+| `SMTP_PORT`          | No       | 587                  |                                       |
+| `SMTP_USER`          | No       |                      |                                       |
+| `SMTP_PASS`          | No       |                      |                                       |
+| `EMAIL_FROM`         | No       | Placeonix <no-reply> |                                       |
+| `RATE_LIMIT_WINDOW`  | No       | 15                   | Window in minutes                     |
+| `RATE_LIMIT_MAX`     | No       | 100                  | Max requests per window               |
+| `MAX_FILE_UPLOAD`    | No       | 10                   | Max file size in MB                   |
+| `FILE_UPLOAD_PATH`   | No       | ./uploads            |                                       |
+| `DISABLE_CRON`       | No       | false                | Disable scheduled jobs                |
 
 ---
 
@@ -431,26 +451,26 @@ Replace your dashboard's localStorage with API calls:
 
 ```javascript
 // Login
-const res = await fetch('/api/v1/auth/login', {
-  method: 'POST',
-  headers: { 'Content-Type': 'application/json' },
-  credentials: 'include',
+const res = await fetch("/api/v1/auth/login", {
+  method: "POST",
+  headers: { "Content-Type": "application/json" },
+  credentials: "include",
   body: JSON.stringify({ email, password }),
 });
 const { data } = await res.json();
-localStorage.setItem('token', data.accessToken);
+localStorage.setItem("token", data.accessToken);
 
 // Authenticated request
-const courses = await fetch('/api/v1/courses', {
-  headers: { Authorization: `Bearer ${localStorage.getItem('token')}` },
-}).then(r => r.json());
+const courses = await fetch("/api/v1/courses", {
+  headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
+}).then((r) => r.json());
 
 // Add a course (admin)
-await fetch('/api/v1/courses', {
-  method: 'POST',
+await fetch("/api/v1/courses", {
+  method: "POST",
   headers: {
-    'Authorization': `Bearer ${token}`,
-    'Content-Type': 'application/json',
+    Authorization: `Bearer ${token}`,
+    "Content-Type": "application/json",
   },
   body: JSON.stringify({ title, category, description, duration, fee }),
 });

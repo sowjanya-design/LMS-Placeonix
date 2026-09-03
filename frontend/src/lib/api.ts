@@ -3,7 +3,8 @@
 // touches a token directly, it just always sends credentials so the browser
 // attaches the cookie. Never store the token in localStorage/state here; that
 // was the exact XSS exposure Phase 0 removed from the old portal.
-const API_BASE = process.env.NEXT_PUBLIC_API_BASE || "http://localhost:5000/api/v1";
+const API_BASE =
+  process.env.NEXT_PUBLIC_API_BASE || "http://localhost:5000/api/v1";
 
 export class ApiError extends Error {
   status: number;
@@ -21,15 +22,18 @@ export function isApiError(error: unknown): error is ApiError {
 
 export async function apiFetch<T = unknown>(
   path: string,
-  options: RequestInit = {}
+  options: RequestInit = {},
 ): Promise<T> {
+  const isFormData = options.body instanceof FormData;
+  const headers = new Headers(options.headers || {});
+  if (!isFormData && !headers.has("Content-Type")) {
+    headers.set("Content-Type", "application/json");
+  }
+
   const res = await fetch(`${API_BASE}${path}`, {
     ...options,
     credentials: "include",
-    headers: {
-      "Content-Type": "application/json",
-      ...options.headers,
-    },
+    headers,
   });
 
   let json: { success: boolean; message?: string; data?: T } | null = null;
@@ -40,7 +44,10 @@ export async function apiFetch<T = unknown>(
   }
 
   if (!res.ok) {
-    throw new ApiError(json?.message || `Request failed (${res.status})`, res.status);
+    throw new ApiError(
+      json?.message || `Request failed (${res.status})`,
+      res.status,
+    );
   }
   return (json?.data ?? null) as T;
 }
@@ -48,8 +55,20 @@ export async function apiFetch<T = unknown>(
 export const api = {
   get: <T = unknown>(path: string) => apiFetch<T>(path),
   post: <T = unknown>(path: string, body?: unknown) =>
-    apiFetch<T>(path, { method: "POST", body: body ? JSON.stringify(body) : undefined }),
+    apiFetch<T>(path, {
+      method: "POST",
+      body: body ? JSON.stringify(body) : undefined,
+    }),
   patch: <T = unknown>(path: string, body?: unknown) =>
-    apiFetch<T>(path, { method: "PATCH", body: body ? JSON.stringify(body) : undefined }),
-  delete: <T = unknown>(path: string) => apiFetch<T>(path, { method: "DELETE" }),
+    apiFetch<T>(path, {
+      method: "PATCH",
+      body: body ? JSON.stringify(body) : undefined,
+    }),
+  put: <T = unknown>(path: string, body?: unknown) =>
+    apiFetch<T>(path, {
+      method: "PUT",
+      body: body ? JSON.stringify(body) : undefined,
+    }),
+  delete: <T = unknown>(path: string) =>
+    apiFetch<T>(path, { method: "DELETE" }),
 };

@@ -6,7 +6,15 @@ import { useAuth } from "@/lib/auth-context";
 import { api, ApiError } from "@/lib/api";
 import type { Alumni } from "@/lib/types";
 import { Modal } from "@/components/ui/modal";
-import { Field, Input, Textarea, ErrorText, ModalActions, PrimaryButton, SecondaryButton } from "@/components/ui/form";
+import {
+  Field,
+  Input,
+  Textarea,
+  ErrorText,
+  ModalActions,
+  PrimaryButton,
+  SecondaryButton,
+} from "@/components/ui/form";
 import { EmptyState } from "@/components/ui/empty-state";
 
 interface AlumniForm {
@@ -57,7 +65,9 @@ function AlumniModal({
   onSaved: (a: Alumni) => void;
 }) {
   const editing = Boolean(alumnus);
-  const [form, setForm] = useState<AlumniForm>(alumnus ? toForm(alumnus) : emptyForm);
+  const [form, setForm] = useState<AlumniForm>(
+    alumnus ? toForm(alumnus) : emptyForm,
+  );
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
 
@@ -78,7 +88,10 @@ function AlumniModal({
         featured: form.featured,
       };
       if (editing && alumnus) {
-        const res = await api.patch<{ alumnus: Alumni }>(`/alumni/${alumnus._id}`, payload);
+        const res = await api.patch<{ alumnus: Alumni }>(
+          `/alumni/${alumnus._id}`,
+          payload,
+        );
         onSaved(res.alumnus);
       } else {
         const res = await api.post<{ alumnus: Alumni }>("/alumni", payload);
@@ -96,33 +109,65 @@ function AlumniModal({
       <form onSubmit={handleSubmit} className="flex flex-col gap-4">
         <div className="grid grid-cols-2 gap-3">
           <Field label="Name" required>
-            <Input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} required />
+            <Input
+              value={form.name}
+              onChange={(e) => setForm({ ...form, name: e.target.value })}
+              required
+            />
           </Field>
           <Field label="Company" required>
-            <Input value={form.company} onChange={(e) => setForm({ ...form, company: e.target.value })} required />
+            <Input
+              value={form.company}
+              onChange={(e) => setForm({ ...form, company: e.target.value })}
+              required
+            />
           </Field>
         </div>
         <div className="grid grid-cols-2 gap-3">
           <Field label="Role">
-            <Input value={form.role} onChange={(e) => setForm({ ...form, role: e.target.value })} />
+            <Input
+              value={form.role}
+              onChange={(e) => setForm({ ...form, role: e.target.value })}
+            />
           </Field>
           <Field label="Course">
-            <Input value={form.course} onChange={(e) => setForm({ ...form, course: e.target.value })} />
+            <Input
+              value={form.course}
+              onChange={(e) => setForm({ ...form, course: e.target.value })}
+            />
           </Field>
         </div>
         <div className="grid grid-cols-2 gap-3">
           <Field label="Package (LPA)">
-            <Input type="number" min={0} step="0.1" value={form.packageLPA} onChange={(e) => setForm({ ...form, packageLPA: e.target.value })} />
+            <Input
+              type="number"
+              min={0}
+              step="0.1"
+              value={form.packageLPA}
+              onChange={(e) => setForm({ ...form, packageLPA: e.target.value })}
+            />
           </Field>
           <Field label="Placed year">
-            <Input type="number" value={form.placedYear} onChange={(e) => setForm({ ...form, placedYear: e.target.value })} />
+            <Input
+              type="number"
+              value={form.placedYear}
+              onChange={(e) => setForm({ ...form, placedYear: e.target.value })}
+            />
           </Field>
         </div>
         <Field label="Testimonial">
-          <Textarea rows={3} value={form.testimonial} onChange={(e) => setForm({ ...form, testimonial: e.target.value })} />
+          <Textarea
+            rows={3}
+            value={form.testimonial}
+            onChange={(e) => setForm({ ...form, testimonial: e.target.value })}
+          />
         </Field>
         <Field label="LinkedIn">
-          <Input type="url" value={form.linkedIn} onChange={(e) => setForm({ ...form, linkedIn: e.target.value })} />
+          <Input
+            type="url"
+            value={form.linkedIn}
+            onChange={(e) => setForm({ ...form, linkedIn: e.target.value })}
+          />
         </Field>
         <label className="flex items-center gap-2 text-sm font-semibold text-ink">
           <input
@@ -156,7 +201,11 @@ export default function AlumniPage() {
     api
       .get<Alumni[]>("/alumni?limit=100")
       .then(setAlumni)
-      .catch((err) => setError(err instanceof ApiError ? err.message : "Failed to load alumni"));
+      .catch((err) =>
+        setError(
+          err instanceof ApiError ? err.message : "Failed to load alumni",
+        ),
+      );
   }, []);
 
   function upsert(a: Alumni) {
@@ -187,7 +236,11 @@ export default function AlumniPage() {
           <h1 className="text-xl font-bold text-ink">Alumni</h1>
           <p className="text-sm text-muted">Success stories from graduates.</p>
         </div>
-        {isAdmin && <PrimaryButton onClick={() => setShowAdd(true)}>+ Add Alumni</PrimaryButton>}
+        {isAdmin && (
+          <PrimaryButton onClick={() => setShowAdd(true)}>
+            + Add Alumni
+          </PrimaryButton>
+        )}
       </div>
 
       {error && <p className="text-sm text-red">{error}</p>}
@@ -195,7 +248,10 @@ export default function AlumniPage() {
       {alumni && (
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {alumni.map((a) => (
-            <div key={a._id} className="flex flex-col gap-2 rounded-[14px] border border-line bg-white p-5">
+            <div
+              key={a._id}
+              className="flex flex-col gap-2 rounded-[14px] border border-line bg-white p-5"
+            >
               <div className="flex items-center gap-3">
                 <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-purple-lt font-bold text-purple">
                   {a.name[0]?.toUpperCase()}
@@ -210,29 +266,58 @@ export default function AlumniPage() {
                   </div>
                 </div>
               </div>
-              {a.testimonial && <p className="text-sm text-muted italic">&ldquo;{a.testimonial}&rdquo;</p>}
+              {a.testimonial && (
+                <p className="text-sm text-muted italic">
+                  &ldquo;{a.testimonial}&rdquo;
+                </p>
+              )}
               <div className="mt-auto flex items-center justify-between text-xs text-muted">
                 <span>{a.course}</span>
-                {a.packageLPA && <span className="font-bold text-green">₹{a.packageLPA}L</span>}
+                {a.packageLPA && (
+                  <span className="font-bold text-green">₹{a.packageLPA}L</span>
+                )}
               </div>
               {isAdmin && (
                 <div className="flex gap-2">
-                  <SecondaryButton onClick={() => setEditing(a)} className="!px-3 !py-1.5 !text-xs">
+                  <SecondaryButton
+                    onClick={() => setEditing(a)}
+                    className="!px-3 !py-1.5 !text-xs"
+                  >
                     Edit
                   </SecondaryButton>
-                  <button onClick={() => handleDelete(a)} className="self-start text-xs font-semibold text-red hover:underline">
+                  <button
+                    onClick={() => handleDelete(a)}
+                    className="self-start text-xs font-semibold text-red hover:underline"
+                  >
                     Delete
                   </button>
                 </div>
               )}
             </div>
           ))}
-          {alumni.length === 0 && <EmptyState message="No alumni stories yet." className="col-span-full" />}
+          {alumni.length === 0 && (
+            <EmptyState
+              message="No alumni stories yet."
+              className="col-span-full"
+            />
+          )}
         </div>
       )}
 
-      {showAdd && <AlumniModal alumnus={null} onClose={() => setShowAdd(false)} onSaved={upsert} />}
-      {editing && <AlumniModal alumnus={editing} onClose={() => setEditing(null)} onSaved={upsert} />}
+      {showAdd && (
+        <AlumniModal
+          alumnus={null}
+          onClose={() => setShowAdd(false)}
+          onSaved={upsert}
+        />
+      )}
+      {editing && (
+        <AlumniModal
+          alumnus={editing}
+          onClose={() => setEditing(null)}
+          onSaved={upsert}
+        />
+      )}
     </div>
   );
 }

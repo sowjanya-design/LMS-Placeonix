@@ -4,7 +4,14 @@ import { useEffect, useState } from "react";
 import { api, ApiError } from "@/lib/api";
 import { useAuth } from "@/lib/auth-context";
 import { Modal } from "@/components/ui/modal";
-import { Field, Input, Textarea, ModalActions, ErrorText, PrimaryButton } from "@/components/ui/form";
+import {
+  Field,
+  Input,
+  Textarea,
+  ModalActions,
+  ErrorText,
+  PrimaryButton,
+} from "@/components/ui/form";
 import { EmptyState } from "@/components/ui/empty-state";
 import type { Company } from "@/lib/types";
 
@@ -43,12 +50,20 @@ function toForm(c?: CompanyFull): CompanyForm {
 // Trim and drop empty optional fields; name always included.
 function toPayload(form: CompanyForm): Record<string, string> {
   const payload: Record<string, string> = { name: form.name.trim() };
-  (["website", "industry", "location", "contactPerson", "contactEmail", "contactPhone", "notes"] as const).forEach(
-    (k) => {
-      const v = form[k].trim();
-      if (v) payload[k] = v;
-    }
-  );
+  (
+    [
+      "website",
+      "industry",
+      "location",
+      "contactPerson",
+      "contactEmail",
+      "contactPhone",
+      "notes",
+    ] as const
+  ).forEach((k) => {
+    const v = form[k].trim();
+    if (v) payload[k] = v;
+  });
   return payload;
 }
 
@@ -62,7 +77,9 @@ function CompanyModal({
   onSaved: (c: CompanyFull) => void;
 }) {
   const isEdit = !!company;
-  const [form, setForm] = useState<CompanyForm>(() => toForm(company ?? undefined));
+  const [form, setForm] = useState<CompanyForm>(() =>
+    toForm(company ?? undefined),
+  );
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
 
@@ -77,29 +94,53 @@ function CompanyModal({
     try {
       const payload = toPayload(form);
       const res = isEdit
-        ? await api.patch<{ company: CompanyFull }>(`/companies/${company!._id}`, payload)
+        ? await api.patch<{ company: CompanyFull }>(
+            `/companies/${company!._id}`,
+            payload,
+          )
         : await api.post<{ company: CompanyFull }>("/companies", payload);
       onSaved(res.company);
       onClose();
     } catch (err) {
-      setError(err instanceof ApiError ? err.message : `Failed to ${isEdit ? "update" : "add"} company`);
+      setError(
+        err instanceof ApiError
+          ? err.message
+          : `Failed to ${isEdit ? "update" : "add"} company`,
+      );
     } finally {
       setSubmitting(false);
     }
   }
 
   return (
-    <Modal title={isEdit ? "Edit Company" : "Add Company"} onClose={onClose} wide>
+    <Modal
+      title={isEdit ? "Edit Company" : "Add Company"}
+      onClose={onClose}
+      wide
+    >
       <form onSubmit={handleSubmit} className="flex flex-col gap-3">
         <Field label="Company name" required>
-          <Input value={form.name} onChange={(e) => set("name", e.target.value)} placeholder="Acme Corp" required />
+          <Input
+            value={form.name}
+            onChange={(e) => set("name", e.target.value)}
+            placeholder="Acme Corp"
+            required
+          />
         </Field>
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
           <Field label="Industry">
-            <Input value={form.industry} onChange={(e) => set("industry", e.target.value)} placeholder="Software" />
+            <Input
+              value={form.industry}
+              onChange={(e) => set("industry", e.target.value)}
+              placeholder="Software"
+            />
           </Field>
           <Field label="Location">
-            <Input value={form.location} onChange={(e) => set("location", e.target.value)} placeholder="Bengaluru" />
+            <Input
+              value={form.location}
+              onChange={(e) => set("location", e.target.value)}
+              placeholder="Bengaluru"
+            />
           </Field>
         </div>
         <Field label="Website" hint="Full URL including https://">
@@ -143,7 +184,11 @@ function CompanyModal({
           />
         </Field>
         <ErrorText>{error}</ErrorText>
-        <ModalActions onCancel={onClose} submitting={submitting} submitLabel={isEdit ? "Save changes" : "Add company"} />
+        <ModalActions
+          onCancel={onClose}
+          submitting={submitting}
+          submitLabel={isEdit ? "Save changes" : "Add company"}
+        />
       </form>
     </Modal>
   );
@@ -161,7 +206,11 @@ export default function CompaniesPage() {
     api
       .get<CompanyFull[]>("/companies")
       .then(setCompanies)
-      .catch((err) => setError(err instanceof ApiError ? err.message : "Failed to load companies"));
+      .catch((err) =>
+        setError(
+          err instanceof ApiError ? err.message : "Failed to load companies",
+        ),
+      );
   }, []);
 
   function upsert(c: CompanyFull) {
@@ -189,7 +238,9 @@ export default function CompaniesPage() {
     <div className="flex flex-col gap-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-xl font-bold text-ink">Companies {companies ? `(${companies.length})` : ""}</h1>
+          <h1 className="text-xl font-bold text-ink">
+            Companies {companies ? `(${companies.length})` : ""}
+          </h1>
           <p className="text-sm text-muted">Employer database.</p>
         </div>
         {isAdmin && (
@@ -204,16 +255,27 @@ export default function CompaniesPage() {
       {companies && (
         <div className="flex flex-col gap-3">
           {companies.map((c) => (
-            <div key={c._id} className="flex flex-wrap items-center gap-4 rounded-[14px] border border-line bg-white p-4">
+            <div
+              key={c._id}
+              className="flex flex-wrap items-center gap-4 rounded-[14px] border border-line bg-white p-4"
+            >
               <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-[10px] bg-purple-lt text-sm font-bold text-purple">
                 {c.name[0]?.toUpperCase()}
               </div>
               <div className="min-w-[160px] flex-1">
                 <div className="font-bold text-ink">{c.name}</div>
-                <div className="text-xs text-muted">{[c.industry, c.location].filter(Boolean).join(" · ") || "Employer"}</div>
+                <div className="text-xs text-muted">
+                  {[c.industry, c.location].filter(Boolean).join(" · ") ||
+                    "Employer"}
+                </div>
               </div>
               {c.website && (
-                <a href={c.website} target="_blank" rel="noreferrer" className="rounded-lg border-[1.5px] border-purple px-3 py-1.5 text-xs font-bold text-purple">
+                <a
+                  href={c.website}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="rounded-lg border-[1.5px] border-purple px-3 py-1.5 text-xs font-bold text-purple"
+                >
                   Visit
                 </a>
               )}
@@ -239,8 +301,20 @@ export default function CompaniesPage() {
         </div>
       )}
 
-      {isAdmin && showAdd && <CompanyModal company={null} onClose={() => setShowAdd(false)} onSaved={upsert} />}
-      {isAdmin && editing && <CompanyModal company={editing} onClose={() => setEditing(null)} onSaved={upsert} />}
+      {isAdmin && showAdd && (
+        <CompanyModal
+          company={null}
+          onClose={() => setShowAdd(false)}
+          onSaved={upsert}
+        />
+      )}
+      {isAdmin && editing && (
+        <CompanyModal
+          company={editing}
+          onClose={() => setEditing(null)}
+          onSaved={upsert}
+        />
+      )}
     </div>
   );
 }

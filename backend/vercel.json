@@ -1,0 +1,21 @@
+{
+  "name": "placeonix-backend-v2",
+  "version": 2,
+  "env": {
+    "MONGO_URI": "mongodb://sowjanya_db_user:rSJR880Io98ZVFmx@ac-vxhabhn-shard-00-00.ubtidzc.mongodb.net:27017,ac-vxhabhn-shard-00-01.ubtidzc.mongodb.net:27017,ac-vxhabhn-shard-00-02.ubtidzc.mongodb.net:27017/placeonix-hub?ssl=true&replicaSet=atlas-zfmtg3-shard-0&authSource=admin&retryWrites=true&w=majority",
+    "JWT_SECRET": "your-super-secret-jwt-key-change-this-in-production-minimum-32-chars",
+    "JWT_REFRESH_SECRET": "your-super-secret-refresh-jwt-key-change-this-too-32-chars",
+    "JWT_COOKIE_EXPIRE": "7",
+    "DISABLE_CRON": "true",
+    "NODE_ENV": "production",
+    "CLIENT_URL": "https://placeonix-frontend-v2.vercel.app,https://frontend-three-jade-53.vercel.app,https://frontend-qw52b5sa0-sowjanya-designs-projects.vercel.app"
+  },
+  "builds": [
+    { "src": "api/index.js", "use": "@vercel/node" }
+  ],
+  "routes": [
+    { "src": "/api/(.*)", "dest": "api/index.js" },
+    { "src": "/health", "dest": "api/index.js" },
+    { "src": "/(.*)", "dest": "api/index.js" }
+  ]
+}

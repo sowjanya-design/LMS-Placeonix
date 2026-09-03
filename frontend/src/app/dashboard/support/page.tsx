@@ -31,13 +31,27 @@ export default function SupportPage() {
       </div>
 
       <div className="rounded-[14px] border border-line bg-white p-5">
-        <div className="mb-3 text-base font-bold text-ink">Frequently Asked Questions</div>
+        <div className="mb-3 text-base font-bold text-ink">
+          Frequently Asked Questions
+        </div>
         <div className="flex flex-col divide-y divide-line">
           {[
-            ["How do I reset my password?", "Use \"Forgot Password?\" on the login screen, or ask your mentor/admin."],
-            ["Where can I see my attendance?", "Attendance is in the sidebar — shows your overall % and full history."],
-            ["How do I submit an assignment?", "Open Assignments, click Submit on the assignment card, and add your work/GitHub link."],
-            ["Who do I contact about platform access?", "Reach out via the email or phone above, or contact your administrator."],
+            [
+              "How do I reset my password?",
+              'Use "Forgot Password?" on the login screen, or ask your mentor/admin.',
+            ],
+            [
+              "Where can I see my attendance?",
+              "Attendance is in the sidebar — shows your overall % and full history.",
+            ],
+            [
+              "How do I submit an assignment?",
+              "Open Assignments, click Submit on the assignment card, and add your work/GitHub link.",
+            ],
+            [
+              "Who do I contact about platform access?",
+              "Reach out via the email or phone above, or contact your administrator.",
+            ],
           ].map(([q, a]) => (
             <div key={q} className="py-3">
               <div className="text-sm font-semibold text-ink">{q}</div>
