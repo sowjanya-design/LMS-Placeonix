@@ -1,18 +1,8 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  async rewrites() {
-    return [
-      {
-        source: '/api/:path*',
-        destination: 'https://backend-pearl-seven-77.vercel.app/api/:path*'
-      },
-      {
-        source: '/uploads/:path*',
-        destination: 'https://backend-pearl-seven-77.vercel.app/uploads/:path*'
-      }
-    ]
-  }
+  // We removed rewrites because we are using a custom proxy route in src/app/api/v1/[...path]/route.ts
+  // This allows us to perfectly forge the CORS headers that the browser expects!
 };
 
 export default nextConfig;
