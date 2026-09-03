@@ -25,8 +25,11 @@ async function proxy(request: NextRequest, { params }: { params: Promise<{ path:
   const path = pathSegments.join("/");
   const searchParams = request.nextUrl.search;
   
-  // Target URL
-  const targetUrl = `https://backend-pearl-seven-77.vercel.app/api/v1/${path}${searchParams}`;
+  // Target URL (use env var or fallback to correct production backend)
+  const baseUrl = process.env.NEXT_PUBLIC_API_BASE 
+    ? process.env.NEXT_PUBLIC_API_BASE.replace(/\/v1$/, "")
+    : "https://backend-sowjanya-designs-projects.vercel.app/api";
+  const targetUrl = `${baseUrl}/v1/${path}${searchParams}`;
   
   // Copy headers
   const headers = new Headers();
