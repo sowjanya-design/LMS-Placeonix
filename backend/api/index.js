@@ -22,9 +22,13 @@ async function ensureDB() {
           const {
             seedRolesAndPermissions,
           } = require("../src/seeders/seedRoles");
+          const {
+            syncHolidayAnnouncements,
+          } = require("../src/services/holidaySyncService");
           await seedRolesAndPermissions();
+          await syncHolidayAnnouncements();
         } catch (err) {
-          console.warn(`Role/permission auto-seed skipped: ${err.message}`);
+          console.warn(`Role/permission or holiday auto-seed skipped: ${err.message}`);
         }
         return conn;
       })
