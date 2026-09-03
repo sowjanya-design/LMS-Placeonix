@@ -8,7 +8,7 @@
     "JWT_COOKIE_EXPIRE": "7",
     "DISABLE_CRON": "true",
     "NODE_ENV": "production",
-    "CLIENT_URL": "https://placeonix-frontend-v2.vercel.app,https://frontend-three-jade-53.vercel.app,https://frontend-qw52b5sa0-sowjanya-designs-projects.vercel.app"
+    "CLIENT_URL": "https://placeonix-frontend-v2.vercel.app,https://frontend-three-jade-53.vercel.app,https://frontend-qw52b5sa0-sowjanya-designs-projects.vercel.app,https://lms-placeonix-me1m28vps-sowjanya-designs-projects.vercel.app,https://lms-placeonix.vercel.app,https://lms-placeonix-sowjanya-designs-projects.vercel.app"
   },
   "builds": [
     { "src": "api/index.js", "use": "@vercel/node" }
