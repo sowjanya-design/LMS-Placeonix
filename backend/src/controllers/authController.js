@@ -476,6 +476,7 @@ exports.forgotPassword = asyncHandler(async (req, res, next) => {
   // testable without a mailbox.
   const resetUrl = `${process.env.CLIENT_URL || ""}/reset-password/${resetToken}`;
   let emailed = false;
+  let emailError = null;
   if (
     process.env.SMTP_HOST &&
     process.env.SMTP_PASS &&
@@ -491,7 +492,10 @@ exports.forgotPassword = asyncHandler(async (req, res, next) => {
       emailed = true;
     } catch (e) {
       emailed = false;
+      emailError = e.message;
     }
+  } else {
+    emailError = "SMTP Environment variables missing or set to default (your-app-password).";
   }
 
   if (!emailed) {
@@ -512,6 +516,7 @@ exports.forgotPassword = asyncHandler(async (req, res, next) => {
     "If that email exists, reset instructions have been sent",
     {
       emailed,
+      emailError,
       resetToken:
         !emailed && process.env.NODE_ENV !== "production"
           ? resetToken
