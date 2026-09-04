@@ -7,10 +7,21 @@ const logger = require("../utils/logger");
 const { auditLog } = require("../utils/audit");
 const crypto = require("crypto");
 
+// The frontend and backend are deployed as two separate Vercel projects on
+// two different vercel.app subdomains — vercel.app itself is a public
+// suffix, so those count as genuinely different sites to the browser, not
+// just different origins. A SameSite=Lax cookie is never usable across
+// real sites like that: it silently never gets stored, every /auth/me on a
+// fresh page load 401s, and the user gets bounced back to /login the
+// moment they refresh. SameSite=None (paired with Secure, required by every
+// browser for None) is what actually works cross-site — kept to production
+// only, since None+Secure would break plain-HTTP localhost dev, where Lax
+// is exactly right (frontend/backend are same-site there, just different
+// ports).
 const cookieOptions = () => ({
   httpOnly: true,
   secure: process.env.NODE_ENV === "production",
-  sameSite: "lax",
+  sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
   maxAge: (Number(process.env.JWT_COOKIE_EXPIRE) || 7) * 24 * 60 * 60 * 1000,
 });
 
