@@ -7,10 +7,13 @@ const app = require("../src/app");
 let connPromise = null;
 async function ensureDB() {
   if (mongoose.connection.readyState === 1) return; // already connected
-  if (!process.env.MONGO_URI) throw new Error("MONGO_URI is not set");
+  let uri = process.env.MONGO_URI;
+  if (!uri || !uri.startsWith("mongodb")) {
+    uri = "mongodb://sowjanya_db_user:rSJR880Io98ZVFmx@ac-vxhabhn-shard-00-00.ubtidzc.mongodb.net:27017,ac-vxhabhn-shard-00-01.ubtidzc.mongodb.net:27017,ac-vxhabhn-shard-00-02.ubtidzc.mongodb.net:27017/placeonix-hub?ssl=true&replicaSet=atlas-zfmtg3-shard-0&authSource=admin&retryWrites=true&w=majority";
+  }
   if (!connPromise) {
     connPromise = mongoose
-      .connect(process.env.MONGO_URI, {
+      .connect(uri, {
         autoIndex: false,
         serverSelectionTimeoutMS: 8000,
         maxPoolSize: 5,
