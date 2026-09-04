@@ -4,21 +4,10 @@ export const maxDuration = 60;
 export const dynamic = "force-dynamic";
 
 async function proxy(request: NextRequest, { params }: { params: Promise<{ path: string[] }> }) {
-  const origin = request.headers.get("Origin") || "*";
-
-  // Handle CORS preflight directly without bothering the backend
+  // This is a same-origin proxy. Reflecting arbitrary origins is unsafe when
+  // authenticated cookies are forwarded to the backend.
   if (request.method === "OPTIONS") {
-    const preflightHeaders = new Headers();
-    preflightHeaders.set("Access-Control-Allow-Origin", origin);
-    preflightHeaders.set("Access-Control-Allow-Methods", "GET, POST, PUT, PATCH, DELETE, OPTIONS");
-    preflightHeaders.set("Access-Control-Allow-Headers", "Content-Type, Authorization");
-    preflightHeaders.set("Access-Control-Allow-Credentials", "true");
-    preflightHeaders.set("Access-Control-Max-Age", "86400"); // 24 hours
-    
-    return new NextResponse(null, {
-      status: 204, // Success status code required by CORS spec
-      headers: preflightHeaders,
-    });
+    return new NextResponse(null, { status: 204 });
   }
 
   const pathSegments = (await Promise.resolve(params)).path;
@@ -39,8 +28,9 @@ async function proxy(request: NextRequest, { params }: { params: Promise<{ path:
     }
   });
   
-  // Trick the backend's CORS check
-  headers.set("Origin", "https://placeonix-frontend-v2.vercel.app");
+  // The backend treats this as an internal server-to-server request. Do not
+  // forward a caller-controlled Origin header.
+  headers.delete("origin");
   
   // Also pass the Vercel SSO nonce if we have it
   const cookie = request.headers.get("cookie");
@@ -71,19 +61,17 @@ async function proxy(request: NextRequest, { params }: { params: Promise<{ path:
       responseHeaders.append("Set-Cookie", cookie);
     });
 
-    // Inject our permissive CORS headers
-    responseHeaders.set("Access-Control-Allow-Origin", origin);
-    responseHeaders.set("Access-Control-Allow-Methods", "GET, POST, PUT, PATCH, DELETE, OPTIONS");
-    responseHeaders.set("Access-Control-Allow-Headers", "Content-Type, Authorization");
-    responseHeaders.set("Access-Control-Allow-Credentials", "true");
-
     return new NextResponse(backendResponse.body, {
       status: backendResponse.status,
       statusText: backendResponse.statusText,
       headers: responseHeaders,
     });
-  } catch (err: any) {
-    return NextResponse.json({ success: false, message: "Proxy Error: " + err.message }, { status: 500 });
+  } catch (err: unknown) {
+    const message = err instanceof Error ? err.message : "Unknown proxy error";
+    return NextResponse.json(
+      { success: false, message: `Proxy error: ${message}` },
+      { status: 500 },
+    );
   }
 }
 

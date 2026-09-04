@@ -17,6 +17,8 @@ placeonix-hub-backend/uploads/
 coverage/
 dist/
 build/
+.next/
+frontend/frontend/
 
 # OS / editor
 .DS_Store

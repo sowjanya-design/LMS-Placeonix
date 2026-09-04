@@ -145,11 +145,11 @@ const seedData = async () => {
       category: "Web Development",
       description:
         "Master modern web development with React, Node.js, Express, and MongoDB.",
-      shortDescription: "Become a full stack developer in 4 months",
-      duration: "4-6 Months",
-      durationWeeks: 20,
+      shortDescription: "MERN or Java full stack development with placement support",
+      duration: "2-3 Months",
+      durationWeeks: 12,
       level: "Beginner to Advanced",
-      fee: { amount: 25000, currency: "INR", installments: 3 },
+      fee: { amount: 37000, currency: "INR", installments: 3 },
       color: "#6c3ff5",
       tags: ["MERN", "React", "Node.js", "Java"],
       modules: [
@@ -198,7 +198,7 @@ const seedData = async () => {
       category: "Data Science",
       description:
         "Master Python, Machine Learning, and data visualization with real datasets.",
-      duration: "4-6 Months",
+      duration: "2-3 Months",
       level: "Intermediate",
       fee: { amount: 40000 },
       color: "#0ea5c9",
@@ -410,9 +410,9 @@ const seedData = async () => {
         description:
           "Backend engineering with Java, Spring Boot and REST APIs.",
         shortDescription: "Java + Spring Boot",
-        duration: "4-6 Months",
+        duration: "2-3 Months",
         level: "Beginner to Advanced",
-        fee: { amount: 20000 },
+        fee: { amount: 25000 },
         tags: ["Java", "Spring", "Backend"],
       },
       {
@@ -425,7 +425,7 @@ const seedData = async () => {
         description:
           "CI/CD, containers and cloud on AWS & Azure with hands-on cloud credits.",
         shortDescription: "AWS + Azure",
-        duration: "4-6 Months",
+        duration: "2-3 Months",
         level: "Intermediate",
         fee: { amount: 37000 },
         tags: ["AWS", "Azure", "Docker", "K8s"],
@@ -439,7 +439,7 @@ const seedData = async () => {
         description:
           "Network security, ethical hacking and defensive security fundamentals.",
         shortDescription: "Security essentials",
-        duration: "4-6 Months",
+        duration: "2-3 Months",
         level: "Beginner to Advanced",
         fee: { amount: 20000 },
         tags: ["Security", "Networking"],
@@ -453,7 +453,7 @@ const seedData = async () => {
         description:
           "Product design with Figma — wireframing, prototyping and design systems.",
         shortDescription: "Figma + Design Systems",
-        duration: "4-6 Months",
+        duration: "16-18 Weeks",
         level: "Beginner to Advanced",
         fee: { amount: 15000 },
         tags: ["Figma", "Design"],

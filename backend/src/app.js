@@ -15,47 +15,6 @@ const { errorHandler, notFound } = require("./middleware/errorHandler");
 const app = express();
 
 // TEMPORARY DEBUG — placed BEFORE any middleware
-app.post("/debug-login", express.json(), async (req, res) => {
-  try {
-    const mongoose = require("mongoose");
-    const User = require("./models/User");
-    const bcrypt = require("bcryptjs");
-    const { email, password } = req.body || {};
-    
-    const dbState = mongoose.connection.readyState;
-    // 0=disconnected, 1=connected, 2=connecting, 3=disconnecting
-    
-    if (dbState !== 1) {
-      return res.json({ debug: "db not connected", dbState });
-    }
-    
-    const user = await User.findOne({ email }).select("+password +emailVerified +loginAttempts +lockUntil");
-    if (!user) {
-      return res.json({ debug: "no user found", email });
-    }
-    
-    const isMatch = await bcrypt.compare(password, user.password);
-    return res.json({
-      debug: "user found",
-      email: user.email,
-      role: user.role,
-      status: user.status,
-      passwordMatch: isMatch,
-      hasPassword: !!user.password,
-      passwordLength: user.password ? user.password.length : 0,
-      isLocked: user.isLocked,
-      loginAttempts: user.loginAttempts,
-    });
-  } catch (err) {
-    return res.status(500).json({
-      debug: "error",
-      name: err.name,
-      message: err.message,
-      stack: err.stack,
-    });
-  }
-});
-
 app.set("trust proxy", 1);
 
 // ─── Security ───

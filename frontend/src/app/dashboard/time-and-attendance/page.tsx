@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useMemo } from "react";
+import { useCallback, useEffect, useState, useMemo } from "react";
 import { useAuth } from "@/lib/auth-context";
 import { api, ApiError } from "@/lib/api";
 import { EmptyState } from "@/components/ui/empty-state";
@@ -54,12 +54,7 @@ function StudentAttendance() {
     return { y: n.getFullYear(), m: n.getMonth() };
   });
 
-  useEffect(() => {
-    loadToday();
-    loadAllRecords();
-  }, []);
-
-  async function loadAllRecords() {
+  const loadAllRecords = useCallback(async () => {
     try {
       const res = await api.get<{ records: AttendanceRecord[] }>(
         "/attendance/me",
@@ -68,7 +63,23 @@ function StudentAttendance() {
     } catch (e) {
       console.error(e);
     }
-  }
+  }, []);
+
+  const loadToday = useCallback(async () => {
+    try {
+      const res = await api.get<{ record: AttendanceRecord }>(
+        "/attendance/today",
+      );
+      setTodayRecord(res.record);
+    } catch (e) {
+      console.error(e);
+    }
+  }, []);
+
+  useEffect(() => {
+    void loadToday();
+    void loadAllRecords();
+  }, [loadAllRecords, loadToday]);
 
   useEffect(() => {
     if (!todayRecord || !todayRecord.inTime || todayRecord.outTime) {
@@ -101,17 +112,6 @@ function StudentAttendance() {
     }, 1000);
     return () => clearInterval(interval);
   }, [todayRecord]);
-
-  async function loadToday() {
-    try {
-      const res = await api.get<{ record: AttendanceRecord }>(
-        "/attendance/today",
-      );
-      setTodayRecord(res.record);
-    } catch (e) {
-      console.error(e);
-    }
-  }
 
   async function handlePunch(
     action: "punch-in" | "punch-out" | "break-start" | "break-end",

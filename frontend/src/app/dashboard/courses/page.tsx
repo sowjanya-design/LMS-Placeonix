@@ -350,7 +350,7 @@ export default function CoursesPage() {
                 </div>
                 <div className="mt-auto flex items-center justify-between border-t border-line pt-3 text-xs text-muted">
                   <span>{c.duration}</span>
-                  {c.fee?.amount > 0 && (
+                  {(c.fee?.amount ?? 0) > 0 && (
                     <span className="font-semibold text-ink2">
                       ₹{c.fee.amount.toLocaleString("en-IN")}
                     </span>

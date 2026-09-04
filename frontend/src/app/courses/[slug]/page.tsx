@@ -24,8 +24,8 @@ async function getCourseData(slug: string) {
         "SAP RAP Tutorials",
         "SAP Training with Placement",
       ],
-      fee: "₹25,000",
-      duration: "45 Days",
+      fee: "₹33,000",
+      duration: "6-8 Weeks",
       faqs: [
         {
           question: "What is SAP BTP?",
@@ -48,13 +48,13 @@ async function getCourseData(slug: string) {
         "Python Institute Hyderabad",
         "Data Science course fees in Hyderabad",
       ],
-      fee: "₹30,000",
-      duration: "3 Months",
+      fee: "₹40,000",
+      duration: "2-3 Months",
       faqs: [
         {
           question: "What is the fee for the Data Science course?",
           answer:
-            "The fee is ₹30,000 which includes all materials and placement support.",
+            "The fee is ₹40,000 which includes all materials and placement support.",
         },
       ],
     },
@@ -68,8 +68,8 @@ async function getCourseData(slug: string) {
         "generative AI course in Hyderabad",
         "AI course with placement Hyderabad",
       ],
-      fee: "₹20,000",
-      duration: "1 Month",
+      fee: "₹1,15,000",
+      duration: "4-6 Months",
       faqs: [
         {
           question: "Is this course suitable for freshers?",

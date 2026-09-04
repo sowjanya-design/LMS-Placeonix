@@ -23,6 +23,7 @@ export interface User {
   studentProfile?: {
     enrollmentId?: string;
     resume?: string;
+    resumeFile?: string;
     skills?: string[];
     college?: string;
     degree?: string;
@@ -66,7 +67,7 @@ export interface Course {
   shortDescription?: string;
   description?: string;
   duration: string;
-  fee?: { amount: number; currency?: string };
+  fee: { amount: number; currency?: string };
   isPublished?: boolean;
 }
 

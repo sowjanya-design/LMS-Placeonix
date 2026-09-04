@@ -494,7 +494,7 @@ function ChallengeModal({
               },
             ];
 
-      const payload: any = {
+      const payload = {
         title,
         description,
         attachment: attachment.trim() || null,
