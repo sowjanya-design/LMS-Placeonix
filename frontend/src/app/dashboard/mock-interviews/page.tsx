@@ -69,6 +69,7 @@ function ScheduleMockModal({
   onClose: () => void;
   onSaved: () => void;
 }) {
+  const { user } = useAuth();
   const [students, setStudents] = useState<User[] | null>(null);
   const [form, setForm] = useState<ScheduleForm>({
     student: "",
@@ -84,8 +85,12 @@ function ScheduleMockModal({
   const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
+    const endpoint =
+      user?.role === "admin"
+        ? "/users?role=student&limit=100"
+        : "/users/my-students";
     api
-      .get<User[]>("/users?role=student&limit=100")
+      .get<User[]>(endpoint)
       .then(setStudents)
       .catch((err) =>
         setError(

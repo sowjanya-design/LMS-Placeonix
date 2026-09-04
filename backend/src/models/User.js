@@ -67,7 +67,8 @@ const userSchema = new mongoose.Schema(
       college: String,
       graduationYear: Number,
       skills: [String],
-      resume: String,
+      resume: String, // typically a link
+      resumeFile: String, // S3/Cloud storage file URL
       linkedIn: String,
       github: String,
       portfolio: String,

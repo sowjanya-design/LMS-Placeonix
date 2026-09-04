@@ -193,6 +193,7 @@ export interface CodingChallenge {
   _id: string;
   title: string;
   description: string;
+  attachment?: string;
   course: { _id: string; title: string };
   batch: { _id: string; name: string; code: string };
   allowedLanguages: string[];

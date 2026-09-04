@@ -18,6 +18,7 @@ const codingChallengeSchema = new mongoose.Schema(
   {
     title: { type: String, required: true, trim: true, maxlength: 200 },
     description: { type: String, required: true },
+    attachment: { type: String, default: null }, // Optional image/file url
 
     course: {
       type: mongoose.Schema.Types.ObjectId,

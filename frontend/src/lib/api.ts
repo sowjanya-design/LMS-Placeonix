@@ -30,6 +30,7 @@ export async function apiFetch<T = unknown>(
   }
 
   const res = await fetch(`${API_BASE}${path}`, {
+    cache: "no-store",
     ...options,
     credentials: "include",
     headers,
@@ -56,17 +57,17 @@ export const api = {
   post: <T = unknown>(path: string, body?: unknown) =>
     apiFetch<T>(path, {
       method: "POST",
-      body: body ? JSON.stringify(body) : undefined,
+      body: body instanceof FormData ? body : body ? JSON.stringify(body) : undefined,
     }),
   patch: <T = unknown>(path: string, body?: unknown) =>
     apiFetch<T>(path, {
       method: "PATCH",
-      body: body ? JSON.stringify(body) : undefined,
+      body: body instanceof FormData ? body : body ? JSON.stringify(body) : undefined,
     }),
   put: <T = unknown>(path: string, body?: unknown) =>
     apiFetch<T>(path, {
       method: "PUT",
-      body: body ? JSON.stringify(body) : undefined,
+      body: body instanceof FormData ? body : body ? JSON.stringify(body) : undefined,
     }),
   delete: <T = unknown>(path: string) =>
     apiFetch<T>(path, { method: "DELETE" }),

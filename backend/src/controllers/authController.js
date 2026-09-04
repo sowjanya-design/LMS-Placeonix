@@ -219,8 +219,12 @@ exports.login = asyncHandler(async (req, res, next) => {
   // }
 
   if (user.role === "admin" || user.role === "super_admin") {
-    const allowed = (process.env.ALLOWED_ADMIN_EMAILS || "").split(",").map(e => e.trim().toLowerCase());
-    if (!allowed.includes(user.email.toLowerCase())) {
+    const rawEnv = process.env.ALLOWED_ADMIN_EMAILS || "";
+    const allowed = rawEnv
+      .split(",")
+      .map((e) => e.trim().toLowerCase())
+      .filter(Boolean); // only enforce if the list is non-empty
+    if (allowed.length > 0 && !allowed.includes(user.email.toLowerCase())) {
       auditLog(req, {
         module: "auth",
         action: "login",

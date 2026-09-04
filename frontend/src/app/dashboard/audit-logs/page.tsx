@@ -42,7 +42,7 @@ export default function AuditLogsPage() {
   const [statusFilter, setStatusFilter] = useState("");
 
   useEffect(() => {
-    if (user?.role !== "admin") return;
+    if (user?.role !== "admin" && user?.role !== "super_admin") return;
     const params = new URLSearchParams({ limit: "100" });
     if (moduleFilter) params.set("module", moduleFilter);
     if (statusFilter) params.set("status", statusFilter);
@@ -56,7 +56,7 @@ export default function AuditLogsPage() {
       );
   }, [user, moduleFilter, statusFilter]);
 
-  if (user?.role !== "admin") {
+  if (user?.role !== "admin" && user?.role !== "super_admin") {
     return (
       <EmptyState message="You do not have permission to view this page." />
     );

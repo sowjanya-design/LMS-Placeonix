@@ -97,6 +97,13 @@ function SolveChallenge({
         <p className="mt-1 whitespace-pre-wrap text-sm text-ink2">
           {challenge.description}
         </p>
+        {challenge.attachment && (
+          <div className="mt-4">
+            <a href={challenge.attachment} target="_blank" className="text-sm font-bold text-purple underline">
+              View Attachment
+            </a>
+          </div>
+        )}
       </div>
 
       {visibleTestCases.length > 0 && (
@@ -431,6 +438,7 @@ function ChallengeModal({
   const editing = Boolean(challenge);
   const [title, setTitle] = useState(challenge?.title ?? "");
   const [description, setDescription] = useState(challenge?.description ?? "");
+  const [attachment, setAttachment] = useState(challenge?.attachment ?? "");
   const [batchId, setBatchId] = useState(challenge?.batch?._id ?? "");
   const [allowedLanguages, setAllowedLanguages] = useState<string[]>(
     challenge?.allowedLanguages ?? languages.map((l) => l.code),
@@ -486,9 +494,10 @@ function ChallengeModal({
               },
             ];
 
-      const payload = {
+      const payload: any = {
         title,
         description,
+        attachment: attachment.trim() || null,
         allowedLanguages: finalLanguages,
         maxAttempts: Number(maxAttempts) || 5,
         status: "published",
@@ -568,6 +577,37 @@ function ChallengeModal({
             rows={4}
             required
           />
+        </Field>
+        
+        <Field label="Attachment" hint="Optional image or file">
+          <Input
+            type="file"
+            onChange={async (e) => {
+              const file = e.target.files?.[0];
+              if (!file) return;
+              const formData = new FormData();
+              formData.append("document", file);
+              try {
+                setSaving(true);
+                const res = await api.post<{ url: string }>("/uploads/document", formData);
+                setAttachment(res.url);
+              } catch (err) {
+                setError(err instanceof ApiError ? err.message : "Upload failed.");
+              } finally {
+                setSaving(false);
+              }
+            }}
+          />
+          {attachment && (
+            <div className="mt-1 flex items-center justify-between">
+              <a href={attachment} target="_blank" className="text-xs text-purple underline">
+                View current attachment
+              </a>
+              <button type="button" onClick={() => setAttachment("")} className="text-xs text-red">
+                Remove
+              </button>
+            </div>
+          )}
         </Field>
 
         {/* Removed allowed languages, max attempts, status, and test cases fields as per requirement */}

@@ -238,7 +238,7 @@ function StudentAttendance() {
                 >
                   {todayRecord?.outTime
                     ? "Shift Completed"
-                    : "On Duty (Punch In)"}
+                    : "Punch In"}
                 </button>
               ) : (
                 <>
@@ -248,27 +248,20 @@ function StudentAttendance() {
                       disabled={loading}
                       className="w-full rounded-xl py-3 text-sm font-bold text-ink bg-purple-lt hover:bg-purple-mid hover:text-white transition-colors disabled:opacity-50"
                     >
-                      Take Break
+                      Start Break
                     </button>
                   ) : (
                     <button
                       onClick={() => handlePunch("break-end")}
                       disabled={loading}
-                      className="w-full rounded-xl py-3 text-sm font-bold text-white bg-yellow-500 hover:bg-yellow-600 transition-colors disabled:opacity-50"
+                      className="w-full rounded-xl py-3 text-sm font-bold text-white shadow-sm disabled:opacity-50"
+                      style={{
+                        background: "var(--amber)",
+                      }}
                     >
-                      Resume Work
+                      End Break
                     </button>
                   )}
-                  <button
-                    onClick={() => {
-                      if (confirm("Are you sure you want to end your shift?"))
-                        handlePunch("punch-out");
-                    }}
-                    disabled={loading || isOnBreak}
-                    className="w-full rounded-xl py-3 text-sm font-bold text-red bg-[rgba(226,114,107,0.1)] hover:bg-red hover:text-white transition-colors disabled:opacity-50"
-                  >
-                    Off Duty (Punch Out)
-                  </button>
                 </>
               )}
             </div>
