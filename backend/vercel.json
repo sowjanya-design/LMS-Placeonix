@@ -2,12 +2,12 @@
   "name": "placeonix-backend-v2",
   "version": 2,
   "env": {
-    "MONGO_URI": "mongodb://sowjanya_db_user:rSJR880Io98ZVFmx@ac-vxhabhn-shard-00-00.ubtidzc.mongodb.net:27017,ac-vxhabhn-shard-00-01.ubtidzc.mongodb.net:27017,ac-vxhabhn-shard-00-02.ubtidzc.mongodb.net:27017/placeonix-hub?ssl=true&replicaSet=atlas-zfmtg3-shard-0&authSource=admin&retryWrites=true&w=majority",
-    "JWT_SECRET": "your-super-secret-jwt-key-change-this-in-production-minimum-32-chars",
-    "JWT_REFRESH_SECRET": "your-super-secret-refresh-jwt-key-change-this-too-32-chars",
+    "MONGO_URI": "SET_IN_VERCEL_DASHBOARD_NOT_HERE",
+    "JWT_SECRET": "SET_IN_VERCEL_DASHBOARD_NOT_HERE",
+    "JWT_REFRESH_SECRET": "SET_IN_VERCEL_DASHBOARD_NOT_HERE",
     "JWT_COOKIE_EXPIRE": "7",
     "DISABLE_CRON": "true",
-    "NODE_ENV": "development",
+    "NODE_ENV": "production",
     "CLIENT_URL": "https://placeonix-frontend-v2.vercel.app,https://frontend-three-jade-53.vercel.app,https://frontend-qw52b5sa0-sowjanya-designs-projects.vercel.app,https://lms-placeonix-me1m28vps-sowjanya-designs-projects.vercel.app,https://lms-placeonix.vercel.app,https://lms-placeonix-sowjanya-designs-projects.vercel.app"
   },
   "builds": [
