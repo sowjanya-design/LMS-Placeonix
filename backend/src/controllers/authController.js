@@ -7,6 +7,18 @@ const logger = require("../utils/logger");
 const { auditLog } = require("../utils/audit");
 const crypto = require("crypto");
 
+// CLIENT_URL is a comma-separated CORS allowlist (it can legitimately list
+// several frontend domains -- preview URLs, aliases, etc.), but a link put
+// inside an email needs exactly one URL. Using the raw env var directly
+// used to produce a garbled, unclickable link like
+// "https://a.vercel.app,https://b.vercel.app,.../reset-password/<token>"
+// the moment more than one domain was configured. Take the first entry as
+// the one canonical "public" URL to build email links from.
+function publicAppUrl() {
+  const first = (process.env.CLIENT_URL || '').split(',')[0].trim();
+  return first || 'http://localhost:3000';
+}
+
 // The frontend and backend are deployed as two separate Vercel projects on
 // two different vercel.app subdomains — vercel.app itself is a public
 // suffix, so those count as genuinely different sites to the browser, not
@@ -96,7 +108,7 @@ exports.register = asyncHandler(async (req, res, next) => {
   if (process.env.SMTP_HOST && process.env.SMTP_PORT) {
     try {
       const { sendEmail } = require("../services/emailService");
-      const verifyUrl = `${process.env.CLIENT_URL || "http://localhost:3000"}/verify-email?token=${verifyTokenRaw}`;
+      const verifyUrl = `${publicAppUrl()}/verify-email?token=${verifyTokenRaw}`;
       await sendEmail({
         to: user.email,
         subject: "Verify your email for Placeonix",
@@ -474,7 +486,7 @@ exports.forgotPassword = asyncHandler(async (req, res, next) => {
   // over any account by email address alone. Outside production (no SMTP
   // configured in local/dev), log it server-side so the flow is still
   // testable without a mailbox.
-  const resetUrl = `${process.env.CLIENT_URL || ""}/reset-password/${resetToken}`;
+  const resetUrl = `${publicAppUrl()}/reset-password/${resetToken}`;
   let emailed = false;
   let emailError = null;
   if (
