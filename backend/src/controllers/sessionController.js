@@ -164,9 +164,8 @@ exports.deleteSession = asyncHandler(async (req, res, next) => {
   if (!session) return next(new AppError("Session not found", 404));
   if (!assertOwnsSession(session, req, next)) return;
 
-  session.status = "cancelled";
-  await session.save();
-  return ApiResponse.success(res, 200, "Session cancelled", { session });
+  await session.deleteOne();
+  return ApiResponse.success(res, 200, "Session deleted successfully");
 });
 
 // @desc   Mark session as live

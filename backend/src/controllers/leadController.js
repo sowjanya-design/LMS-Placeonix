@@ -26,7 +26,6 @@ exports.createLead = asyncHandler(async (req, res) => {
     phone,
     message,
     courseInterested,
-    courseInterested,
     courseInterestedName,
   });
 

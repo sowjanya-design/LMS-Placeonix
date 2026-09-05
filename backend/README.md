@@ -497,3 +497,13 @@ Returns server status, uptime, memory usage, and environment.
 ## License
 
 ISC © Placeonix
+# Deployment environment
+
+Do not commit deployment credentials. Configure these values in the Vercel
+project settings for each environment before deploying: `MONGO_URI`,
+`JWT_SECRET`, `JWT_REFRESH_SECRET`, `CLIENT_URL`, `ALLOWED_ADMIN_EMAILS`, and
+any enabled email, upload, Google Sign-In, or video-service credentials.
+
+After deploying this update, run `npm run migrate:brochure-courses` once with
+the production `MONGO_URI` to update existing course prices and durations
+without altering enrollments or payments.

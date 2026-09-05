@@ -7,10 +7,33 @@ const logger = require("../utils/logger");
 const { auditLog } = require("../utils/audit");
 const crypto = require("crypto");
 
+// CLIENT_URL is a comma-separated CORS allowlist (it can legitimately list
+// several frontend domains -- preview URLs, aliases, etc.), but a link put
+// inside an email needs exactly one URL. Using the raw env var directly
+// used to produce a garbled, unclickable link like
+// "https://a.vercel.app,https://b.vercel.app,.../reset-password/<token>"
+// the moment more than one domain was configured. Take the first entry as
+// the one canonical "public" URL to build email links from.
+function publicAppUrl() {
+  const first = (process.env.CLIENT_URL || '').split(',')[0].trim();
+  return first || 'http://localhost:3000';
+}
+
+// The frontend and backend are deployed as two separate Vercel projects on
+// two different vercel.app subdomains — vercel.app itself is a public
+// suffix, so those count as genuinely different sites to the browser, not
+// just different origins. A SameSite=Lax cookie is never usable across
+// real sites like that: it silently never gets stored, every /auth/me on a
+// fresh page load 401s, and the user gets bounced back to /login the
+// moment they refresh. SameSite=None (paired with Secure, required by every
+// browser for None) is what actually works cross-site — kept to production
+// only, since None+Secure would break plain-HTTP localhost dev, where Lax
+// is exactly right (frontend/backend are same-site there, just different
+// ports).
 const cookieOptions = () => ({
   httpOnly: true,
   secure: process.env.NODE_ENV === "production",
-  sameSite: "lax",
+  sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
   maxAge: (Number(process.env.JWT_COOKIE_EXPIRE) || 7) * 24 * 60 * 60 * 1000,
 });
 
@@ -85,7 +108,7 @@ exports.register = asyncHandler(async (req, res, next) => {
   if (process.env.SMTP_HOST && process.env.SMTP_PORT) {
     try {
       const { sendEmail } = require("../services/emailService");
-      const verifyUrl = `${process.env.CLIENT_URL || "http://localhost:3000"}/verify-email?token=${verifyTokenRaw}`;
+      const verifyUrl = `${publicAppUrl()}/verify-email?token=${verifyTokenRaw}`;
       await sendEmail({
         to: user.email,
         subject: "Verify your email for Placeonix",
@@ -219,8 +242,12 @@ exports.login = asyncHandler(async (req, res, next) => {
   // }
 
   if (user.role === "admin" || user.role === "super_admin") {
-    const allowed = (process.env.ALLOWED_ADMIN_EMAILS || "").split(",").map(e => e.trim().toLowerCase());
-    if (!allowed.includes(user.email.toLowerCase())) {
+    const rawEnv = process.env.ALLOWED_ADMIN_EMAILS || "";
+    const allowed = rawEnv
+      .split(",")
+      .map((e) => e.trim().toLowerCase())
+      .filter(Boolean); // only enforce if the list is non-empty
+    if (allowed.length > 0 && !allowed.includes(user.email.toLowerCase())) {
       auditLog(req, {
         module: "auth",
         action: "login",
@@ -459,8 +486,9 @@ exports.forgotPassword = asyncHandler(async (req, res, next) => {
   // over any account by email address alone. Outside production (no SMTP
   // configured in local/dev), log it server-side so the flow is still
   // testable without a mailbox.
-  const resetUrl = `${process.env.CLIENT_URL || ""}/reset-password/${resetToken}`;
+  const resetUrl = `${publicAppUrl()}/reset-password/${resetToken}`;
   let emailed = false;
+  let emailError = null;
   if (
     process.env.SMTP_HOST &&
     process.env.SMTP_PASS &&
@@ -476,7 +504,10 @@ exports.forgotPassword = asyncHandler(async (req, res, next) => {
       emailed = true;
     } catch (e) {
       emailed = false;
+      emailError = e.message;
     }
+  } else {
+    emailError = "SMTP Environment variables missing or set to default (your-app-password).";
   }
 
   if (!emailed) {
@@ -497,6 +528,7 @@ exports.forgotPassword = asyncHandler(async (req, res, next) => {
     "If that email exists, reset instructions have been sent",
     {
       emailed,
+      emailError,
       resetToken:
         !emailed && process.env.NODE_ENV !== "production"
           ? resetToken

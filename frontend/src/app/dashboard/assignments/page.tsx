@@ -216,7 +216,7 @@ function StudentAssignments() {
 
                 {mine?.files && mine.files.length > 0 && (
                   <div className="mt-3 flex flex-wrap gap-2">
-                    {mine.files.map((f: any, idx: number) => (
+                    {mine.files.map((f, idx: number) => (
                       <a
                         key={idx}
                         href={f.url}

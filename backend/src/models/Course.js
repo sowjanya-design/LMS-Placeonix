@@ -57,7 +57,7 @@ const courseSchema = new mongoose.Schema(
     },
 
     fee: {
-      amount: { type: Number, required: true, min: 0 },
+      amount: { type: Number, default: 0, min: 0 },
       currency: { type: String, default: "INR" },
       installments: { type: Number, default: 1, min: 1 },
     },

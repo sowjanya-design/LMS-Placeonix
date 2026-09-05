@@ -55,14 +55,30 @@ async function syncHolidayAnnouncements() {
       body: `${h.name} — the institute will be closed. This entry was added automatically; no action needed.`,
       type: "holiday",
       priority: "normal",
-      audience: { roles: ["admin", "mentor", "student"], isPublic: false },
+      audience: { roles: ["admin", "mentor", "student"], isPublic: true },
       publishAt: new Date(`${h.date}T00:00:00.000Z`),
       isSystemHoliday: true,
       createdBy: systemAuthor._id,
     }));
 
-  if (toCreate.length === 0) return { created: 0 };
+  if (toCreate.length === 0) {
+    // Repair pass: ensure any existing holidays that were created with
+    // isPublic:false are updated to isPublic:true so students/mentors can see them.
+    const repaired = await Announcement.updateMany(
+      { isSystemHoliday: true, "audience.isPublic": { $ne: true } },
+      { $set: { "audience.isPublic": true } },
+    );
+    if (repaired.modifiedCount > 0) {
+      logger.info(`[holidaySync] Repaired ${repaired.modifiedCount} holiday(s) — set isPublic:true`);
+    }
+    return { created: 0 };
+  }
   await Announcement.insertMany(toCreate);
+  // Also repair any stale holidays with isPublic:false
+  await Announcement.updateMany(
+    { isSystemHoliday: true, "audience.isPublic": { $ne: true } },
+    { $set: { "audience.isPublic": true } },
+  );
   logger.info(
     `[holidaySync] Auto-created ${toCreate.length} holiday announcement(s)`,
   );

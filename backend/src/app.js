@@ -14,6 +14,7 @@ const { errorHandler, notFound } = require("./middleware/errorHandler");
 
 const app = express();
 
+// TEMPORARY DEBUG — placed BEFORE any middleware
 app.set("trust proxy", 1);
 
 // ─── Security ───
@@ -209,6 +210,8 @@ app.get("/health", (req, res) => {
     },
   });
 });
+
+
 
 // API
 const apiVersion = process.env.API_VERSION || "v1";

@@ -19,6 +19,7 @@ export default function ProfilePage() {
   const [bio, setBio] = useState(user?.bio ?? "");
   // Student career fields — resume is the one that actually gates placement applications.
   const [resume, setResume] = useState(sp?.resume ?? "");
+  const [resumeFile, setResumeFile] = useState(sp?.resumeFile ?? "");
   const [skills, setSkills] = useState((sp?.skills ?? []).join(", "));
   const [college, setCollege] = useState(sp?.college ?? "");
   const [degree, setDegree] = useState(sp?.degree ?? "");
@@ -58,6 +59,7 @@ export default function ProfilePage() {
       if (isStudent) {
         payload.studentProfile = {
           resume: resume.trim(),
+          resumeFile: resumeFile.trim(),
           skills: skills
             .split(",")
             .map((s) => s.trim())
@@ -156,18 +158,53 @@ export default function ProfilePage() {
             <div className="mt-6 mb-3 border-t border-line pt-5 text-sm font-bold text-ink">
               Career profile
             </div>
-            <div className="mt-1">
-              <Field
-                label="Resume link"
-                hint="A public link (Google Drive, Dropbox, etc.). Required before you can apply to placement drives."
-              >
-                <Input
-                  type="url"
-                  placeholder="https://…"
-                  value={resume}
-                  onChange={(e) => setResume(e.target.value)}
-                />
-              </Field>
+            <div className="mt-4 flex flex-col sm:flex-row gap-4">
+              <div className="flex-1">
+                <Field
+                  label="Resume link"
+                  hint="A public link (Google Drive, Dropbox, etc.). Required before you can apply to placement drives."
+                >
+                  <Input
+                    type="url"
+                    placeholder="https://…"
+                    value={resume}
+                    onChange={(e) => setResume(e.target.value)}
+                  />
+                </Field>
+              </div>
+              <div className="flex-1">
+                <Field label="Or Upload Resume (PDF/Word)">
+                  <Input
+                    type="file"
+                    accept=".pdf,.doc,.docx"
+                    onChange={async (e) => {
+                      const file = e.target.files?.[0];
+                      if (!file) return;
+                      const formData = new FormData();
+                      formData.append("document", file);
+                      try {
+                        setMessage({ ok: true, text: "Uploading..." });
+                        const res = await api.post<{ url: string }>(
+                          "/uploads/document",
+                          formData,
+                        );
+                        setResumeFile(res.url);
+                        setMessage({ ok: true, text: "Resume uploaded." });
+                      } catch (err) {
+                        setMessage({
+                          ok: false,
+                          text: "Upload failed.",
+                        });
+                      }
+                    }}
+                  />
+                  {resumeFile && (
+                    <a href={resumeFile} target="_blank" className="text-xs text-purple mt-1 inline-block">
+                      View Uploaded Resume
+                    </a>
+                  )}
+                </Field>
+              </div>
             </div>
             <div className="mt-4">
               <Field

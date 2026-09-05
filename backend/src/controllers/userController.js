@@ -200,6 +200,7 @@ const STUDENT_PROFILE_FIELDS = [
   "graduationYear",
   "skills",
   "resume",
+  "resumeFile",
   "linkedIn",
   "github",
   "portfolio",

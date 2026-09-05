@@ -187,9 +187,6 @@ exports.raiseCorrection = asyncHandler(async (req, res, next) => {
   return ApiResponse.success(res, 201, "Correction raised", {
     request: reqObj,
   });
-
-  await record.save();
-  return ApiResponse.success(res, 200, 'Break started', { record });
 });
 
 exports.getCorrectionRequests = asyncHandler(async (req, res) => {

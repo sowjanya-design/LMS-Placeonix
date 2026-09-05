@@ -87,7 +87,7 @@ function CourseModal({
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    const feeAmount = Number(form.feeAmount);
+    const feeAmount = Number(form.feeAmount) || 0;
     if (
       !form.title.trim() ||
       !form.duration.trim() ||
@@ -175,13 +175,13 @@ function CourseModal({
           </Field>
         </div>
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-[1fr_auto]">
-          <Field label="Fee (₹)" required>
+          <Field label="Fee (₹)" hint="Leave empty or 0 if free">
             <Input
               type="number"
               min={0}
               value={form.feeAmount}
               onChange={(e) => set("feeAmount", e.target.value)}
-              placeholder="25000"
+              placeholder="0 (Free)"
             />
           </Field>
           <Field
@@ -350,7 +350,7 @@ export default function CoursesPage() {
                 </div>
                 <div className="mt-auto flex items-center justify-between border-t border-line pt-3 text-xs text-muted">
                   <span>{c.duration}</span>
-                  {c.fee?.amount != null && (
+                  {(c.fee?.amount ?? 0) > 0 && (
                     <span className="font-semibold text-ink2">
                       ₹{c.fee.amount.toLocaleString("en-IN")}
                     </span>

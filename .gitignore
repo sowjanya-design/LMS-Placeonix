@@ -17,6 +17,8 @@ placeonix-hub-backend/uploads/
 coverage/
 dist/
 build/
+.next/
+frontend/frontend/
 
 # OS / editor
 .DS_Store
@@ -30,3 +32,5 @@ Thumbs.db
 
 # Claude Code local settings
 .claude/settings.local.json
+.vercel/
+.env.vercel

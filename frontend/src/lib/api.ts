@@ -3,8 +3,7 @@
 // touches a token directly, it just always sends credentials so the browser
 // attaches the cookie. Never store the token in localStorage/state here; that
 // was the exact XSS exposure Phase 0 removed from the old portal.
-const API_BASE =
-  process.env.NEXT_PUBLIC_API_BASE || "http://localhost:5000/api/v1";
+const API_BASE = "/api/v1";
 
 export class ApiError extends Error {
   status: number;
@@ -31,6 +30,7 @@ export async function apiFetch<T = unknown>(
   }
 
   const res = await fetch(`${API_BASE}${path}`, {
+    cache: "no-store",
     ...options,
     credentials: "include",
     headers,
@@ -57,17 +57,17 @@ export const api = {
   post: <T = unknown>(path: string, body?: unknown) =>
     apiFetch<T>(path, {
       method: "POST",
-      body: body ? JSON.stringify(body) : undefined,
+      body: body instanceof FormData ? body : body ? JSON.stringify(body) : undefined,
     }),
   patch: <T = unknown>(path: string, body?: unknown) =>
     apiFetch<T>(path, {
       method: "PATCH",
-      body: body ? JSON.stringify(body) : undefined,
+      body: body instanceof FormData ? body : body ? JSON.stringify(body) : undefined,
     }),
   put: <T = unknown>(path: string, body?: unknown) =>
     apiFetch<T>(path, {
       method: "PUT",
-      body: body ? JSON.stringify(body) : undefined,
+      body: body instanceof FormData ? body : body ? JSON.stringify(body) : undefined,
     }),
   delete: <T = unknown>(path: string) =>
     apiFetch<T>(path, { method: "DELETE" }),

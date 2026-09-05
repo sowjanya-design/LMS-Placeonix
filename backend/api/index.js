@@ -7,10 +7,19 @@ const app = require("../src/app");
 let connPromise = null;
 async function ensureDB() {
   if (mongoose.connection.readyState === 1) return; // already connected
-  if (!process.env.MONGO_URI) throw new Error("MONGO_URI is not set");
+  const uri = process.env.MONGO_URI;
+  if (!uri || !uri.startsWith("mongodb")) {
+    // No hardcoded fallback on purpose — a real Atlas connection string used
+    // to sit here as a "just in case MONGO_URI is missing" fallback, which
+    // meant the real DB credentials were committed to git regardless of
+    // whether the env var was ever actually unset. Fail loudly instead.
+    throw new Error(
+      "MONGO_URI is not set (or doesn't look like a Mongo connection string) — set it in Vercel's dashboard, Settings -> Environment Variables.",
+    );
+  }
   if (!connPromise) {
     connPromise = mongoose
-      .connect(process.env.MONGO_URI, {
+      .connect(uri, {
         autoIndex: false,
         serverSelectionTimeoutMS: 8000,
         maxPoolSize: 5,
@@ -22,9 +31,13 @@ async function ensureDB() {
           const {
             seedRolesAndPermissions,
           } = require("../src/seeders/seedRoles");
+          const {
+            syncHolidayAnnouncements,
+          } = require("../src/services/holidaySyncService");
           await seedRolesAndPermissions();
+          await syncHolidayAnnouncements();
         } catch (err) {
-          console.warn(`Role/permission auto-seed skipped: ${err.message}`);
+          console.warn(`Role/permission or holiday auto-seed skipped: ${err.message}`);
         }
         return conn;
       })

@@ -1,0 +1,122 @@
+[
+  {
+    "page": "/dashboard",
+    "status": "PASS",
+    "consoleErrors": [],
+    "domErrors": []
+  },
+  {
+    "page": "/dashboard/students",
+    "status": "PASS",
+    "consoleErrors": [],
+    "domErrors": []
+  },
+  {
+    "page": "/dashboard/mentors",
+    "status": "PASS",
+    "consoleErrors": [],
+    "domErrors": []
+  },
+  {
+    "page": "/dashboard/courses",
+    "status": "PASS",
+    "consoleErrors": [],
+    "domErrors": []
+  },
+  {
+    "page": "/dashboard/batches",
+    "status": "PASS",
+    "consoleErrors": [],
+    "domErrors": []
+  },
+  {
+    "page": "/dashboard/sessions",
+    "status": "PASS",
+    "consoleErrors": [],
+    "domErrors": []
+  },
+  {
+    "page": "/dashboard/payments",
+    "status": "PASS",
+    "consoleErrors": [],
+    "domErrors": []
+  },
+  {
+    "page": "/dashboard/time-and-attendance",
+    "status": "PASS",
+    "consoleErrors": [],
+    "domErrors": []
+  },
+  {
+    "page": "/dashboard/quizzes",
+    "status": "PASS",
+    "consoleErrors": [],
+    "domErrors": []
+  },
+  {
+    "page": "/dashboard/resources",
+    "status": "PASS",
+    "consoleErrors": [],
+    "domErrors": []
+  },
+  {
+    "page": "/dashboard/assignments",
+    "status": "PASS",
+    "consoleErrors": [],
+    "domErrors": []
+  },
+  {
+    "page": "/dashboard/placements",
+    "status": "PASS",
+    "consoleErrors": [],
+    "domErrors": []
+  },
+  {
+    "page": "/dashboard/leads",
+    "status": "PASS",
+    "consoleErrors": [],
+    "domErrors": []
+  },
+  {
+    "page": "/dashboard/calendar",
+    "status": "PASS",
+    "consoleErrors": [],
+    "domErrors": []
+  },
+  {
+    "page": "/dashboard/announcements",
+    "status": "PASS",
+    "consoleErrors": [],
+    "domErrors": []
+  },
+  {
+    "page": "/dashboard/support",
+    "status": "PASS",
+    "consoleErrors": [],
+    "domErrors": []
+  },
+  {
+    "page": "/dashboard/certificates",
+    "status": "PASS",
+    "consoleErrors": [],
+    "domErrors": []
+  },
+  {
+    "page": "/dashboard/upload-video",
+    "status": "PASS",
+    "consoleErrors": [],
+    "domErrors": []
+  },
+  {
+    "page": "/dashboard/mock-interviews",
+    "status": "PASS",
+    "consoleErrors": [],
+    "domErrors": []
+  },
+  {
+    "page": "/dashboard/profile",
+    "status": "PASS",
+    "consoleErrors": [],
+    "domErrors": []
+  }
+]

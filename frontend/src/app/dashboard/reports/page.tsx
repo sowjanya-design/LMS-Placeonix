@@ -173,9 +173,9 @@ export default function ReportsPage() {
           ["Placements", "Placed", placement.placed],
           ["Placements", "Placement Rate", `${placement.placementRate}%`],
           ["Placements", "Highest Package", `₹${placement.highestPackage}L`],
-          ...placement.funnel.map(
+          ...(placement.funnel ? placement.funnel.map(
             (f) => ["Placements — Funnel", f.label, f.count] as ReportRow,
-          ),
+          ) : []),
         ] as ReportRow[])
       : []),
     ...(revenue

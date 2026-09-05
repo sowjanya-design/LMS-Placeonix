@@ -61,7 +61,30 @@ If an AI or developer runs into issues, check these historical context points:
         2. Ensure `NEXT_PUBLIC_API_BASE` matches the *active* backend URL exactly.
         3. Force a fresh, uncached rebuild of the frontend (`vercel deploy --prod --force`).
 
-## 5. Development Credentials
+## 5. URGENT — 2026-09-04: real secrets were committed to this repo
+
+`backend/vercel.json` had the real MongoDB Atlas connection string (username +
+password) and `NODE_ENV` hardcoded to `"development"` on the live production
+deployment. `JWT_SECRET`/`JWT_REFRESH_SECRET` were the literal placeholder
+text from `.env.example`, not real secrets at all — anyone who's seen that
+example file already knows them, meaning login tokens could be forged.
+
+**This needs, in order, done by whoever picks it up:**
+1. Rotate the Atlas password for `sowjanya_db_user` (Atlas → Database Access → Edit).
+2. Generate new random 32+ char `JWT_SECRET` and `JWT_REFRESH_SECRET` (this logs everyone out — expected).
+3. Set the new Mongo URI + new JWT secrets + `NODE_ENV=production` as real
+   Environment Variables in Vercel's dashboard (Settings → Environment
+   Variables) for the **backend** project — never in a committed file again.
+4. Redeploy. The values in `backend/vercel.json` were replaced with
+   `SET_IN_VERCEL_DASHBOARD_NOT_HERE` placeholders on purpose — the app will
+   fail to boot until the dashboard values are set, which is intentional
+   (fail loud, not fail open with a leaked credential).
+
+This is also why the `sameSite: "lax"` login-cookie fix (same commit) won't
+visibly do anything until `NODE_ENV` is actually `"production"` — that fix
+is gated on the same env var.
+
+## 6. Development Credentials
 Use these credentials to test the production application safely:
 *   **Admin:** `admin@placeonix.in` / `Password123`
 *   **Mentor:** `mentor@placeonix.in` / `Password123`
